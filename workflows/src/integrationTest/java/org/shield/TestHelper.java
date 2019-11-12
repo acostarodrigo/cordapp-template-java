@@ -17,7 +17,7 @@ public class TestHelper {
     // we avoid instantiation
     private TestHelper(){}
 
-    private static MockNetwork mockNet;
+    public static MockNetwork mockNet;
     public static StartedMockNode issuerNode;
     public static StartedMockNode broker1Node;
     public static StartedMockNode broker2Node;
