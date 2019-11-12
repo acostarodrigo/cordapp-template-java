@@ -4,59 +4,35 @@ import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.crypto.SecureHash;
-import net.corda.core.identity.CordaX500Name;
-import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.testing.node.MockNetwork;
-import net.corda.testing.node.StartedMockNode;
-import org.shield.flows.arrangement.*;
-
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.shield.flows.arrangement.AcceptFlow;
+import org.shield.flows.arrangement.CancelFlow;
+import org.shield.flows.arrangement.IssueFlow;
+import org.shield.flows.arrangement.PreIssueFlow;
 import org.shield.flows.init.BrokerDealerInit;
 import org.shield.flows.init.IssuerInit;
 import org.shield.states.ArrangementState;
 
-
-
 import java.util.Arrays;
-import java.util.Calendar;
 import java.util.Date;
-
 import java.util.concurrent.ExecutionException;
 
-public class ArrangementFlowTests {
-    //private final MockNetwork mockNet = new MockNetwork(new MockNetworkParameters(singletonList(findCordapp("org.shield.contracts"))));
-    private final MockNetwork mockNet = new MockNetwork(Arrays.asList("org.shield.contracts", "org.shield.flows.arrangement"));
-    private Calendar calendar = Calendar.getInstance();
-    private Date offeringDate;
-    private StartedMockNode issuerNode;
-    private StartedMockNode broker1Node;
-    private StartedMockNode broker2Node;
-    private Party issuer;
-    private Party broker1;
-    private Party broker2;
+import static org.shield.TestHelper.*;
 
+public class ArrangementFlowTests {
+    private final Date offeringDate = new Date(2020,12,12);
     @Before
     public void setUp() {
-        issuerNode = mockNet.createNode(new CordaX500Name("Issuer", "London", "GB"));
-        broker1Node = mockNet.createNode(new CordaX500Name("Broker1", "London", "GB"));
-        broker2Node = mockNet.createNode(new CordaX500Name("Broker2", "London", "GB"));
-
-        issuer = issuerNode.getInfo().getLegalIdentities().get(0);
-        broker1 = broker1Node.getInfo().getLegalIdentities().get(0);
-        broker2 = broker2Node.getInfo().getLegalIdentities().get(0);
-
-        // we create the offering date in the future
-        calendar.setTime(new Date());
-        calendar.add(Calendar.DATE, 5);
-        offeringDate = calendar.getTime();
+        TestHelper.setupNetwork();
     }
 
     @Test
     public void preIssueWithoutInitTest() throws ExecutionException, InterruptedException {
+
         // we issue arrangement from issuer to broker1
         CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 70, offeringDate));
 

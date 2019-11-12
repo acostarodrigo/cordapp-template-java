@@ -34,7 +34,8 @@ public class TestHelper {
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
             TestCordapp.findCordapp("org.shield.token")));
-        List<String> packages = Arrays.asList("org.shield.token");
+
+        List<String> packages = Arrays.asList("org.shield.token","org.shield.flows.arrangement");
 
         DriverParameters driverParameters = new DriverParameters().withIsDebug(true).withCordappsForAllNodes(cordapps);
         NetworkParameters networkParameters = driverParameters.getNetworkParameters();
