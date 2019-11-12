@@ -6,8 +6,9 @@ import net.corda.core.transactions.LedgerTransaction;
 import org.jetbrains.annotations.NotNull;
 
 
-public class CommercialPaperTokenContract extends EvolvableTokenContract implements Contract {
-    public CommercialPaperTokenContract() {
+public class CommercialPaperTokenTypeContract extends EvolvableTokenContract implements Contract {
+    public static final String ID = "org.shield.token.CommercialPaperTokenTypeContract";
+    public CommercialPaperTokenTypeContract() {
         super();
     }
 
