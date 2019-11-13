@@ -14,7 +14,6 @@ import org.shield.contracts.ArrangementContract;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
 import org.shield.states.ArrangementState;
 import org.shield.states.BrokerDealerInitState;
-import org.shield.states.CommercialPaperState;
 import org.shield.states.IssuerInitState;
 
 import java.security.PublicKey;
@@ -208,7 +207,6 @@ public class ArrangementFlow {
         private Party issuer;
         private Party brokerDealer;
         private StateAndRef<ArrangementState> inputArrangement;
-        private StateAndRef<CommercialPaperState> inputCommercialPaper;
 
         public Issue(UniqueIdentifier arrangementId) {
             this.id = arrangementId;
