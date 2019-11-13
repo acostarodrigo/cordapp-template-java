@@ -9,10 +9,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.shield.flows.arrangement.AcceptFlow;
-import org.shield.flows.arrangement.CancelFlow;
-import org.shield.flows.arrangement.IssueFlow;
-import org.shield.flows.arrangement.PreIssueFlow;
+import org.shield.flows.arrangement.ArrangementFlow.*;
 import org.shield.flows.init.BrokerDealerInit;
 import org.shield.flows.init.IssuerInit;
 import org.shield.states.ArrangementState;
@@ -34,7 +31,7 @@ public class ArrangementFlowTests {
     public void preIssueWithoutInitTest() throws ExecutionException, InterruptedException {
 
         // we issue arrangement from issuer to broker1
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 70, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 70, offeringDate));
 
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get();
@@ -78,20 +75,20 @@ public class ArrangementFlowTests {
         initFuture.get();
 
         // we issue from issuer an arrangement to broker1
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 100, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get(); // this should trigger an exception
     }
 
     @Test
     public void cancelFlowWithoutInitTest() throws ExecutionException, InterruptedException {
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 100, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
 
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new CancelFlow(id));
+        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new Cancel(id));
         mockNet.runNetwork();
         cancelFuture.get();
 
@@ -108,13 +105,13 @@ public class ArrangementFlowTests {
         mockNet.runNetwork();
         issuerInitFuture.get();
 
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 100, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
 
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new CancelFlow(id));
+        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new Cancel(id));
         mockNet.runNetwork();
         cancelFuture.get();
 
@@ -133,13 +130,13 @@ public class ArrangementFlowTests {
 
         int initialSize = 100;
         int finalSize = 50;
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, initialSize, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, initialSize, offeringDate));
 
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new AcceptFlow(id, finalSize));
+        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new Accept(id, finalSize));
         mockNet.runNetwork();
         cancelFuture.get();
 
@@ -154,13 +151,13 @@ public class ArrangementFlowTests {
 
     @Test
     public void issueFlowTest() throws ExecutionException, InterruptedException {
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 100, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
 
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new AcceptFlow(id, 50));
+        CordaFuture<Void> cancelFuture = broker1Node.startFlow(new Accept(id, 50));
         mockNet.runNetwork();
         cancelFuture.get();
 
@@ -172,7 +169,7 @@ public class ArrangementFlowTests {
             }
         }
 
-        CordaFuture<UniqueIdentifier> paperFuture = issuerNode.startFlow(new IssueFlow(id));
+        CordaFuture<UniqueIdentifier> paperFuture = issuerNode.startFlow(new Issue(id));
 
         mockNet.runNetwork();
         UniqueIdentifier paperId = paperFuture.get();
@@ -185,13 +182,13 @@ public class ArrangementFlowTests {
 
     @Test
     public void issueFlowExistingCommercialPaperTest() throws ExecutionException, InterruptedException {
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker1, 100, offeringDate));
+        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
 
         mockNet.runNetwork();
         UniqueIdentifier id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        CordaFuture<Void> acceptFuture = broker1Node.startFlow(new AcceptFlow(id, 50));
+        CordaFuture<Void> acceptFuture = broker1Node.startFlow(new Accept(id, 50));
         mockNet.runNetwork();
         acceptFuture.get();
 
@@ -203,7 +200,7 @@ public class ArrangementFlowTests {
             }
         }
 
-        CordaFuture<UniqueIdentifier> paperFuture = issuerNode.startFlow(new IssueFlow(id));
+        CordaFuture<UniqueIdentifier> paperFuture = issuerNode.startFlow(new Issue(id));
 
         mockNet.runNetwork();
         UniqueIdentifier paperId = paperFuture.get();
@@ -215,16 +212,16 @@ public class ArrangementFlowTests {
         Assert.assertEquals(arrangementState.getPaperId(), paperId);
 
         // we will issue another arrangement from broker2
-        preIssueFuture = issuerNode.startFlow(new PreIssueFlow(broker2, 30, offeringDate));
+        preIssueFuture = issuerNode.startFlow(new PreIssue(broker2, 30, offeringDate));
         mockNet.runNetwork();
         id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        acceptFuture = broker2Node.startFlow(new AcceptFlow(id, 50));
+        acceptFuture = broker2Node.startFlow(new Accept(id, 50));
         mockNet.runNetwork();
         acceptFuture.get();
 
-        paperFuture = issuerNode.startFlow(new IssueFlow(id));
+        paperFuture = issuerNode.startFlow(new Issue(id));
 
         mockNet.runNetwork();
         UniqueIdentifier broker2PaperId = paperFuture.get();

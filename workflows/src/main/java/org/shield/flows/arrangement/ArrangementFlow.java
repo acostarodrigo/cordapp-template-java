@@ -96,6 +96,7 @@ public class ArrangementFlow {
         }
 
         @Override
+        @Suspendable
         public Void call() throws FlowException {
             SignedTransaction stx = subFlow(new ReceiveTransactionFlow(brokerDealerSession,false));
             // we will validate the transaction if we have the init configured.
@@ -178,6 +179,7 @@ public class ArrangementFlow {
         }
 
         @Override
+        @Suspendable
         public Void call() throws FlowException {
             SignedTransaction stx = subFlow(new ReceiveTransactionFlow(brokerDealerSession,false));
             // we will validate the transaction if we have the init configured.
@@ -211,7 +213,9 @@ public class ArrangementFlow {
         public Issue(UniqueIdentifier arrangementId) {
             this.id = arrangementId;
         }
+
         @Override
+        @Suspendable
         public UniqueIdentifier call() throws FlowException {
             this.issuer = getOurIdentity();
 
@@ -272,6 +276,7 @@ public class ArrangementFlow {
         }
 
         @Override
+        @Suspendable
         public Void call() throws FlowException {
             subFlow(new SignTransactionFlow(issuerSession) {
                 @Override
@@ -337,6 +342,7 @@ public class ArrangementFlow {
             this.offeringDate = offeringDate;
         }
         @Override
+        @Suspendable
         public UniqueIdentifier call() throws FlowException {
             this.issuer = getOurIdentity();
 
@@ -388,6 +394,7 @@ public class ArrangementFlow {
         }
 
         @Override
+        @Suspendable
         public Void call() throws FlowException {
             // we validate the transaction first
             subFlow(new PreIssueResponse.ValidateTx(this.issuerSession));
