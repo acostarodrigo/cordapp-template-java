@@ -6,6 +6,8 @@ import net.corda.core.contracts.ContractState;
 import net.corda.core.transactions.LedgerTransaction;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Date;
+
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 
@@ -21,8 +23,15 @@ public class CommercialPaperTokenTypeContract extends EvolvableTokenContract imp
     }
 
     @Override
-    public void additionalCreateChecks(@NotNull LedgerTransaction tx) {
-
+    public void additionalCreateChecks(@NotNull LedgerTransaction tx){
+        CommercialPaperTokenType output = (CommercialPaperTokenType) tx.getOutput(0);
+        Date now = new Date();
+        requireThat(require -> {
+            require.using("Valuation must be zero during creation.", output.getValuation() == 0);
+            require.using("Digits supported is zero.", output.getFractionDigits() == 0);
+            require.using("Offering date can't be in the past", output.getofferingDate().after(now));
+            return null;
+        });
     }
 
     @Override

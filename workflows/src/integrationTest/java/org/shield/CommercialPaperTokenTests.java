@@ -28,7 +28,7 @@ public class CommercialPaperTokenTests {
      * Then issues tokens to broker2 and validated token gets updated in all participants and broker 2 has fungible tokens.
      */
     public void testIssueFungibleToken() throws ExecutionException, InterruptedException {
-        Date offeringDate = new Date();
+        Date offeringDate = new Date(2020,12,12);
         CordaFuture<UniqueIdentifier> issueTokensBroker1 = issuerNode.startFlow(new CommercialPaperTokenFlow.IssueFungibleToken(offeringDate, 1L, broker1));
 
         mockNet.runNetwork();
@@ -62,6 +62,16 @@ public class CommercialPaperTokenTests {
         assertNotNull(fungibleTokenBroker2);
 
         assertEquals(tokenTypeBroker2.getValuation(), fungibleTokenBroker1.getAmount().getQuantity() + fungibleTokenBroker2.getAmount().getQuantity());
+    }
+
+    @Test (expected = java.util.concurrent.ExecutionException.class)
+    public void issueTokenWithInvalidDate() throws ExecutionException, InterruptedException {
+        Date offeringDate = new Date();
+        CordaFuture<UniqueIdentifier> issueTokensBroker1 = issuerNode.startFlow(new CommercialPaperTokenFlow.IssueFungibleToken(offeringDate, 1L, broker1));
+        // should fail, offering date not in the future.
+
+        mockNet.runNetwork();
+        UniqueIdentifier id = issueTokensBroker1.get();
     }
 
     @After
