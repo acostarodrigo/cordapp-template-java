@@ -19,7 +19,7 @@ import java.util.List;
 public class IssuerInitFlow {
     private IssuerInitFlow(){}
 
-    private class Issue extends FlowLogic<Void>{
+    public class Issue extends FlowLogic<Void>{
         private List<Party> brokerDealers;
         private Party issuer;
 
@@ -59,7 +59,7 @@ public class IssuerInitFlow {
         }
     }
 
-    private class Update extends FlowLogic<Void>{
+    public class Update extends FlowLogic<Void>{
         List<Party> brokerDealers;
 
         public Update(List<Party> brokerDealers) {
