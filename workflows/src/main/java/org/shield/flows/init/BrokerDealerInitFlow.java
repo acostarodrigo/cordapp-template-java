@@ -19,7 +19,7 @@ public class BrokerDealerInitFlow {
 
     @StartableByRPC
     @InitiatingFlow
-    public class Issue extends FlowLogic<Void> {
+    public static class Issue extends FlowLogic<Void> {
         private List<Party> issuers;
         Party brokerDealer;
 
@@ -61,7 +61,7 @@ public class BrokerDealerInitFlow {
 
     @StartableByRPC
     @InitiatingFlow
-    public class Update extends FlowLogic<Void>{
+    public static class Update extends FlowLogic<Void>{
         List<Party> issuers;
 
         public Update(List<Party> issuers) {

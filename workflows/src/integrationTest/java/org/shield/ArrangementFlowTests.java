@@ -10,8 +10,8 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.flows.arrangement.ArrangementFlow.*;
-import org.shield.flows.init.BrokerDealerInit;
-import org.shield.flows.init.IssuerInit;
+import org.shield.flows.init.BrokerDealerInitFlow;
+import org.shield.flows.init.IssuerInitFlow;
 import org.shield.states.ArrangementState;
 
 import java.util.Arrays;
@@ -60,7 +60,7 @@ public class ArrangementFlowTests {
     @Test
     public void preIssueWithValidInitTest() throws ExecutionException, InterruptedException {
         // we add issuer as valid issuer for broker1
-        CordaFuture<Void> initFuture = broker1Node.startFlow(new BrokerDealerInit(Arrays.asList(issuer)));
+        CordaFuture<Void> initFuture = broker1Node.startFlow(new BrokerDealerInitFlow.Issue(Arrays.asList(issuer)));
         mockNet.runNetwork();
         initFuture.get();
 
@@ -70,7 +70,7 @@ public class ArrangementFlowTests {
     @Test(expected = ExecutionException.class)
     public void preIssueWithInvalidInitTest() throws ExecutionException, InterruptedException {
         // we add broker2 as valid issuer for broker1
-        CordaFuture<Void> initFuture = broker1Node.startFlow(new BrokerDealerInit(Arrays.asList(broker2)));
+        CordaFuture<Void> initFuture = broker1Node.startFlow(new BrokerDealerInitFlow.Issue(Arrays.asList(broker2)));
         mockNet.runNetwork();
         initFuture.get();
 
@@ -101,7 +101,7 @@ public class ArrangementFlowTests {
 
     @Test
     public void cancelFlowWithInitTest() throws ExecutionException, InterruptedException {
-        CordaFuture<Void> issuerInitFuture = issuerNode.startFlow(new IssuerInit(Arrays.asList(broker1)));
+        CordaFuture<Void> issuerInitFuture = issuerNode.startFlow(new IssuerInitFlow.Issue(Arrays.asList(broker1)));
         mockNet.runNetwork();
         issuerInitFuture.get();
 
@@ -124,7 +124,7 @@ public class ArrangementFlowTests {
 
     @Test
     public void AcceptFlowWithInitTest() throws ExecutionException, InterruptedException {
-        CordaFuture<Void> issuerInitFuture = issuerNode.startFlow(new IssuerInit(Arrays.asList(broker1)));
+        CordaFuture<Void> issuerInitFuture = issuerNode.startFlow(new IssuerInitFlow.Issue(Arrays.asList(broker1)));
         mockNet.runNetwork();
         issuerInitFuture.get();
 
