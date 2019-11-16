@@ -26,11 +26,13 @@ public class Client {
         final String rpcUsername = args[1];
         final String rpcPassword = args[2];
         final CordaRPCClient client = new CordaRPCClient(nodeAddress);
+        System.out.println("connecting to node " + nodeAddress.toString());
         final CordaRPCOps proxy = client.start(rpcUsername, rpcPassword).getProxy();
 
         // Interact with the node.
         // For example, here we print the nodes on the network.
         final List<NodeInfo> nodes = proxy.networkMapSnapshot();
+        System.out.println("nodes:" + nodes.toString());
         logger.info("{}", nodes);
     }
 }
