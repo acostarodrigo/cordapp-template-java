@@ -39,6 +39,10 @@ public class IssuerInitState implements ContractState {
         this.brokerDealers = brokerDealers;
     }
 
+    public void setIssuer(Party issuer) {
+        this.issuer = issuer;
+    }
+
     public void addBrokerDealer(Party brokerDealer){
         this.brokerDealers.add(brokerDealer);
     }

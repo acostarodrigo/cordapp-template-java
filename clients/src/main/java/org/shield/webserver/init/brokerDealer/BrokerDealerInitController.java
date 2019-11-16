@@ -1,6 +1,7 @@
-package org.shield.webserver.init;
+package org.shield.webserver.init.brokerDealer;
 
 import net.corda.core.contracts.StateAndRef;
+import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.services.Vault;
@@ -12,11 +13,11 @@ import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.persistence.Entity;
 import javax.validation.Valid;
-import javax.validation.constraints.NotEmpty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -30,8 +31,8 @@ public class BrokerDealerInitController {
     private ProxyEntry proxyEntry;
     private CordaRPCOps proxy;
 
-    @GetMapping(value = "/get")
-    public BrokerDealerInitState getBrokerDealerInit(@Valid @RequestBody User user){
+    @GetMapping(value = "")
+    public ResponseEntity<ResponseWrapper> getBrokerDealerInit(@Valid @RequestBody User user){
         logger.debug("Getting broker dealer  init for " + user.toString());
         generateConnection(user);
         QueryCriteria queryCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
@@ -39,27 +40,23 @@ public class BrokerDealerInitController {
         List<StateAndRef<BrokerDealerInitState>> result = proxy.vaultQueryByCriteria(queryCriteria, BrokerDealerInitState.class).getStates();
         if (result.isEmpty()) return null;
         BrokerDealerInitState brokerDealerInitState = result.get(0).getState().getData();
-        return brokerDealerInitState;
+        return new ResponseEntity<>(new ResponseWrapper(brokerDealerInitState), HttpStatus.OK);
     }
 
-    @Entity
-    private class InitState{
-        @NotEmpty(message = "Please provide a valid username")
-        private User user;
-        @NotEmpty(message = "Please provide a valid issuer")
-        private Party issuer;
-    }
 
-    @PostMapping(value = "/post")
-    public BrokerDealerInitState submitBrokerDealerInit(@Valid @RequestBody User user) throws ExecutionException, InterruptedException {
-        logger.debug("Submitting init " + user.toString() + " with issuer " );
-        generateConnection(user);
-        Party issuer = proxy.getNetworkParameters().getNotaries().get(0).component1();
+
+    @RequestMapping(value = "", method = RequestMethod.POST)
+    public ResponseEntity<ResponseWrapper> submitBrokerDealerInit(@Valid @RequestBody RequestWrapper body) throws ExecutionException, InterruptedException {
+        User user = body.getUser();
+        CordaX500Name issuerName = CordaX500Name.parse(body.getIssuer());
+
+        generateConnection(body.getUser());
+        Party issuer = proxy.wellKnownPartyFromX500Name(issuerName);
         List<Party> issuers = new ArrayList<>();
         issuers.add(issuer);
 
-        proxy.startFlowDynamic(BrokerDealerInitFlow.Issue.class, issuers).getReturnValue().get();
-        return getBrokerDealerInit(user);
+        proxy.startFlowDynamic(BrokerDealerInitFlow.Update.class, issuers).getReturnValue().get();
+        return getBrokerDealerInit(body.getUser());
     }
 
     private void generateConnection(User user){

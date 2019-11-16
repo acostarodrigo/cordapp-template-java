@@ -25,6 +25,9 @@ public class BrokerDealerInitState implements ContractState {
         return brokerDealer;
     }
 
+    public void setBrokerDealer(Party brokerDealer) {
+        this.brokerDealer = brokerDealer;
+    }
 
     public List<Party> getIssuers() {
         return issuers;
