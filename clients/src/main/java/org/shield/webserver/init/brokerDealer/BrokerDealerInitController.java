@@ -50,20 +50,29 @@ public class BrokerDealerInitController {
         User user = body.getUser();
         CordaX500Name issuerName = CordaX500Name.parse(body.getIssuer());
 
-        generateConnection(body.getUser());
+        // stablish connection
+        generateConnection(user);
+
+        // lets search for the state, to determine if we issue or update
+        QueryCriteria queryCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        List<StateAndRef<BrokerDealerInitState>> result = proxy.vaultQueryByCriteria(queryCriteria, BrokerDealerInitState.class).getStates();
+
+        // we create the party from the string
         Party issuer = proxy.wellKnownPartyFromX500Name(issuerName);
         List<Party> issuers = new ArrayList<>();
         issuers.add(issuer);
 
-        proxy.startFlowDynamic(BrokerDealerInitFlow.Update.class, issuers).getReturnValue().get();
-        return getBrokerDealerInit(body.getUser());
+        if (result.isEmpty())
+            proxy.startFlowDynamic(BrokerDealerInitFlow.Issue.class, issuers).getReturnValue().get();
+        else
+            proxy.startFlowDynamic(BrokerDealerInitFlow.Update.class, issuers).getReturnValue().get();
+
+        return getBrokerDealerInit(user);
     }
 
     private void generateConnection(User user){
-        if (proxy == null) {
-            connection = new Connection(user);
-            proxyEntry = connection.login();
-            proxy = proxyEntry.getProxy();
-        }
+        connection = new Connection(user);
+        proxyEntry = connection.login();
+        proxy = proxyEntry.getProxy();
     }
 }

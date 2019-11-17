@@ -2,10 +2,12 @@ package org.shield.webserver.connection;
 
 public class Connection {
     private User user;
+    private final String key;
     private static ProxyEntry proxyEntry;
 
     public Connection(User user) {
         this.user = user;
+        this.key = user.getUsername()+user.getServerName();
     }
 
     public User getUser() {
@@ -14,26 +16,17 @@ public class Connection {
 
     public ProxyEntry login(){
         // we get an available opened connection for this user
-        proxyEntry = ConnectionPool.getProxyEntry(user.getUsername());
+        proxyEntry = ConnectionPool.getProxyEntry(key);
 
         // no connection was found, we need to open one.
         if (proxyEntry == null) {
-            NodeRPCConnection nodeRPCConnection = new NodeRPCConnection(user.getUsername(), user.getPassword());
+            NodeRPCConnection nodeRPCConnection = new NodeRPCConnection(user.getServerName(),user.getUsername(), user.getPassword());
             nodeRPCConnection.initialiseNodeRPCConnection();
             proxyEntry = new ProxyEntry(nodeRPCConnection.getRpcConnection());
 
             // we store the connection in the connection pool.
-            ConnectionPool.putProxyEntry(proxyEntry, user.getUsername());
+            ConnectionPool.putProxyEntry(proxyEntry, key);
         }
         return proxyEntry;
-    }
-
-    /**
-     * Static method with no password. it is assumed that user has already logged before and has an open connection.
-     * @param userName
-     * @return
-     */
-    public static ProxyEntry login(String userName){
-        return proxyEntry = ConnectionPool.getProxyEntry(userName);
     }
 }

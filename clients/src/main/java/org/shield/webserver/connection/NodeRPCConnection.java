@@ -10,14 +10,18 @@ import org.slf4j.LoggerFactory;
 public class NodeRPCConnection {
     private static final Logger logger = LoggerFactory.getLogger(NodeRPCConnection.class);
 
-    private final String host = "localhost";
-    private final int port = 10009;
+    private final String serverName;
+    private final String host;
+    private final int port;
     private final String username;
     private final String password;
     private CordaRPCConnection rpcConnection;
     private CordaRPCOps proxy;
 
-    public NodeRPCConnection(String username, String password) {
+    public NodeRPCConnection(String serverName, String username, String password) {
+        this.serverName = serverName;
+        this.host = serverName.split(":")[0];
+        this.port = Integer.valueOf(serverName.split(":")[1]); //todo this needs to be validated
         this.username = username;
         this.password = password;
     }
