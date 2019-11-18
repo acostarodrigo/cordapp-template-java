@@ -3,9 +3,7 @@ package org.shield.flows.init;
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.flows.FinalityFlow;
-import net.corda.core.flows.FlowException;
-import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
@@ -19,6 +17,8 @@ import java.util.List;
 public class IssuerInitFlow {
     private IssuerInitFlow(){}
 
+    @InitiatingFlow
+    @StartableByRPC
     public static class Issue extends FlowLogic<Void>{
         private List<Party> brokerDealers;
         private Party issuer;
@@ -59,6 +59,8 @@ public class IssuerInitFlow {
         }
     }
 
+    @InitiatingFlow
+    @StartableByRPC
     public static class Update extends FlowLogic<Void>{
         List<Party> brokerDealers;
 
