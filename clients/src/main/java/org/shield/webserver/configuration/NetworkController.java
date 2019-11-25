@@ -19,9 +19,9 @@ import javax.validation.Valid;
 @RequestMapping("/network") // The paths for HTTP requests are relative to this base path.
 public class NetworkController {
     // todo this values must come from configuration file
-    private final String serverName = "localhost:10006";
-    private final String userName = "user1";
-    private final String password = "test";
+    private final String serverName = "23.99.231.7:10003";
+    private final String userName = "rpcuser";
+    private final String password = "ChangeTh1sPa$$w0rd";
 
     @GetMapping(value = "")
     public ResponseEntity<ResponseWrapper> getNetworkConfiguration(){
