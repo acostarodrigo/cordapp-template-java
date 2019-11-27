@@ -36,7 +36,7 @@ public class TestHelper {
         Map<String, String> config = new HashMap<>();
         config.put("bnoWhitelist","O=BNO,L=New York,C=US");
         config.put("notaryName","O=Notary,L=London,C=GB");
-        config.put("membershipContractName","net.corda.businessnetworks.membership.states.MembershipContract");
+        config.put("bno","O=BNO,L=New York,C=US");
         HashSet<TestCordapp> cordapps = new HashSet<>(asList(
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
