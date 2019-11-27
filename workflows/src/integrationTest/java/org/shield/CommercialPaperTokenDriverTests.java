@@ -18,6 +18,7 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.shield.flows.arrangement.ArrangementFlow;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
 
 import java.math.BigDecimal;
@@ -52,6 +53,7 @@ public class CommercialPaperTokenDriverTests {
         HashSet<TestCordapp> cordapps = new HashSet<>(asList( TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
                 TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
+                TestCordapp.findCordapp("com.r3.businessnetworks.membership"),
                 TestCordapp.findCordapp("org.shield.token")));
 
         // in order to support token flows, network must be version 4 compatible, so we are copying default parameters
@@ -102,7 +104,7 @@ public class CommercialPaperTokenDriverTests {
                 BigDecimal fungibleAmount = BigDecimal.ONE;
 
                 Party holder = broker1Node.getNodeInfo().getLegalIdentities().get(0);
-                UniqueIdentifier id = issuer.startFlowDynamic(CommercialPaperTokenFlow.IssueFungibleToken.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
+                UniqueIdentifier id = issuer.startFlowDynamic(ArrangementFlow.PreIssue.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
                 Assert.assertNotNull(id);
             } catch (Exception e) {
                 System.out.println("Exception during node initialization:" + e.toString());

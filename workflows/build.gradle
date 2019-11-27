@@ -42,6 +42,7 @@ repositories {
     maven {
         url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-solutions-releases'
     }
+
 }
 
 dependencies {
@@ -52,6 +53,8 @@ dependencies {
     // For testing.
     testCompile "junit:junit:$junit_version"
     testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+    testCompile "com.r3.businessnetworks:membership-service:2.0"
+    testCompile "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
 
 
     // CorDapp dependencies.
@@ -66,7 +69,7 @@ dependencies {
     cordapp "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
 }
 
-task integrationTest(type: Test, dependsOn: []) {
+task integrationTest(type: Test, dependsOn: [jar]) {
     testClassesDirs = sourceSets.integrationTest.output.classesDirs
     classpath = sourceSets.integrationTest.runtimeClasspath
 }

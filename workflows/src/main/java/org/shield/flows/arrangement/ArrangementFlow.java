@@ -1,14 +1,18 @@
 package org.shield.flows.arrangement;
 
 import co.paralleluniverse.fibers.Suspendable;
+import com.r3.businessnetworks.membership.flows.bno.GetMembershipsFlowResponder;
+import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
+import com.r3.businessnetworks.membership.states.MembershipState;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.*;
+import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
-import net.corda.core.utilities.ProgressTracker;
 import org.jetbrains.annotations.NotNull;
 import org.shield.contracts.ArrangementContract;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
@@ -302,34 +306,11 @@ public class ArrangementFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class PreIssue extends FlowLogic<UniqueIdentifier>{
-        // we define the steps of the flow
-        private final ProgressTracker.Step PREISSUING = new ProgressTracker.Step("Creating arrangement output and generating transaction.");
-        private final ProgressTracker.Step ISSUER_SIGNING = new ProgressTracker.Step("Signing arrangement proposal from issuer.");
-        private final ProgressTracker.Step BROKER_SIGNATURE = new ProgressTracker.Step("Getting broker dealer signature."){
-            @Override
-            public ProgressTracker childProgressTracker() {
-                return CollectSignaturesFlow.tracker();
-            }
-        };
-
-        private final ProgressTracker.Step RECORDING = new ProgressTracker.Step("Recording completed transaction"){
-            @Override
-            public ProgressTracker childProgressTracker() {
-                return FinalityFlow.tracker();
-            }
-        };
-
-        // and create the progress tracker with our own steps.
-        private final ProgressTracker progressTracker = new ProgressTracker(
-            PREISSUING,
-            ISSUER_SIGNING,
-            BROKER_SIGNATURE,
-            RECORDING
-        );
-
+    public static class PreIssue extends FlowLogic<UniqueIdentifier> {
         private Party issuer;
         private Party brokerDealer;
+        private Party bno;
+        private CordappConfig config;
         private int size;
         private Date offeringDate;
 
@@ -339,15 +320,26 @@ public class ArrangementFlow {
             this.size = size;
             this.offeringDate = offeringDate;
         }
+
         @Override
         @Suspendable
         public UniqueIdentifier call() throws FlowException {
             this.issuer = getOurIdentity();
 
+            String bnoString = "O=BNO,L=New York,C=US";
+            CordaX500Name bnoName = CordaX500Name.parse(bnoString);
+            bno = getServiceHub().getNetworkMapCache().getPeerByLegalName(bnoName);
+            GetMembershipsFlow getMembershipsFlow = new GetMembershipsFlow(bno, false, true);
+            StateAndRef<? extends MembershipState<? extends Object>> membershipState = subFlow(getMembershipsFlow).get(this.issuer);
+
+            if (membershipState == null || !membershipState.getState().getData().isActive()){
+                throw new FlowException("Only issuers can call this flow.");
+            }
+
+
+
             // We retrieve the notary identity from the network map.
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-
-            progressTracker.setCurrentStep(PREISSUING);
 
             // We create the transaction components.
             // output is created without input for PreIssueFlow command
@@ -363,21 +355,21 @@ public class ArrangementFlow {
                 .addOutputState(outputState, ArrangementContract.ID)
                 .addCommand(command);
 
-            progressTracker.setCurrentStep(ISSUER_SIGNING);
 
             // Signing the transaction.
             SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
 
             // Obtaining the counterparty's signature.
-            progressTracker.setCurrentStep(BROKER_SIGNATURE);
-            FlowSession brokerDealerSession = initiateFlow(brokerDealer);
-            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(
-                signedTx, Arrays.asList(brokerDealerSession)));
 
-            progressTracker.setCurrentStep(RECORDING);
+            FlowSession brokerDealerSession = initiateFlow(brokerDealer);
+            SignedTransaction fullySignedTx = null;
+
+            fullySignedTx = subFlow(new CollectSignaturesFlow(
+                signedTx, Arrays.asList(brokerDealerSession)));
 
             // Finalising the transaction.
             subFlow(new FinalityFlow(fullySignedTx, brokerDealerSession));
+
             return outputState.getId();
         }
     }
@@ -386,18 +378,28 @@ public class ArrangementFlow {
     public static class PreIssueResponse extends  FlowLogic<Void> {
         private FlowSession issuerSession;
 
+
         // constructor
         public PreIssueResponse(FlowSession flowSession) {
             this.issuerSession = flowSession;
         }
 
+
         @Override
         @Suspendable
-        public Void call() throws FlowException {
+        public Void call() {
             // we validate the transaction first
-            subFlow(new PreIssueResponse.ValidateTx(this.issuerSession));
+            try {
+                subFlow(new ValidateTx(this.issuerSession));
+            } catch (FlowException e) {
+                throw new IllegalArgumentException(e.getLocalizedMessage());
+            }
 
-            subFlow(new ReceiveFinalityFlow(issuerSession));
+            try {
+                subFlow(new ReceiveFinalityFlow(issuerSession));
+            } catch (FlowException e) {
+                throw new IllegalArgumentException(e.getLocalizedMessage());
+            }
             return null;
         }
 

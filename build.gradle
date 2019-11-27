@@ -63,7 +63,7 @@ apply plugin: 'net.corda.plugins.quasar-utils'
 
 cordapp {
     info {
-        name "CorDapp Template"
+        name "Shield MVP"
         vendor "Corda Open Source"
         targetPlatformVersion corda_platform_version.toInteger()
         minimumPlatformVersion corda_platform_version.toInteger()
@@ -103,6 +103,7 @@ dependencies {
     // Business Network Membership Service (BNMS)
     cordapp "com.r3.businessnetworks:membership-service:2.0"
     cordapp "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
+
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
@@ -146,11 +147,11 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     }
 
     node {
-        name "O=broker2,L=New York,C=US"
+        name "O=BNO,L=New York,C=US"
         p2pPort 10011
         rpcSettings {
-            address("broker2:10012")
-            adminAddress("broker2:10051")
+            address("localhost:10012")
+            adminAddress("localhost:10051")
         }
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
