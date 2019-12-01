@@ -10,7 +10,8 @@ sourceSets {
 
 dependencies {
     // Corda dependencies.
-    compile "$corda_release_group:corda-rpc:$corda_release_version"
+    compile "$corda_release_group:corda-rpc:4.3"
+
 
     // CorDapp dependencies.
     compile project(":contracts")
@@ -28,6 +29,10 @@ dependencies {
     compile "com.r3.tokens-sdk:contract:1.0-SNAPSHOT"
     compile "com.r3.tokens-sdk:workflow:1.0-SNAPSHOT"
     compile "com.r3.tokens-sdk:money:1.0-SNAPSHOT"
+
+    // Business Network Membership Service (BNMS)
+    compile "com.r3.businessnetworks:membership-service:2.0"
+    compile "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
 }
 
 springBoot {
