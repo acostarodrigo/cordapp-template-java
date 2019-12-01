@@ -134,6 +134,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("issuer:10006")
             adminAddress("issuer:10046")
         }
+        cordapps = ["com.r3.businessnetworks:membership-service:2.0", "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
     node {
@@ -143,6 +144,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("broker1:10009")
             adminAddress("broker1:10049")
         }
+        cordapps = ["com.r3.businessnetworks:membership-service:2.0", "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 
@@ -153,6 +155,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
             address("localhost:10012")
             adminAddress("localhost:10051")
         }
+        cordapps = ["com.r3.businessnetworks:membership-service:2.0", "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
     }
 }
