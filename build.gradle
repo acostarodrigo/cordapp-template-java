@@ -175,8 +175,6 @@ task resetBlockchain(dependsOn: deployNodes, type: Copy){
             }
         }
     }
-    from "$buildDir/membership-service.conf"
-    into "$buildDir/nodes/issuer/cordapps/config"
 }
 
 task installQuasar(type: Copy) {
