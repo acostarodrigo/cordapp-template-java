@@ -14,7 +14,6 @@ import net.corda.core.transactions.SignedTransaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.shield.flows.membership.MembershipFlow;
 import org.shield.membership.ShieldMetadata;
 
 import java.util.Arrays;
