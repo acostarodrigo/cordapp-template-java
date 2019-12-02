@@ -1,19 +1,18 @@
-package org.shield.token;
+package org.shield.states;
 
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 
-import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import org.jetbrains.annotations.NotNull;
+import org.shield.contracts.CommercialPaperTokenTypeContract;
 
-import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 
 @BelongsToContract(CommercialPaperTokenTypeContract.class)
-public class CommercialPaperTokenType extends EvolvableTokenType {
+public class CommercialPaperTokenState extends EvolvableTokenType {
     private long valuation;
     private Party issuer;
     private Date offeringDate;
@@ -22,7 +21,7 @@ public class CommercialPaperTokenType extends EvolvableTokenType {
     private UniqueIdentifier linearId;
 
 
-    public CommercialPaperTokenType(long valuation, Party issuer, Date offeringDate, int fractionDigits, List<Party> maintainers, UniqueIdentifier linearId) {
+    public CommercialPaperTokenState(long valuation, Party issuer, Date offeringDate, int fractionDigits, List<Party> maintainers, UniqueIdentifier linearId) {
         this.valuation = valuation;
         this.issuer = issuer;
         this.offeringDate = offeringDate;

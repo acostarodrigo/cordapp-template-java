@@ -1,11 +1,9 @@
 package org.shield.webserver.commercialPaper;
 
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
-import com.r3.corda.sdk.token.contracts.types.TokenType;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.messaging.CordaRPCOps;
-import org.shield.token.CommercialPaperTokenType;
-import org.shield.webserver.arrangement.RequestWrapper;
+import org.shield.states.CommercialPaperTokenState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
@@ -37,9 +35,9 @@ public class CommercialPaperController {
         generateConnection(user);
 
         List<ResponseWrapper> result = new ArrayList<>();
-        for (StateAndRef<CommercialPaperTokenType> stateAndRef : proxy.vaultQuery(CommercialPaperTokenType.class).getStates()){
-            CommercialPaperTokenType commercialPaperTokenType = stateAndRef.getState().getData();
-            ResponseWrapper responseWrapper = new ResponseWrapper(commercialPaperTokenType.getIssuer().getName().toString(), commercialPaperTokenType.getValuation());
+        for (StateAndRef<CommercialPaperTokenState> stateAndRef : proxy.vaultQuery(CommercialPaperTokenState.class).getStates()){
+            CommercialPaperTokenState commercialPaperTokenState = stateAndRef.getState().getData();
+            ResponseWrapper responseWrapper = new ResponseWrapper(commercialPaperTokenState.getIssuer().getName().toString(), commercialPaperTokenState.getValuation());
             for (StateAndRef<FungibleToken> tokenStateAndRef : proxy.vaultQuery(FungibleToken.class).getStates()){
                 responseWrapper.setTokenQuantity(tokenStateAndRef.getState().getData().getAmount().getQuantity());
             }

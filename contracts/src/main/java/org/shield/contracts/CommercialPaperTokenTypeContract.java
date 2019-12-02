@@ -1,10 +1,10 @@
-package org.shield.token;
+package org.shield.contracts;
 
 import com.r3.corda.lib.tokens.contracts.EvolvableTokenContract;
 import net.corda.core.contracts.Contract;
-import net.corda.core.contracts.ContractState;
 import net.corda.core.transactions.LedgerTransaction;
 import org.jetbrains.annotations.NotNull;
+import org.shield.states.CommercialPaperTokenState;
 
 import java.util.Date;
 
@@ -12,7 +12,7 @@ import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 
 public class CommercialPaperTokenTypeContract extends EvolvableTokenContract implements Contract {
-    public static final String ID = "org.shield.token.CommercialPaperTokenTypeContract";
+    public static final String ID = "org.shield.contracts.CommercialPaperTokenTypeContract";
     public CommercialPaperTokenTypeContract() {
         super();
     }
@@ -24,7 +24,7 @@ public class CommercialPaperTokenTypeContract extends EvolvableTokenContract imp
 
     @Override
     public void additionalCreateChecks(@NotNull LedgerTransaction tx){
-        CommercialPaperTokenType output = (CommercialPaperTokenType) tx.getOutput(0);
+        CommercialPaperTokenState output = (CommercialPaperTokenState) tx.getOutput(0);
         Date now = new Date();
         requireThat(require -> {
             require.using("Valuation must be zero during creation.", output.getValuation() == 0);
@@ -36,8 +36,8 @@ public class CommercialPaperTokenTypeContract extends EvolvableTokenContract imp
 
     @Override
     public void additionalUpdateChecks(@NotNull LedgerTransaction tx) {
-        CommercialPaperTokenType input = (CommercialPaperTokenType) tx.getInput(0);
-        CommercialPaperTokenType output = (CommercialPaperTokenType) tx.getOutput(0);
+        CommercialPaperTokenState input = (CommercialPaperTokenState) tx.getInput(0);
+        CommercialPaperTokenState output = (CommercialPaperTokenState) tx.getOutput(0);
 
         // we make sure only some values change. Only valuation and maintainers for now.
         requireThat(require -> {
