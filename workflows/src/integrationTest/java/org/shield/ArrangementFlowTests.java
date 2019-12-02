@@ -9,9 +9,10 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.shield.flows.arrangement.ArrangementFlow.*;
-import org.shield.flows.init.BrokerDealerInitFlow;
-import org.shield.flows.init.IssuerInitFlow;
+import org.shield.flows.arrangement.ArrangementFlow.Accept;
+import org.shield.flows.arrangement.ArrangementFlow.Cancel;
+import org.shield.flows.arrangement.ArrangementFlow.Issue;
+import org.shield.flows.arrangement.ArrangementFlow.PreIssue;
 import org.shield.states.ArrangementState;
 
 import java.util.Arrays;
@@ -57,28 +58,6 @@ public class ArrangementFlowTests {
 
     }
 
-    @Test
-    public void preIssueWithValidInitTest() throws ExecutionException, InterruptedException {
-        // we add issuer as valid issuer for broker1
-        CordaFuture<Void> initFuture = broker1Node.startFlow(new BrokerDealerInitFlow.Issue(Arrays.asList(issuer)));
-        mockNet.runNetwork();
-        initFuture.get();
-
-        preIssueWithoutInitTest();
-    }
-
-    @Test(expected = ExecutionException.class)
-    public void preIssueWithInvalidInitTest() throws ExecutionException, InterruptedException {
-        // we add broker2 as valid issuer for broker1
-        CordaFuture<Void> initFuture = broker1Node.startFlow(new BrokerDealerInitFlow.Issue(Arrays.asList(broker2)));
-        mockNet.runNetwork();
-        initFuture.get();
-
-        // we issue from issuer an arrangement to broker1
-        CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
-        mockNet.runNetwork();
-        UniqueIdentifier id = preIssueFuture.get(); // this should trigger an exception
-    }
 
     @Test
     public void cancelFlowWithoutInitTest() throws ExecutionException, InterruptedException {
@@ -101,9 +80,6 @@ public class ArrangementFlowTests {
 
     @Test
     public void cancelFlowWithInitTest() throws ExecutionException, InterruptedException {
-        CordaFuture<Void> issuerInitFuture = issuerNode.startFlow(new IssuerInitFlow.Issue(Arrays.asList(broker1)));
-        mockNet.runNetwork();
-        issuerInitFuture.get();
 
         CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 100, offeringDate));
 
@@ -124,10 +100,6 @@ public class ArrangementFlowTests {
 
     @Test
     public void AcceptFlowWithInitTest() throws ExecutionException, InterruptedException {
-        CordaFuture<Void> issuerInitFuture = issuerNode.startFlow(new IssuerInitFlow.Issue(Arrays.asList(broker1)));
-        mockNet.runNetwork();
-        issuerInitFuture.get();
-
         int initialSize = 100;
         int finalSize = 50;
         CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, initialSize, offeringDate));

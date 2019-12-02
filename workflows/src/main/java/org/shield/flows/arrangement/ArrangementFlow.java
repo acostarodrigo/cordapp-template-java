@@ -18,8 +18,6 @@ import org.shield.contracts.ArrangementContract;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
 import org.shield.membership.ShieldMetadata;
 import org.shield.states.ArrangementState;
-import org.shield.states.BrokerDealerInitState;
-import org.shield.states.IssuerInitState;
 
 import java.security.PublicKey;
 import java.util.Arrays;
@@ -102,19 +100,7 @@ public class ArrangementFlow {
         @Override
         @Suspendable
         public Void call() throws FlowException {
-            SignedTransaction stx = subFlow(new ReceiveTransactionFlow(brokerDealerSession,false));
-            // we will validate the transaction if we have the init configured.
-            if (!getServiceHub().getVaultService().queryBy(IssuerInitState.class).getStates().isEmpty()){
-                IssuerInitState issuerInitState = getServiceHub().getVaultService().queryBy(IssuerInitState.class).getStates().get(0).getState().getData();
 
-                requireThat(require -> {
-                    require.using("Broker Dealer must be authorized.", issuerInitState.getBrokerDealers().contains(brokerDealerSession.getCounterparty()));
-
-                    ArrangementState output = stx.getCoreTransaction().outputsOfType(ArrangementState.class).get(0);
-                    require.using("Output must be from authorized broker.", issuerInitState.getBrokerDealers().contains(output.getBrokerDealer()));
-                    return null;
-                });
-            }
             subFlow(new ReceiveFinalityFlow(brokerDealerSession));
 
             return null;
@@ -185,19 +171,7 @@ public class ArrangementFlow {
         @Override
         @Suspendable
         public Void call() throws FlowException {
-            SignedTransaction stx = subFlow(new ReceiveTransactionFlow(brokerDealerSession,false));
-            // we will validate the transaction if we have the init configured.
-            if (!getServiceHub().getVaultService().queryBy(IssuerInitState.class).getStates().isEmpty()){
-                IssuerInitState issuerInitState = getServiceHub().getVaultService().queryBy(IssuerInitState.class).getStates().get(0).getState().getData();
 
-                requireThat(require -> {
-                    require.using("Broker Dealer must be authorized.", issuerInitState.getBrokerDealers().contains(brokerDealerSession.getCounterparty()));
-
-                    ArrangementState output = stx.getCoreTransaction().outputsOfType(ArrangementState.class).get(0);
-                    require.using("Output must be from authorized broker.", issuerInitState.getBrokerDealers().contains(output.getBrokerDealer()));
-                    return null;
-                });
-            }
             subFlow(new ReceiveFinalityFlow(brokerDealerSession));
 
             return null;
@@ -410,10 +384,7 @@ public class ArrangementFlow {
             return null;
         }
 
-        /**
-         * Transaction validation depends if the broker Dealer has created the {@link BrokerDealerInitState state}.
-         * If the broker dealer specified a list of Issuers to accept arrangements from, then we validate it.     *
-         */
+
         private class ValidateTx extends SignTransactionFlow{
             public ValidateTx(@NotNull FlowSession otherSideSession) {
                 super(otherSideSession);
@@ -421,16 +392,8 @@ public class ArrangementFlow {
 
             @Override
             protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                List<StateAndRef<BrokerDealerInitState>> brokerDealerInitStates = getServiceHub().getVaultService().queryBy(BrokerDealerInitState.class).getStates();
 
-                if (!brokerDealerInitStates.isEmpty()) {
-                    BrokerDealerInitState brokerDealerInitState = brokerDealerInitStates.get(0).getState().getData();
-                    ArrangementState output = stx.getTx().outputsOfType(ArrangementState.class).get(0);
-                    requireThat(require -> {
-                        require.using("Arrangement must be from authorized issuer.", brokerDealerInitState.getIssuers().contains(output.getIssuer()));
-                        return null;
-                    });
-                }
+
             }
         }
     }
