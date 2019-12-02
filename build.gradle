@@ -160,6 +160,25 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     }
 }
 
+
+task resetBlockchain(dependsOn: deployNodes, type: Copy){
+    def deployTargets = ["$buildDir/nodes/issuer/cordapps/config", "$buildDir/nodes/broker1/cordapps/config", "$buildDir/nodes/BNO/cordapps/config"]
+
+    deployTargets.each { outputDir ->
+        outputs.dir outputDir
+    }
+    doLast {
+        deployTargets.each { outputDir ->
+            copy {
+                from "$buildDir/membership-service.conf"
+                into outputDir
+            }
+        }
+    }
+    from "$buildDir/membership-service.conf"
+    into "$buildDir/nodes/issuer/cordapps/config"
+}
+
 task installQuasar(type: Copy) {
     destinationDir rootProject.file("lib")
     from(configurations.quasar) {
