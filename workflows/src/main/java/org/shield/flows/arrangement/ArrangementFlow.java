@@ -16,6 +16,7 @@ import net.corda.core.transactions.TransactionBuilder;
 import org.jetbrains.annotations.NotNull;
 import org.shield.contracts.ArrangementContract;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
+import org.shield.membership.ShieldMetadata;
 import org.shield.states.ArrangementState;
 import org.shield.states.BrokerDealerInitState;
 import org.shield.states.IssuerInitState;
@@ -326,17 +327,23 @@ public class ArrangementFlow {
         public UniqueIdentifier call() throws FlowException {
             this.issuer = getOurIdentity();
 
+            // todo this needs to be retrieved from conf
             String bnoString = "O=BNO,L=New York,C=US";
             CordaX500Name bnoName = CordaX500Name.parse(bnoString);
             bno = getServiceHub().getNetworkMapCache().getPeerByLegalName(bnoName);
             GetMembershipsFlow getMembershipsFlow = new GetMembershipsFlow(bno, false, true);
             StateAndRef<? extends MembershipState<? extends Object>> membershipState = subFlow(getMembershipsFlow).get(this.issuer);
 
+            // we will validate is an active member of the organization
             if (membershipState == null || !membershipState.getState().getData().isActive()){
-                throw new FlowException("Only issuers can call this flow.");
+                throw new FlowException("Only organization members can preissue arrangemnts.");
             }
 
-
+            // node must be bond issuer to continue
+            ShieldMetadata metadata = (ShieldMetadata) membershipState.getState().getData().getMembershipMetadata();
+            if (!metadata.getOrgTypes().contains(ShieldMetadata.OrgType.BOND_PARTICIPANT) && !metadata.getBondRoles().contains(ShieldMetadata.BondRole.ISSUER)){
+                throw new FlowException("Only Bond issuers can preissue arrangements.");
+            }
 
             // We retrieve the notary identity from the network map.
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);

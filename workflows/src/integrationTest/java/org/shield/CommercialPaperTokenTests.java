@@ -7,7 +7,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
-import org.shield.token.CommercialPaperTokenType;
+import org.shield.states.CommercialPaperTokenState;
 
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -35,13 +35,13 @@ public class CommercialPaperTokenTests {
         UniqueIdentifier id = issueTokensBroker1.get();
         assertNotNull(id);
 
-        CommercialPaperTokenType tokenType = issuerNode.getServices().getVaultService().queryBy(CommercialPaperTokenType.class).component1().get(0).getState().getData();
+        CommercialPaperTokenState tokenType = issuerNode.getServices().getVaultService().queryBy(CommercialPaperTokenState.class).component1().get(0).getState().getData();
         assertNotNull(tokenType);
         assertEquals(tokenType.getValuation(), 1L);
         // issuer only has one tokenType
-        assertTrue(issuerNode.getServices().getVaultService().queryBy(CommercialPaperTokenType.class).component1().size() == 1);
+        assertTrue(issuerNode.getServices().getVaultService().queryBy(CommercialPaperTokenState.class).component1().size() == 1);
 
-        CommercialPaperTokenType tokenTypeBroker1 = broker1Node.getServices().getVaultService().queryBy(CommercialPaperTokenType.class).component1().get(0).getState().getData();
+        CommercialPaperTokenState tokenTypeBroker1 = broker1Node.getServices().getVaultService().queryBy(CommercialPaperTokenState.class).component1().get(0).getState().getData();
         assertNotNull(tokenTypeBroker1);
         assertEquals(tokenTypeBroker1.getValuation(), tokenType.getValuation());
 
@@ -50,7 +50,7 @@ public class CommercialPaperTokenTests {
         mockNet.runNetwork();
         issueTokensBroker2.get();
 
-        CommercialPaperTokenType tokenTypeBroker2 = broker2Node.getServices().getVaultService().queryBy(CommercialPaperTokenType.class).component1().get(0).getState().getData();
+        CommercialPaperTokenState tokenTypeBroker2 = broker2Node.getServices().getVaultService().queryBy(CommercialPaperTokenState.class).component1().get(0).getState().getData();
         assertNotNull(tokenTypeBroker2);
         assertEquals(tokenTypeBroker2.getValuation(), 11);
 

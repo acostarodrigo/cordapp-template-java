@@ -46,7 +46,8 @@ public class TestHelper {
             TestCordapp.findCordapp("org.shield.token")));
 
 
-        List<String> packages = Arrays.asList("org.shield.token","org.shield.flows.arrangement", GetMembershipsFlowResponder.class.getCanonicalName());
+
+        List<String> packages = Arrays.asList("org.shield.token","org.shield.flows.arrangement", GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.membership");
 
         DriverParameters driverParameters = new DriverParameters().withIsDebug(true).withCordappsForAllNodes(cordapps);
         NetworkParameters networkParameters = driverParameters.getNetworkParameters();

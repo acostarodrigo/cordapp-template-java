@@ -8,20 +8,21 @@ import com.r3.businessnetworks.membership.states.MembershipState;
 import com.r3.businessnetworks.membership.states.SimpleMembershipMetadata;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import org.junit.After;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+import org.shield.flows.membership.MembershipFlow;
+import org.shield.membership.ShieldMetadata;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 import static org.shield.TestHelper.*;
 
 public class MembershipTests {
@@ -98,6 +99,31 @@ public class MembershipTests {
         assertNull(memberships.get(broker1));
         assertTrue(memberships.get(issuer).getState().getData().isActive());
 
+    }
+
+    @Test
+    public void membershipFlowRequestTest() throws ExecutionException, InterruptedException {
+        // we will issue a request with incorrect email
+        ShieldMetadata metadata = new ShieldMetadata("Rodrigo", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@hotmail.com", Arrays.asList());
+
+        CordaFuture<SignedTransaction> cordaFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
+        mockNet.runNetwork();
+        SignedTransaction requestTransaction = cordaFuture.get();
+        assertNotNull(requestTransaction);
+
+        for (StateAndRef<MembershipState> stateAndRefs : bnoNode.getServices().getVaultService().queryBy(MembershipState.class).getStates()){
+            System.out.println(stateAndRefs.getState().getData().toString());
+        }
+        System.out.println("State: " + requestTransaction.getCoreTransaction().outRef(0).getState().getData().toString());
+        Future<SignedTransaction> aproveFuture = bnoNode.startFlow(new ActivateMembershipFlow(requestTransaction.getCoreTransaction().outRef(0)));
+        mockNet.runNetwork();
+        SignedTransaction signedTransaction = aproveFuture.get();
+        assertNotNull(signedTransaction);
+
+        Future<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> future = issuerNode.startFlow(new GetMembershipsFlow(bno,false,true));
+        mockNet.runNetwork();
+        Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>> memberships = future.get();
+        assertNotNull(memberships);
     }
 
 
