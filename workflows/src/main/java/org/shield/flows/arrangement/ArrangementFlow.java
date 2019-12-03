@@ -1,20 +1,19 @@
 package org.shield.flows.arrangement;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.r3.businessnetworks.membership.flows.bno.GetMembershipsFlowResponder;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
 import com.r3.businessnetworks.membership.states.MembershipState;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.*;
-import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
+import org.intellij.lang.annotations.Flow;
 import org.jetbrains.annotations.NotNull;
 import org.shield.contracts.ArrangementContract;
+import org.shield.flows.membership.MembershipFlows;
 import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
 import org.shield.membership.ShieldMetadata;
 import org.shield.states.ArrangementState;
@@ -24,8 +23,6 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
-
-import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 public class ArrangementFlow {
     // we are disabling instantiation
@@ -284,8 +281,6 @@ public class ArrangementFlow {
     public static class PreIssue extends FlowLogic<UniqueIdentifier> {
         private Party issuer;
         private Party brokerDealer;
-        private Party bno;
-        private CordappConfig config;
         private int size;
         private Date offeringDate;
 
@@ -301,23 +296,7 @@ public class ArrangementFlow {
         public UniqueIdentifier call() throws FlowException {
             this.issuer = getOurIdentity();
 
-            // todo this needs to be retrieved from conf
-            String bnoString = "O=BNO,L=New York,C=US";
-            CordaX500Name bnoName = CordaX500Name.parse(bnoString);
-            bno = getServiceHub().getNetworkMapCache().getPeerByLegalName(bnoName);
-            GetMembershipsFlow getMembershipsFlow = new GetMembershipsFlow(bno, false, true);
-            StateAndRef<? extends MembershipState<? extends Object>> membershipState = subFlow(getMembershipsFlow).get(this.issuer);
-
-            // we will validate is an active member of the organization
-            if (membershipState == null || !membershipState.getState().getData().isActive()){
-                throw new FlowException("Only organization members can preissue arrangemnts.");
-            }
-
-            // node must be bond issuer to continue
-            ShieldMetadata metadata = (ShieldMetadata) membershipState.getState().getData().getMembershipMetadata();
-            if (!metadata.getOrgTypes().contains(ShieldMetadata.OrgType.BOND_PARTICIPANT) && !metadata.getBondRoles().contains(ShieldMetadata.BondRole.ISSUER)){
-                throw new FlowException("Only Bond issuers can preissue arrangements.");
-            }
+            if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only active issuer organizations can preIssue a bond.");
 
             // We retrieve the notary identity from the network map.
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
