@@ -29,7 +29,9 @@ public class ArrangementFlowTests {
     }
 
     @Test
-    public void preIssueWithoutInitTest() throws ExecutionException, InterruptedException {
+    public void preIssueTest() throws ExecutionException, InterruptedException {
+        MembershipTests membershipTests = new MembershipTests();
+        membershipTests.configIssuerTest();
 
         // we issue arrangement from issuer to broker1
         CordaFuture<UniqueIdentifier> preIssueFuture = issuerNode.startFlow(new PreIssue(broker1, 70, offeringDate));

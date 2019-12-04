@@ -24,37 +24,31 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.*;
 import static org.shield.TestHelper.*;
 
+/**
+ * Include tests to add, remove and change membership to Shield network.
+ * No configuration of network is executed because most of this tests are executed from other tests
+ * that already configure network
+ */
 public class MembershipTests {
-    private Party bno;
-    @Before
-    public void setupNetwork(){
-        TestHelper.setupNetwork();
-        // we get the bno name from the configuration file
-        String bnoString = "O=BNO,L=New York,C=US";
-        CordaX500Name bnoName = CordaX500Name.parse(bnoString);
-        bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
-    }
-
-
+    // Makes issuer node an issuer member
     @Test
-    public void IssuerRequestJoiningTest() throws ExecutionException, InterruptedException {
-        // generate a simple request with role issuer
-        SimpleMembershipMetadata simpleMembershipMetadata = new SimpleMembershipMetadata("role", "issuer");
-        CordaFuture<SignedTransaction> membershipFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,simpleMembershipMetadata));
-        mockNet.runNetwork();
-        SignedTransaction signedTransaction = membershipFuture.get();
+    public void configIssuerTest() throws ExecutionException, InterruptedException {
+        // the mocked BNO
+        CordaX500Name bnoName = CordaX500Name.parse("O=BNO,L=New York,C=US");
+        Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
-        // bno approves
-        CordaFuture<SignedTransaction> bnoFuture = bnoNode.startFlow(new ActivateMembershipFlow(signedTransaction.getCoreTransaction().outRef(0)));
+        // we execute the request
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER));
+        Future<SignedTransaction> signedTransactionFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
-        bnoFuture.get();
+        SignedTransaction signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
 
-        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = issuerNode.startFlow(new GetMembershipsFlow(bno,false,true));
+        // BNO approves
+        signedTransactionFuture = bnoNode.startFlow(new ActivateMembershipFlow(signedTransaction.getCoreTransaction().outRef(0)));
         mockNet.runNetwork();
-        Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>> memberships = membershipsFuture.get();
-
-        // we get validations from bno
-        assertTrue(memberships.get(issuer).getState().getData().isActive());
+        signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
     }
 
     @Test
@@ -123,11 +117,5 @@ public class MembershipTests {
         mockNet.runNetwork();
         Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>> memberships = future.get();
         assertNotNull(memberships);
-    }
-
-
-    @After
-    public void closeNetwork(){
-        TestHelper.cleanUpNetwork();
     }
 }
