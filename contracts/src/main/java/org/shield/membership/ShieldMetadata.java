@@ -1,5 +1,6 @@
 package org.shield.membership;
 
+import net.corda.core.identity.Party;
 import net.corda.core.serialization.CordaSerializable;
 
 import javax.annotation.Nullable;
@@ -67,13 +68,17 @@ public class ShieldMetadata  {
     private List<OrgType> orgTypes;
     private List<BondRole> bondRoles;
     private String orgContact;
+    private List<Party> custodians;
+    private List<Party> treasurers;
 
 
-    public ShieldMetadata(String orgName, List<OrgType> orgTypes, String orgContact, @Nullable List<BondRole> bondRoles) {
+    public ShieldMetadata(String orgName, List<OrgType> orgTypes, String orgContact, @Nullable List<BondRole> bondRoles, @Nullable List<Party> custodians, @Nullable List<Party> treasurers) {
         this.orgName = orgName;
         this.orgTypes = orgTypes;
         this.orgContact = orgContact;
         this.bondRoles = bondRoles;
+        this.custodians = custodians;
+        this.treasurers = treasurers;
     }
 
     public String getOrgName() {
@@ -108,6 +113,22 @@ public class ShieldMetadata  {
         this.orgContact = orgContact;
     }
 
+    public List<Party> getCustodians() {
+        return custodians;
+    }
+
+    public void setCustodians(List<Party> custodians) {
+        this.custodians = custodians;
+    }
+
+    public List<Party> getTreasurers() {
+        return treasurers;
+    }
+
+    public void setTreasurers(List<Party> treasurers) {
+        this.treasurers = treasurers;
+    }
+
     @Override
     public String toString() {
         return "ShieldMetadata{" +
@@ -115,6 +136,8 @@ public class ShieldMetadata  {
             ", orgTypes=" + orgTypes +
             ", bondRoles=" + bondRoles +
             ", orgContact='" + orgContact + '\'' +
+            ", custodians=" + custodians +
+            ", treasurers=" + treasurers +
             '}';
     }
 
@@ -126,11 +149,13 @@ public class ShieldMetadata  {
         return Objects.equals(getOrgName(), metadata.getOrgName()) &&
             Objects.equals(getOrgTypes(), metadata.getOrgTypes()) &&
             Objects.equals(getBondRoles(), metadata.getBondRoles()) &&
-            Objects.equals(getOrgContact(), metadata.getOrgContact());
+            Objects.equals(getOrgContact(), metadata.getOrgContact()) &&
+            Objects.equals(getCustodians(), metadata.getCustodians()) &&
+            Objects.equals(getTreasurers(), metadata.getTreasurers());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOrgName(), getOrgTypes(), getBondRoles(), getOrgContact());
+        return Objects.hash(getOrgName(), getOrgTypes(), getBondRoles(), getOrgContact(), getCustodians(), getTreasurers());
     }
 }
