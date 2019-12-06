@@ -1,5 +1,6 @@
 package org.shield.webserver.membership;
 
+import net.corda.core.identity.Party;
 import org.shield.membership.ShieldMetadata;
 import org.shield.webserver.connection.User;
 
@@ -21,15 +22,19 @@ public class RequestWrapper {
     private List<String> bondRoles;
     @NotEmpty(message = "Please provide a valid organization contact")
     private String orgContact;
+    private List<Party> custodians;
+    private List<Party> treasurers;
 
     private ShieldMetadata metadata;
 
-    public RequestWrapper(User user, String orgName, List<String> orgTypes, List<String> bondRoles, String orgContact) {
+    public RequestWrapper(User user, String orgName, List<String> orgTypes, List<String> bondRoles, String orgContact, List<Party> custodians, List<Party> treasurers) {
         this.user = user;
         this.orgName = orgName;
         this.orgTypes = orgTypes;
         this.bondRoles = bondRoles;
         this.orgContact = orgContact;
+        this.custodians = custodians;
+        this.treasurers = treasurers;
 
         List<ShieldMetadata.OrgType> orgTypeList = new ArrayList<>();
         for (String type : orgTypes){
@@ -41,7 +46,7 @@ public class RequestWrapper {
             bondRoleList.add(ShieldMetadata.BondRole.valueOf(type));
         }
 
-        this.metadata = new ShieldMetadata(orgName,orgTypeList, orgContact, bondRoleList);
+        this.metadata = new ShieldMetadata(orgName,orgTypeList, orgContact, bondRoleList,custodians, treasurers );
 
     }
 
