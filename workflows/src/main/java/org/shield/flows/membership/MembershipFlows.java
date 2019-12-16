@@ -26,13 +26,27 @@ public class MembershipFlows {
      *  is a BondRole.ISSUER
      */
     public static class isIssuer extends FlowLogic<Boolean>{
+        private Party issuer;
+
+        public isIssuer(Party issuer) {
+            this.issuer = issuer;
+        }
+
+        public isIssuer() {
+            this.issuer = null;
+        }
+
         @Override
         @Suspendable
         public Boolean call() throws FlowException {
+            MembershipState membershipState = null;
 
-            MembershipState membershipState = subFlow(new getMembership());
+            if (this.issuer == null)
+             membershipState = subFlow(new getMembership());
+            else
+                membershipState = subFlow(new getMembership(issuer));
 
-            // we will validate is an active member of the organization
+            // we will validate if issuer is an active member of the organization
             if (membershipState == null || !membershipState.isActive()) return false;
 
             // node must be bond participant and bond issuer
@@ -44,18 +58,31 @@ public class MembershipFlows {
     }
 
     /**
-     * Validates if the caller is a member of an Issuer organization.
+     * Validates if the caller (or passed Party) is a member of an Buyer organization.
      * Will return true if:
      *  is an active member
      *  is a OrgType.BOND_PARTICIPANT
      *  is a BondRole.BUYER
      */
     public static class isBuyer extends FlowLogic<Boolean>{
+        private Party buyer;
+
+        public isBuyer(Party buyer) {
+            this.buyer = buyer;
+        }
+
+        public isBuyer() {
+            this.buyer = null;
+        }
+
         @Override
         @Suspendable
         public Boolean call() throws FlowException {
-
-            MembershipState membershipState = subFlow(new getMembership());
+            MembershipState membershipState = null;
+            if (this.buyer == null)
+                 subFlow(new getMembership());
+            else
+                subFlow(new getMembership(buyer));
 
             // we will validate is an active member of the organization
             if (membershipState == null || !membershipState.isActive()) return false;
@@ -148,10 +175,27 @@ public class MembershipFlows {
      * Will fail if caller is not a member
      */
     public static class getMembership extends FlowLogic<MembershipState<? extends Object>>{
+        private Party caller;
+
+        /**
+         * we allow getting membership of someone else than the caller.
+         * @param caller
+         */
+        public getMembership(Party caller) {
+            this.caller = caller;
+        }
+
+        /**
+         * in case we want to know membership for caller identity
+         */
+        public getMembership() {
+            this.caller = null;
+        }
+
         @Override
         @Suspendable
         public MembershipState<? extends Object> call() throws FlowException {
-            Party caller = getOurIdentity();
+            if (caller == null) caller = getOurIdentity();
 
             Party bno = subFlow(new getBNO());
 
