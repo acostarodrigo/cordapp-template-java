@@ -14,19 +14,15 @@ import net.corda.testing.driver.NodeHandle;
 import net.corda.testing.driver.NodeParameters;
 import net.corda.testing.node.TestCordapp;
 import net.corda.testing.node.User;
-import org.junit.After;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
-import org.shield.flows.arrangement.ArrangementFlow;
-import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
+import org.shield.flows.trade.TradeFlow;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import static java.util.Arrays.asList;
 import static net.corda.testing.driver.Driver.driver;
@@ -104,7 +100,7 @@ public class CommercialPaperTokenDriverTests {
                 BigDecimal fungibleAmount = BigDecimal.ONE;
 
                 Party holder = broker1Node.getNodeInfo().getLegalIdentities().get(0);
-                UniqueIdentifier id = issuer.startFlowDynamic(ArrangementFlow.PreIssue.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
+                UniqueIdentifier id = issuer.startFlowDynamic(TradeFlow.PreIssue.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
                 Assert.assertNotNull(id);
             } catch (Exception e) {
                 System.out.println("Exception during node initialization:" + e.toString());

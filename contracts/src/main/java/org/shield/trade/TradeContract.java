@@ -1,6 +1,6 @@
-package org.shield.contracts;
+package org.shield.trade;
 
-import org.shield.states.ArrangementState;
+import org.shield.trade.TradeState;
 
 import net.corda.core.contracts.*;
 import net.corda.core.transactions.LedgerTransaction;
@@ -11,14 +11,14 @@ import static net.corda.core.contracts.ContractsDSL.requireSingleCommand;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 
-public class ArrangementContract implements Contract {
+public class TradeContract implements Contract {
 
-    public static final String ID = "org.shield.contracts.ArrangementContract";
+    public static final String ID = "org.shield.trade.TradeContract";
 
     @Override
     public void verify(LedgerTransaction tx) {
         CommandWithParties<Commands> cmd = requireSingleCommand(tx.getCommands(), Commands.class);
-        ArrangementState output =  tx.outputsOfType(ArrangementState.class).get(0);
+        TradeState output =  tx.outputsOfType(TradeState.class).get(0);
         // preIssue
         if (cmd.getValue() instanceof Commands.preIssue) {
             requireThat(require -> {
@@ -35,7 +35,7 @@ public class ArrangementContract implements Contract {
 
                 require.using("Offering date can't be in the past", output.getOfferingDate().after(new Date()));
 
-                require.using("State of the arrangement must be preIssue.", output.getState().equals(ArrangementState.State.PREISSUE));
+                require.using("State of the arrangement must be preIssue.", output.getState().equals(TradeState.State.PREISSUE));
 
                 return null;
 
@@ -43,18 +43,18 @@ public class ArrangementContract implements Contract {
 
         } else if (cmd.getValue() instanceof Commands.accept) {
             requireThat(require -> {
-                require.using("Must have only 1 input", tx.inputsOfType(ArrangementState.class).size() == 1);
+                require.using("Must have only 1 input", tx.inputsOfType(TradeState.class).size() == 1);
 
                 // we get the input
-                ArrangementState input = tx.inputsOfType(ArrangementState.class).get(0);
+                TradeState input = tx.inputsOfType(TradeState.class).get(0);
 
                 require.using("Must have broker dealer signature.", cmd.getSigners().contains(output.getBrokerDealer().getOwningKey()));
 
                 // we only allow changing state of a preIssue arrangement
-                require.using("State of old arrangement must be preIssue.", input.getState().equals(ArrangementState.State.PREISSUE));
+                require.using("State of old arrangement must be preIssue.", input.getState().equals(TradeState.State.PREISSUE));
 
                 // output state must be Accepted
-                require.using("State of new arrangement must be Accepted.", output.getState().equals(ArrangementState.State.ACCEPTED));
+                require.using("State of new arrangement must be Accepted.", output.getState().equals(TradeState.State.ACCEPTED));
 
                 // we only allow certain fields to change, so we compare input and output fields remained unchanged
                 require.using("Id value can't change", output.getId().equals(input.getId()));
@@ -66,37 +66,37 @@ public class ArrangementContract implements Contract {
 
         } else if (cmd.getValue() instanceof Commands.cancel) {
             requireThat(require -> {
-                require.using("Must have only 1 input", tx.inputsOfType(ArrangementState.class).size() == 1);
+                require.using("Must have only 1 input", tx.inputsOfType(TradeState.class).size() == 1);
 
                 // we get the input
-                ArrangementState input = tx.inputsOfType(ArrangementState.class).get(0);
+                TradeState input = tx.inputsOfType(TradeState.class).get(0);
 
                 // we only allow changing state of a preIssue arrangement
-                require.using("State of old arrangement must be preIssue.", input.getState().equals(ArrangementState.State.PREISSUE));
+                require.using("State of old arrangement must be preIssue.", input.getState().equals(TradeState.State.PREISSUE));
 
                 require.using("Must have broker dealer signature.", cmd.getSigners().contains(output.getBrokerDealer().getOwningKey()));
 
                 // output state must be cancelled
-                require.using("State of passed arrangement must be cancelled.", output.getState().equals(ArrangementState.State.CANCELLED));
+                require.using("State of passed arrangement must be cancelled.", output.getState().equals(TradeState.State.CANCELLED));
                 return null;
             });
 
         } else if (cmd.getValue() instanceof Commands.issue) {
             requireThat(require -> {
-                require.using("Must have only 1 input", tx.inputsOfType(ArrangementState.class).size() == 1);
+                require.using("Must have only 1 input", tx.inputsOfType(TradeState.class).size() == 1);
 
                 require.using("Must have issuer signature", cmd.getSigners().contains(output.getIssuer().getOwningKey()));
 
                 // we get the input
-                ArrangementState input = tx.inputsOfType(ArrangementState.class).get(0);
+                TradeState input = tx.inputsOfType(TradeState.class).get(0);
 
                 // we only allow changing state of a preIssue arrangement
-                require.using("State of old arrangement must be Accepted.", input.getState().equals(ArrangementState.State.ACCEPTED));
+                require.using("State of old arrangement must be Accepted.", input.getState().equals(TradeState.State.ACCEPTED));
 
                 require.using("Must have broker dealer signature.", cmd.getSigners().contains(output.getBrokerDealer().getOwningKey()));
 
                 // output state must be cancelled
-                require.using("State of passed arrangement must be ISSUED.", output.getState().equals(ArrangementState.State.ISSUED));
+                require.using("State of passed arrangement must be ISSUED.", output.getState().equals(TradeState.State.ISSUED));
 
                 // must specify a paperId
                 require.using("Must specify a paperId.", output.getPaperId() != null);

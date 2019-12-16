@@ -1,25 +1,15 @@
 package org.shield.flows.membership;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.r3.businessnetworks.membership.flows.bno.RequestMembershipFlowResponder;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
-import com.r3.businessnetworks.membership.flows.member.RequestMembershipFlow;
 import com.r3.businessnetworks.membership.states.MembershipState;
-import kotlin.UNINITIALIZED_VALUE;
-import kotlin.Unit;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
-import net.corda.core.flows.FlowSession;
-import net.corda.core.flows.InitiatedBy;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
-import net.corda.core.transactions.TransactionBuilder;
-import org.jetbrains.annotations.NotNull;
 import org.shield.membership.ShieldMetadata;
-
-import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 /**
  * Deals with all role and membership validations

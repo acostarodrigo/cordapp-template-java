@@ -1,8 +1,7 @@
-package org.shield.states;
+package org.shield.trade;
 
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
-import org.shield.contracts.ArrangementContract;
 
 import net.corda.core.contracts.*;
 import net.corda.core.identity.AbstractParty;
@@ -14,9 +13,9 @@ import java.util.*;
 // *********
 // * State *
 // *********
-@BelongsToContract(ArrangementContract.class)
-public class ArrangementState implements ContractState, Serializable {
-    public static final String externalKey = "org.shield.arrangement";
+@BelongsToContract(TradeContract.class)
+public class TradeState implements ContractState, Serializable {
+    public static final String externalKey = "org.shield.trade.TradeState";
     private UniqueIdentifier id;
     private Party issuer;
     private Party brokerDealer;
@@ -32,10 +31,10 @@ public class ArrangementState implements ContractState, Serializable {
     }
 
     @ConstructorForDeserialization
-    public ArrangementState() {
+    public TradeState() {
     }
 
-    public ArrangementState(UniqueIdentifier id, Party issuer, Party brokerDealer, int size, Date offeringDate, State state) {
+    public TradeState(UniqueIdentifier id, Party issuer, Party brokerDealer, int size, Date offeringDate, State state) {
         this.id = id;
         this.issuer = issuer;
         this.brokerDealer = brokerDealer;
@@ -122,7 +121,7 @@ public class ArrangementState implements ContractState, Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ArrangementState that = (ArrangementState) o;
+        TradeState that = (TradeState) o;
         return getSize() == that.getSize() &&
                 getId().equals(that.getId()) &&
                 getIssuer().equals(that.getIssuer()) &&

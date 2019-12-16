@@ -26,6 +26,6 @@ public class Starter {
         app.run(args);
 
         // we initialize the connection pool, with a threshold of 1 minute for the connection recycler.
-        new ConnectionPool((60 * 60) * 60 );
+        new ConnectionPool((60 * 60) * 60 ); // todo, this needs to be migrated to Service
     }
 }

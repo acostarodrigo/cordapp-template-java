@@ -3,7 +3,7 @@ package org.shield.webserver.commercialPaper;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.messaging.CordaRPCOps;
-import org.shield.states.CommercialPaperTokenState;
+import org.shield.bond.BondState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
@@ -35,9 +35,9 @@ public class CommercialPaperController {
         generateConnection(user);
 
         List<ResponseWrapper> result = new ArrayList<>();
-        for (StateAndRef<CommercialPaperTokenState> stateAndRef : proxy.vaultQuery(CommercialPaperTokenState.class).getStates()){
-            CommercialPaperTokenState commercialPaperTokenState = stateAndRef.getState().getData();
-            ResponseWrapper responseWrapper = new ResponseWrapper(commercialPaperTokenState.getIssuer().getName().toString(), commercialPaperTokenState.getValuation());
+        for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
+            BondState bondState = stateAndRef.getState().getData();
+            ResponseWrapper responseWrapper = new ResponseWrapper(bondState.getIssuer().getName().toString(), bondState.getValuation());
             for (StateAndRef<FungibleToken> tokenStateAndRef : proxy.vaultQuery(FungibleToken.class).getStates()){
                 responseWrapper.setTokenQuantity(tokenStateAndRef.getState().getData().getAmount().getQuantity());
             }

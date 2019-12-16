@@ -3,7 +3,7 @@ package com.template.webserver;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
-import org.shield.flows.commercialPaper.CommercialPaperTokenFlow;
+import org.shield.flows.bond.BondFlow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -32,7 +32,7 @@ public class Controller {
         long fungibleAmount = 100;
         Party holder = proxy.networkMapSnapshot().get(1).getLegalIdentities().get(0);
 
-        UniqueIdentifier id = proxy.startFlowDynamic(CommercialPaperTokenFlow.IssueFungibleToken.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
+        UniqueIdentifier id = proxy.startFlowDynamic(BondFlow.IssueFungibleToken.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
         return id.toString();
     }
 }

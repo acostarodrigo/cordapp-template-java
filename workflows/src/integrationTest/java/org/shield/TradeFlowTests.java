@@ -9,25 +9,30 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.shield.flows.arrangement.ArrangementFlow.Accept;
-import org.shield.flows.arrangement.ArrangementFlow.Cancel;
-import org.shield.flows.arrangement.ArrangementFlow.Issue;
-import org.shield.flows.arrangement.ArrangementFlow.PreIssue;
-import org.shield.states.ArrangementState;
+import org.shield.flows.trade.TradeFlow.Accept;
+import org.shield.flows.trade.TradeFlow.Cancel;
+import org.shield.flows.trade.TradeFlow.Issue;
+import org.shield.flows.trade.TradeFlow.PreIssue;
+import org.shield.trade.TradeState;
 
-import java.util.Arrays;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
 import static org.shield.TestHelper.*;
 
-public class ArrangementFlowTests {
+public class TradeFlowTests {
     private final Date offeringDate = new Date(2020,12,12);
     @Before
     public void setUp() {
         TestHelper.setupNetwork();
     }
 
+
+    /**
+     * Creates a Trade.
+     * @throws ExecutionException
+     * @throws InterruptedException
+     */
     @Test
     public void preIssueTest() throws ExecutionException, InterruptedException {
         MembershipTests membershipTests = new MembershipTests();
@@ -40,18 +45,18 @@ public class ArrangementFlowTests {
         UniqueIdentifier id = preIssueFuture.get();
         Assert.assertNotNull(id);
 
-        int size = issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates().size();
-        ArrangementState issuerState = issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates().get(0).getState().getData();
+        int size = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().size();
+        TradeState issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
 
-        StateAndRef<ArrangementState> stateAndRef = broker1Node.getServices().getVaultService().queryBy(ArrangementState.class).getStates().get(0);
-        ArrangementState brokerDealerState = stateAndRef.getState().getData();
+        StateAndRef<TradeState> stateAndRef = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0);
+        TradeState brokerDealerState = stateAndRef.getState().getData();
 
         // boths nodes must have the same arrangement state
         Assert.assertEquals(id, issuerState.getId());
         Assert.assertEquals(id, brokerDealerState.getId());
         //Assert.assertEquals(issuerState, brokerDealerState);
 
-        SecureHash txId = issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates().get(0).getRef().getTxhash();
+        SecureHash txId = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getRef().getTxhash();
         SignedTransaction tx = issuerNode.getServices().getValidatedTransactions().getTransaction(txId);
 
         // transaction contains both issuer and broker dealer signature
@@ -73,9 +78,9 @@ public class ArrangementFlowTests {
         mockNet.runNetwork();
         cancelFuture.get();
 
-        for (StateAndRef<ArrangementState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates()){
+        for (StateAndRef<TradeState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(id)){
-                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(ArrangementState.State.CANCELLED));
+                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(TradeState.State.CANCELLED));
             }
         }
     }
@@ -93,9 +98,9 @@ public class ArrangementFlowTests {
         mockNet.runNetwork();
         cancelFuture.get();
 
-        for (StateAndRef<ArrangementState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates()){
+        for (StateAndRef<TradeState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(id)){
-                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(ArrangementState.State.CANCELLED));
+                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(TradeState.State.CANCELLED));
             }
         }
     }
@@ -115,9 +120,9 @@ public class ArrangementFlowTests {
         cancelFuture.get();
 
 
-        for (StateAndRef<ArrangementState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates()){
+        for (StateAndRef<TradeState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(id)){
-                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(ArrangementState.State.ACCEPTED));
+                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(TradeState.State.ACCEPTED));
                 Assert.assertTrue(stateAndRef.getState().getData().getSize() == finalSize);
             }
         }
@@ -136,9 +141,9 @@ public class ArrangementFlowTests {
         cancelFuture.get();
 
 
-        for (StateAndRef<ArrangementState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates()){
+        for (StateAndRef<TradeState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(id)){
-                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(ArrangementState.State.ACCEPTED));
+                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(TradeState.State.ACCEPTED));
                 Assert.assertTrue(stateAndRef.getState().getData().getSize() == 50);
             }
         }
@@ -150,8 +155,8 @@ public class ArrangementFlowTests {
         Assert.assertNotNull(paperId);
 
         // we will get the arrangemenState and validate it has the commercialPaper assigned.
-        ArrangementState arrangementState = broker1Node.getServices().getVaultService().queryBy(ArrangementState.class).getStates().get(0).getState().getData();
-        Assert.assertEquals(arrangementState.getPaperId(), paperId);
+        TradeState tradeState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        Assert.assertEquals(tradeState.getPaperId(), paperId);
     }
 
     @Test
@@ -167,9 +172,9 @@ public class ArrangementFlowTests {
         acceptFuture.get();
 
 
-        for (StateAndRef<ArrangementState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(ArrangementState.class).getStates()){
+        for (StateAndRef<TradeState> stateAndRef : issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(id)){
-                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(ArrangementState.State.ACCEPTED));
+                Assert.assertTrue(stateAndRef.getState().getData().getState().equals(TradeState.State.ACCEPTED));
                 Assert.assertTrue(stateAndRef.getState().getData().getSize() == 50);
             }
         }
@@ -182,8 +187,8 @@ public class ArrangementFlowTests {
         Assert.assertNotNull(paperId);
 
         // we will get the arrangemenState and validate it has the commercialPaper assigned.
-        ArrangementState arrangementState = broker1Node.getServices().getVaultService().queryBy(ArrangementState.class).getStates().get(0).getState().getData();
-        Assert.assertEquals(arrangementState.getPaperId(), paperId);
+        TradeState tradeState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        Assert.assertEquals(tradeState.getPaperId(), paperId);
 
         // we will issue another arrangement from broker2
         preIssueFuture = issuerNode.startFlow(new PreIssue(broker2, 30, offeringDate));
@@ -201,8 +206,8 @@ public class ArrangementFlowTests {
         UniqueIdentifier broker2PaperId = paperFuture.get();
         Assert.assertEquals(paperId, broker2PaperId);
 
-        ArrangementState broker2arrangementState = broker2Node.getServices().getVaultService().queryBy(ArrangementState.class).getStates().get(0).getState().getData();
-        Assert.assertEquals(broker2arrangementState.getPaperId(), paperId);
+        TradeState broker2TradeState = broker2Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        Assert.assertEquals(broker2TradeState.getPaperId(), paperId);
 
         // commercial paper at issuer should have sum of sizes
     }

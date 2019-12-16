@@ -38,8 +38,7 @@ public class TestHelper {
         config.put("notaryName","O=Notary,L=London,C=GB");
         config.put("bno","O=BNO,L=New York,C=US");
         HashSet<TestCordapp> cordapps = new HashSet<>(asList(
-            TestCordapp.findCordapp("org.shield.flows.membership").withConfig(config),
-            TestCordapp.findCordapp("org.shield.flows.arrangement").withConfig(config),
+            TestCordapp.findCordapp("org.shield.flows").withConfig(config),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.contracts"),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.workflows"),
@@ -48,7 +47,7 @@ public class TestHelper {
 
 
 
-        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.contracts");
+        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade");
 
         DriverParameters driverParameters = new DriverParameters().withIsDebug(true).withCordappsForAllNodes(cordapps);
         NetworkParameters networkParameters = driverParameters.getNetworkParameters();

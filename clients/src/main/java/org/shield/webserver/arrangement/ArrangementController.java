@@ -11,12 +11,11 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
-import org.shield.flows.arrangement.ArrangementFlow;
-import org.shield.states.ArrangementState;
+import org.shield.flows.trade.TradeFlow;
+import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -48,7 +47,7 @@ public class ArrangementController {
         int size = body.getSize();
         Date offeringDate = body.getOfferingDate();
 
-        UniqueIdentifier id = proxy.startFlowDynamic(ArrangementFlow.PreIssue.class, brokerDealer, size, offeringDate).getReturnValue().get();
+        UniqueIdentifier id = proxy.startFlowDynamic(TradeFlow.PreIssue.class, brokerDealer, size, offeringDate).getReturnValue().get();
         return new ResponseEntity<>(id.toString(), HttpStatus.OK);
     }
 
@@ -59,7 +58,7 @@ public class ArrangementController {
         UniqueIdentifier id = new UniqueIdentifier(body.getId().split("_")[0], UUID.fromString(body.getId().split("_")[1]));
         int size = body.getSize();
 
-        proxy.startFlowDynamic(ArrangementFlow.Accept.class, id, size).getReturnValue().get();
+        proxy.startFlowDynamic(TradeFlow.Accept.class, id, size).getReturnValue().get();
         return new ResponseEntity<>(id.toString(),HttpStatus.OK);
     }
 
@@ -70,7 +69,7 @@ public class ArrangementController {
         UniqueIdentifier id = new UniqueIdentifier(body.getId().split("_")[0], UUID.fromString(body.getId().split("_")[1]));
 
 
-        proxy.startFlowDynamic(ArrangementFlow.Cancel.class, id).getReturnValue().get();
+        proxy.startFlowDynamic(TradeFlow.Cancel.class, id).getReturnValue().get();
         return new ResponseEntity<>(id.toString(),HttpStatus.OK);
     }
 
@@ -81,7 +80,7 @@ public class ArrangementController {
         UniqueIdentifier id = new UniqueIdentifier(body.getId().split("_")[0], UUID.fromString(body.getId().split("_")[1]));
 
 
-        proxy.startFlowDynamic(ArrangementFlow.Issue.class, id).getReturnValue().get();
+        proxy.startFlowDynamic(TradeFlow.Issue.class, id).getReturnValue().get();
         return new ResponseEntity<>(id.toString(),HttpStatus.OK);
     }
 
@@ -95,10 +94,10 @@ public class ArrangementController {
 
 
         List<ResponseWrapper> result = new ArrayList<>();
-        for (StateAndRef<ArrangementState> stateAndRef : proxy.vaultQuery(ArrangementState.class).getStates()){
-            ArrangementState arrangementState = stateAndRef.getState().getData();
+        for (StateAndRef<TradeState> stateAndRef : proxy.vaultQuery(TradeState.class).getStates()){
+            TradeState tradeState = stateAndRef.getState().getData();
 
-            ResponseWrapper responseWrapper = new ResponseWrapper(arrangementState.getId().toString(),arrangementState.getIssuer().getName().toString(), arrangementState.getBrokerDealer().getName().toString(),arrangementState.getSize(), arrangementState.getOfferingDate(), arrangementState.getState().toString());
+            ResponseWrapper responseWrapper = new ResponseWrapper(tradeState.getId().toString(), tradeState.getIssuer().getName().toString(), tradeState.getBrokerDealer().getName().toString(), tradeState.getSize(), tradeState.getOfferingDate(), tradeState.getState().toString());
             result.add(responseWrapper);
         }
         return new ResponseEntity<>(result, HttpStatus.OK);

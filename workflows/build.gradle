@@ -39,6 +39,7 @@ configurations {
 }
 
 repositories {
+    mavenCentral()
     maven {
         url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-solutions-releases'
     }
@@ -67,6 +68,10 @@ dependencies {
     // Business Network Membership Service (BNMS)
     cordapp "com.r3.businessnetworks:membership-service:2.0"
     cordapp "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
+
+    // PayPal
+    compile 'com.paypal.sdk:checkout-sdk:1.0.0'
+    testCompile 'com.paypal.sdk:rest-api-sdk:+'
 }
 
 task integrationTest(type: Test, dependsOn: [jar]) {

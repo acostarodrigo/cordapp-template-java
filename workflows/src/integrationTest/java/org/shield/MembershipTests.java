@@ -38,7 +38,7 @@ public class MembershipTests {
         Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER), null, null);
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER), null, null);
         Future<SignedTransaction> signedTransactionFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -49,5 +49,11 @@ public class MembershipTests {
         mockNet.runNetwork();
         signedTransaction = signedTransactionFuture.get();
         assertNotNull(signedTransaction);
+
+        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = issuerNode.startFlow(new GetMembershipsFlow(bno,false,false));
+        mockNet.runNetwork();
+        MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(issuer).getState().getData();
+        assertNotNull(membershipState);
+        assertTrue(membershipState.isActive());
     }
 }
