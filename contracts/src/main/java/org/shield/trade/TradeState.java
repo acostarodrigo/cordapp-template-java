@@ -6,83 +6,135 @@ import net.corda.core.serialization.CordaSerializable;
 import net.corda.core.contracts.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Serializable;
 import java.util.*;
 
-// *********
-// * State *
-// *********
 @BelongsToContract(TradeContract.class)
+@CordaSerializable
 public class TradeState implements ContractState, Serializable {
     public static final String externalKey = "org.shield.trade.TradeState";
     private UniqueIdentifier id;
-    private Party issuer;
-    private Party brokerDealer;
-    private int size;
-    private Date offeringDate;
+    private UniqueIdentifier bondId;
+    private Date tradeDate;
+    private Date settleDate;
+    private Party buyer;
+    private Party seller;
+    private float price;
+    private float yield;
+    private long size;
+    private long proceeds;
+    private Currency currency;
     private State state;
-    private UniqueIdentifier paperId;
 
-
-    @CordaSerializable
-    public static enum State {
-        PREISSUE, ACCEPTED, CANCELLED, ISSUED
+    @NotNull
+    @Override
+    public List<AbstractParty> getParticipants() {
+        return Arrays.asList(this.buyer, this.seller);
     }
 
-    @ConstructorForDeserialization
-    public TradeState() {
-    }
-
-    public TradeState(UniqueIdentifier id, Party issuer, Party brokerDealer, int size, Date offeringDate, State state) {
-        this.id = id;
-        this.issuer = issuer;
-        this.brokerDealer = brokerDealer;
+    public TradeState(UniqueIdentifier bondId, Date tradeDate, Date settleDate, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
+        this.id = new UniqueIdentifier();
+        this.bondId = bondId;
+        this.tradeDate = tradeDate;
+        this.settleDate = settleDate;
+        this.buyer = buyer;
+        this.seller = seller;
+        this.price = price;
+        this.yield = yield;
         this.size = size;
-        this.offeringDate = offeringDate;
+        this.proceeds = proceeds;
+        this.currency = currency;
         this.state = state;
-        this.paperId = null;
     }
 
+    public static String getExternalKey() {
+        return externalKey;
+    }
 
     public UniqueIdentifier getId() {
         return id;
     }
 
-    public void setId(UniqueIdentifier id) {
-        this.id = id;
+    public UniqueIdentifier getBondId() {
+        return bondId;
     }
 
-    public Party getIssuer() {
-        return issuer;
+    public void setBondId(UniqueIdentifier bondId) {
+        this.bondId = bondId;
     }
 
-    public void setIssuer(Party issuer) {
-        this.issuer = issuer;
+    public Date getTradeDate() {
+        return tradeDate;
     }
 
-    public Party getBrokerDealer() {
-        return brokerDealer;
+    public void setTradeDate(Date tradeDate) {
+        this.tradeDate = tradeDate;
     }
 
-    public void setBrokerDealer(Party brokerDealer) {
-        this.brokerDealer = brokerDealer;
+    public Date getSettleDate() {
+        return settleDate;
     }
 
-    public int getSize() {
+    public void setSettleDate(Date settleDate) {
+        this.settleDate = settleDate;
+    }
+
+    public Party getBuyer() {
+        return buyer;
+    }
+
+    public void setBuyer(Party buyer) {
+        this.buyer = buyer;
+    }
+
+    public Party getSeller() {
+        return seller;
+    }
+
+    public void setSeller(Party seller) {
+        this.seller = seller;
+    }
+
+    public float getPrice() {
+        return price;
+    }
+
+    public void setPrice(float price) {
+        this.price = price;
+    }
+
+    public float getYield() {
+        return yield;
+    }
+
+    public void setYield(float yield) {
+        this.yield = yield;
+    }
+
+    public long getSize() {
         return size;
     }
 
-    public void setSize(int size) {
+    public void setSize(long size) {
         this.size = size;
     }
 
-    public Date getOfferingDate() {
-        return offeringDate;
+    public long getProceeds() {
+        return proceeds;
     }
 
-    public void setOfferingDate(Date offeringDate) {
-        this.offeringDate = offeringDate;
+    public void setProceeds(long proceeds) {
+        this.proceeds = proceeds;
+    }
+
+    public Currency getCurrency() {
+        return currency;
+    }
+
+    public void setCurrency(Currency currency) {
+        this.currency = currency;
     }
 
     public State getState() {
@@ -93,44 +145,27 @@ public class TradeState implements ContractState, Serializable {
         this.state = state;
     }
 
-    public UniqueIdentifier getPaperId() {
-        return paperId;
-    }
-
-    public void setPaperId(UniqueIdentifier paperId) {
-        this.paperId = paperId;
-    }
-
-    @Override
-    public List<AbstractParty> getParticipants() {
-        return Arrays.asList(this.issuer, this.brokerDealer);
-    }
-
-    @Override
-    public String toString() {
-        return "ArrangementState{" +
-                "id=" + id +
-                ", issuer=" + issuer +
-                ", brokerDealer=" + brokerDealer +
-                ", size=" + size +
-                ", offeringDate=" + offeringDate +
-                '}';
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         TradeState that = (TradeState) o;
-        return getSize() == that.getSize() &&
-                getId().equals(that.getId()) &&
-                getIssuer().equals(that.getIssuer()) &&
-                getBrokerDealer().equals(that.getBrokerDealer()) &&
-                getOfferingDate().equals(that.getOfferingDate());
+        return Float.compare(that.getPrice(), getPrice()) == 0 &&
+            Float.compare(that.getYield(), getYield()) == 0 &&
+            getSize() == that.getSize() &&
+            getProceeds() == that.getProceeds() &&
+            Objects.equals(getId(), that.getId()) &&
+            Objects.equals(getBondId(), that.getBondId()) &&
+            Objects.equals(getTradeDate(), that.getTradeDate()) &&
+            Objects.equals(getSettleDate(), that.getSettleDate()) &&
+            Objects.equals(getBuyer(), that.getBuyer()) &&
+            Objects.equals(getSeller(), that.getSeller()) &&
+            Objects.equals(getCurrency(), that.getCurrency()) &&
+            getState() == that.getState();
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getIssuer(), getBrokerDealer(), getSize(), getOfferingDate(), getState());
+        return Objects.hash(getId(), getBondId(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
     }
 }

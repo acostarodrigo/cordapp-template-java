@@ -9,6 +9,9 @@ import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import org.jetbrains.annotations.NotNull;
+import org.shield.bond.BondContract;
+import org.shield.bond.BondState;
+import org.shield.trade.State;
 import org.shield.trade.TradeContract;
 import org.shield.flows.bond.BondFlow;
 import org.shield.flows.membership.MembershipFlows;
@@ -24,133 +27,130 @@ public class TradeFlow {
     // we are disabling instantiation
     private TradeFlow() {}
 
-    /**
-     * Accept flow.
-     */
     @StartableByRPC
     @InitiatingFlow
-    public static class Accept extends FlowLogic<Void> {
-        private UniqueIdentifier id;
-        private TradeState tradeState;
-        private StateAndRef<TradeState> input;
-        private Party issuer;
-        private int size;
+    public static class SendToBuyer extends FlowLogic<SignedTransaction>{
+        private TradeState trade;
 
-        public Accept(UniqueIdentifier id, int newSize) {
-            this.id = id;
-            this.size = newSize;
+        public SendToBuyer(TradeState trade) {
+            this.trade = trade;
         }
 
         @Override
         @Suspendable
-        public Void call() throws FlowException {
-            // we get the arrangement state based in the id
-            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
-                if (stateAndRef.getState().getData().getId().equals(this.id)) {
-                    this.tradeState = stateAndRef.getState().getData();
-                    this.input =stateAndRef;
-                    this.issuer = this.tradeState.getIssuer();
+        public SignedTransaction call() throws FlowException {
+            // we validate the caller is an issuer
+            if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only an active issuer can send a trade to a buyer");
+
+            // we validate the buyer of the trade is a buyer organization
+            if (!subFlow(new MembershipFlows.isBuyer(trade.getBuyer()))) throw new FlowException(String.format("Buyer %s is not registered is not an active buyer organization", trade.getBuyer().getName().getCommonName()));
+
+            // we validate the bond to be traded is already issued.
+            BondState bond = null;
+            StateAndRef<BondState> bondStateStateAndRef = null;
+            for (StateAndRef<BondState> stateAndRef : getServiceHub().getVaultService().queryBy(BondState.class).getStates()){
+                if (stateAndRef.getState().getData().getLinearId().equals(this.trade.getBondId())){
+                    bondStateStateAndRef = stateAndRef;
+                    bond = stateAndRef.component1().getData();
+                    break;
                 }
             }
+            if (bondStateStateAndRef == null || bond == null) throw new FlowException(String.format("Specified bond %s does not exists.", this.trade.getBondId().toString()));
 
-            // we couldn't find it. we are cancelling
-            if (this.tradeState == null) {
-                throw new FlowException("Provided arrangement id " + id.toString() + " does not exists.");
-            }
+            // caller must be issuer of the bond
+            Party caller = getOurIdentity();
+            if (!caller.equals(bond.getIssuer())) throw new FlowException(String.format("Seller (%s) must be issuer (%s) of the bond.", caller.getName().getCommonName(), bond.getIssuer().getName().getCommonName() ));
 
-            // we change the state in the output
-            TradeState output = tradeState;
-            output.setState(TradeState.State.ACCEPTED);
-
-            if (this.size != 0)
-                output.setSize(this.size);
+            // todo verify contract before sending
 
             // we are good to go. let's generate the transaction
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            List<PublicKey> requiredSigners = Arrays.asList(getOurIdentity().getOwningKey());
-            Command command = new Command<>(new TradeContract.Commands.accept(), requiredSigners);
+            List<PublicKey> requiredSigners = Arrays.asList(trade.getSeller().getOwningKey(), trade.getBuyer().getOwningKey());
+            Command command = new Command<>(new TradeContract.Commands.sendToBuyer(), requiredSigners);
 
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addInputState(this.input)
-                .addOutputState(output, TradeContract.ID)
+                .addOutputState(trade, TradeContract.ID)
+                .addOutputState(bond, BondContract.ID)
                 .addCommand(command);
 
             SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
 
-            FlowSession issuerSession = initiateFlow(issuer);
-            subFlow(new SendTransactionFlow(issuerSession, signedTx));
-            subFlow(new FinalityFlow(signedTx,issuerSession));
+            FlowSession buyerSession = initiateFlow(trade.getBuyer());
+            subFlow(new SendTransactionFlow(buyerSession, signedTx));
+            subFlow(new FinalityFlow(signedTx,buyerSession));
 
-            return null;
+            return signedTx;
         }
     }
 
-    @InitiatedBy(Accept.class)
-    public static class AcceptResponse extends FlowLogic<Void>{
-        private FlowSession brokerDealerSession;
+    @InitiatedBy(SendToBuyer.class)
+    public static class SendToBuyerResponse extends FlowLogic<Void> {
+        private FlowSession callerSession;
 
-        public AcceptResponse(FlowSession brokerDealerSession) {
-            this.brokerDealerSession = brokerDealerSession;
+        public SendToBuyerResponse(FlowSession callerSession) {
+            this.callerSession = callerSession;
         }
 
         @Override
         @Suspendable
         public Void call() throws FlowException {
+            // we run transaction validations before signing.
+            subFlow(new SignTransactionFlow(this.callerSession) {
+                @Override
+                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
+                    TradeState trade = (TradeState) stx.getCoreTransaction().outRef(0).getState().getData();
+                    // we validate trade is send from an Issuer organization
+                    if (!subFlow(new MembershipFlows.isIssuer(trade.getSeller()))) throw new FlowException(String.format("Trade seller (%s) is not an Issuer organization", trade.getSeller().getName().getCommonName()));
+                }
+            });
 
-            subFlow(new ReceiveFinalityFlow(brokerDealerSession));
-
+            subFlow(new ReceiveFinalityFlow(callerSession));
             return null;
         }
     }
 
     @InitiatingFlow
     @StartableByRPC
-    public static class Cancel extends FlowLogic<Void> {
-        private UniqueIdentifier id;
-        private TradeState tradeState;
-        private StateAndRef<TradeState> input;
-        private Party issuer;
+    public static class Cancel extends FlowLogic<Void>{
+        private UniqueIdentifier tradeId;
 
-        public Cancel(UniqueIdentifier id) {
-            this.id = id;
+        public Cancel(UniqueIdentifier tradeId) {
+            this.tradeId = tradeId;
         }
 
         @Override
         @Suspendable
         public Void call() throws FlowException {
-            // we get the arrangement state based in the id
+            // we don't need to check if caller is a buyer. If we have the passed trade, then we can cancel it.
+            StateAndRef<TradeState> tradeStateStateAndRef = null;
+            TradeState trade = null;
+
             for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
-                if (stateAndRef.getState().getData().getId().equals(this.id)) {
-                    this.tradeState = stateAndRef.getState().getData();
-                    this.input =stateAndRef;
-                    this.issuer = this.tradeState.getIssuer();
+                if (stateAndRef.getState().getData().getId().equals(this.tradeId)){
+                    tradeStateStateAndRef = stateAndRef;
+                    trade = stateAndRef.getState().getData();
+                    break;
                 }
             }
+            // lets make sure the trade to accept exists.
+            if (tradeStateStateAndRef == null || trade == null) throw new FlowException(String.format("Specified trade %s does not exists.", this.tradeId.toString()));
 
-            // we couldn't find it. we are cancelling
-            if (this.tradeState == null) {
-                throw new FlowException("Provided arrangement id " + id.toString() + " does not exists.");
-            }
-
-            // we change the state in the output
-            TradeState output = tradeState;
-            output.setState(TradeState.State.CANCELLED);
-
-            // we are good to go. let's generate the transaction
+            // we are ready to cancel it.
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            List<PublicKey> requiredSigners = Arrays.asList(getOurIdentity().getOwningKey());
+            List<PublicKey> requiredSigners = Arrays.asList(trade.getBuyer().getOwningKey());
             Command command = new Command<>(new TradeContract.Commands.cancel(), requiredSigners);
 
+            trade.setState(State.CANCELLED);
+
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addInputState(this.input)
-                .addOutputState(output, TradeContract.ID)
+                .addInputState(tradeStateStateAndRef)
+                .addOutputState(trade, TradeContract.ID)
                 .addCommand(command);
 
             SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
 
-            FlowSession issuerSession = initiateFlow(issuer);
-            subFlow(new SendTransactionFlow(issuerSession, signedTx));
-            subFlow(new FinalityFlow(signedTx,issuerSession));
+            FlowSession sellerSession = initiateFlow(trade.getSeller());
+            subFlow(new FinalityFlow(signedTx,sellerSession));
 
             return null;
         }
@@ -158,222 +158,64 @@ public class TradeFlow {
 
     @InitiatedBy(Cancel.class)
     public static class CancelResponse extends FlowLogic<Void>{
-        private FlowSession brokerDealerSession;
+        private FlowSession callerSession;
 
-        public CancelResponse(FlowSession brokerDealerSession) {
-            this.brokerDealerSession = brokerDealerSession;
+        public CancelResponse(FlowSession callerSession) {
+            this.callerSession = callerSession;
         }
 
         @Override
-        @Suspendable
         public Void call() throws FlowException {
-
-            subFlow(new ReceiveFinalityFlow(brokerDealerSession));
-
-            return null;
-        }
-    }
-
-    @StartableByRPC
-    @InitiatingFlow
-    public static class Issue extends FlowLogic<UniqueIdentifier>{
-        private UniqueIdentifier id;
-        private TradeState input;
-        private Party issuer;
-        private Party brokerDealer;
-        private StateAndRef<TradeState> inputArrangement;
-
-        public Issue(UniqueIdentifier arrangementId) {
-            this.id = arrangementId;
-        }
-
-        @Override
-        @Suspendable
-        public UniqueIdentifier call() throws FlowException {
-            this.issuer = getOurIdentity();
-
-            // we get the arrangement from the Vault
-            for (StateAndRef<TradeState> stateAndRef : getServiceHub ().getVaultService().queryBy(TradeState.class).getStates()){
-                if (stateAndRef.getState().getData().getId().equals(this.id)){
-                    this.input = stateAndRef.getState().getData();
-                    this.inputArrangement = stateAndRef;
-                }
-            }
-
-            // we can't go on if we don't have it.
-            if (this.input == null)throw new FlowException("Arrangement with id " + this.id.toString() + " doesn't exists.");
-
-            this.brokerDealer = this.input.getBrokerDealer();
-
-            // we issue the tokens.
-            BondFlow.IssueFungibleToken issueFungibleToken = new BondFlow.IssueFungibleToken(input.getOfferingDate(), new Long(input.getSize()), this.brokerDealer);
-            UniqueIdentifier paperId = subFlow(issueFungibleToken);
-
-            // now we generate the new output of the arrangement with the commercialPaper id attached.
-            TradeState output = this.input;
-            output.setPaperId(paperId);
-            output.setState(TradeState.State.ISSUED);
-
-            // it is time to generate the transaction.
-            List<PublicKey> requiredSigners = Arrays.asList(this.issuer.getOwningKey(), this.brokerDealer.getOwningKey());
-            Command command = new Command<>(new TradeContract.Commands.issue(), requiredSigners);
-
-            // We retrieve the notary identity from the network map.
-            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-
-            // We create a transaction builder and add the components.
-            TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addInputState(inputArrangement)
-                .addOutputState(output, TradeContract.ID)
-                .addCommand(command);
-
-            // Signing the transaction.
-            SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
-
-            FlowSession brokerDealerSession = initiateFlow(brokerDealer);
-            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(
-                signedTx, Arrays.asList(brokerDealerSession)));
-
-            // Finalising the transaction.
-            subFlow(new FinalityFlow(fullySignedTx, brokerDealerSession));
-            return paperId;
-        }
-    }
-
-    @InitiatedBy(Issue.class)
-    public static class IssueResponse extends FlowLogic<Void> {
-        private FlowSession issuerSession;
-
-        public IssueResponse(FlowSession issuerSession) {
-            this.issuerSession = issuerSession;
-        }
-
-        @Override
-        @Suspendable
-        public Void call() throws FlowException {
-            subFlow(new SignTransactionFlow(issuerSession) {
-                @Override
-                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                    TradeState input = null;
-
-                    // before signing, we need to validate arrangement has not changed. And it is the same that we agreed.
-                    TradeState output = stx.getTx().outputsOfType(TradeState.class).get(0);
-                    for (StateAndRef<TradeState> stateAndRefs : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
-                        if (stateAndRefs.getState().getData().getId().equals(output.getId())){
-                            input = stateAndRefs.getState().getData();
-                        }
-                    }
-
-                    if (input == null) throw new FlowException("Provided Arrangement does not exists.");
-
-                    if (!output.equals(input)) throw new FlowException("Can't sign because arragement is not equal to what we accepted.");
-                }
-            });
-
-            subFlow(new ReceiveFinalityFlow(issuerSession));
+            subFlow(new ReceiveFinalityFlow(callerSession));
             return null;
         }
     }
 
     @InitiatingFlow
     @StartableByRPC
-    public static class PreIssue extends FlowLogic<UniqueIdentifier> {
-        private Party issuer;
-        private Party brokerDealer;
-        private int size;
-        private Date offeringDate;
+    public static class Accept extends FlowLogic<SignedTransaction> {
+        private UniqueIdentifier tradeId;
 
-        // constructor
-        public PreIssue(Party brokerDealer, int size, Date offeringDate){
-            this.brokerDealer = brokerDealer;
-            this.size = size;
-            this.offeringDate = offeringDate;
+        public Accept(UniqueIdentifier tradeId) {
+            this.tradeId = tradeId;
         }
 
         @Override
         @Suspendable
-        public UniqueIdentifier call() throws FlowException {
-            // we first validate caller is a valid issuer
-            if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only active issuer organizations can preIssue a bond.");
+        public SignedTransaction call() throws FlowException {
+            // we don't need to check if caller is a buyer. If we have the passed trade, then we can accept it.
+            StateAndRef<TradeState> tradeStateStateAndRef = null;
+            TradeState trade = null;
 
-            this.issuer = getOurIdentity();
+            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
+                if (stateAndRef.getState().getData().getId().equals(this.tradeId)){
+                    tradeStateStateAndRef = stateAndRef;
+                    trade = stateAndRef.getState().getData();
+                    break;
+                }
+            }
+            // lets make sure the trade to accept exists.
+            if (tradeStateStateAndRef == null || trade == null) throw new FlowException(String.format("Specified trade %s does not exists.", this.tradeId.toString()));
 
-            // We retrieve the notary identity from the network map.
+            // we are ready to accept it.
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            List<PublicKey> requiredSigners = Arrays.asList(trade.getBuyer().getOwningKey(), trade.getSeller().getOwningKey());
+            Command command = new Command<>(new TradeContract.Commands.accept(), requiredSigners);
 
-            // We create the transaction components.
-            // output is created without input for PreIssueFlow command
-            UniqueIdentifier id = new UniqueIdentifier(TradeState.externalKey, UUID.randomUUID());
-            TradeState outputState = new TradeState(id, this.issuer, this.brokerDealer, this.size, this.offeringDate, TradeState.State.PREISSUE);
+            trade.setState(State.ACCEPTED);
 
-            List<PublicKey> requiredSigners = Arrays.asList(this.issuer.getOwningKey(), this.brokerDealer.getOwningKey());
-            // Command contract only requires the issuer signature.
-            Command command = new Command<>(new TradeContract.Commands.preIssue(), requiredSigners);
-
-            // We create a transaction builder and add the components.
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addOutputState(outputState, TradeContract.ID)
+                .addInputState(tradeStateStateAndRef)
+                .addOutputState(trade, TradeContract.ID)
                 .addCommand(command);
 
-
-            // Signing the transaction.
             SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
 
-            // Obtaining the counterparty's signature.
+            FlowSession sellerSession = initiateFlow(trade.getSeller());
+            subFlow(new SendTransactionFlow(sellerSession, signedTx));
+            subFlow(new FinalityFlow(signedTx,sellerSession));
 
-            FlowSession brokerDealerSession = initiateFlow(brokerDealer);
-            SignedTransaction fullySignedTx = null;
-
-            fullySignedTx = subFlow(new CollectSignaturesFlow(
-                signedTx, Arrays.asList(brokerDealerSession)));
-
-            // Finalising the transaction.
-            subFlow(new FinalityFlow(fullySignedTx, brokerDealerSession));
-
-            return outputState.getId();
-        }
-    }
-
-    @InitiatedBy(PreIssue.class)
-    public static class PreIssueResponse extends  FlowLogic<Void> {
-        private FlowSession issuerSession;
-
-
-        // constructor
-        public PreIssueResponse(FlowSession flowSession) {
-            this.issuerSession = flowSession;
-        }
-
-
-        @Override
-        @Suspendable
-        public Void call() {
-            // we validate the transaction first
-            try {
-                subFlow(new ValidateTx(this.issuerSession));
-            } catch (FlowException e) {
-                throw new IllegalArgumentException(e.getLocalizedMessage());
-            }
-
-            try {
-                subFlow(new ReceiveFinalityFlow(issuerSession));
-            } catch (FlowException e) {
-                throw new IllegalArgumentException(e.getLocalizedMessage());
-            }
-            return null;
-        }
-
-
-        private class ValidateTx extends SignTransactionFlow{
-            public ValidateTx(@NotNull FlowSession otherSideSession) {
-                super(otherSideSession);
-            }
-
-            @Override
-            protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-
-
-            }
+            return signedTx;
         }
     }
 
