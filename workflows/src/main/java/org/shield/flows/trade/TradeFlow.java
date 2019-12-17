@@ -50,9 +50,9 @@ public class TradeFlow {
             BondState bond = null;
             StateAndRef<BondState> bondStateStateAndRef = null;
             for (StateAndRef<BondState> stateAndRef : getServiceHub().getVaultService().queryBy(BondState.class).getStates()){
-                if (stateAndRef.getState().getData().getLinearId().equals(this.trade.getBondId())){
+                if (stateAndRef.getState().getData().getId().equals(this.trade.getBondId())){
                     bondStateStateAndRef = stateAndRef;
-                    bond = stateAndRef.component1().getData();
+                    bond = stateAndRef.getState().getData();
                     break;
                 }
             }
