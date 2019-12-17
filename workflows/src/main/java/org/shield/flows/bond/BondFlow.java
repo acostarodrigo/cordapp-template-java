@@ -34,7 +34,7 @@ public class BondFlow {
 
     @StartableByRPC
     @InitiatingFlow
-    public static class Issue extends FlowLogic<SignedTransaction> {
+    public static class Issue extends FlowLogic<UniqueIdentifier> {
         private BondState bond;
 
         public Issue(BondState bond) {
@@ -42,7 +42,7 @@ public class BondFlow {
         }
 
         @Override
-        public SignedTransaction call() throws FlowException {
+        public UniqueIdentifier call() throws FlowException {
             // we validate caller is an issuer
             if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only active issuer organizations can issue a bond.");
 
@@ -62,9 +62,9 @@ public class BondFlow {
             Amount<IssuedTokenType> amount = new Amount<>(bond.getDealSize(), issuedTokenType);
             FungibleToken fungibleToken = new FungibleToken(amount,bond.getIssuer(), null);
 
-            SignedTransaction signedTransaction = subFlow(new IssueTokens(Arrays.asList(fungibleToken),Arrays.asList(bond.getIssuer())));
+            subFlow(new IssueTokens(Arrays.asList(fungibleToken),Arrays.asList(bond.getIssuer())));
 
-            return signedTransaction;
+            return bond.getLinearId();
         }
     }
 

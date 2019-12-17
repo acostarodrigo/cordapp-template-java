@@ -25,9 +25,9 @@ public class BondState extends EvolvableTokenType {
     private DealType dealType;
     private int redemptionPrice;
     private long dealSize;
-    private float initialPrice;
+    private double initialPrice;
     private Date maturityDate;
-    private float couponRate;
+    private double couponRate;
 
     // Evolvable Token type
     private int fractionDigits;
@@ -35,7 +35,7 @@ public class BondState extends EvolvableTokenType {
     private UniqueIdentifier linearId;
 
 
-    public BondState(Party issuer, String issuerName, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, float initialPrice, Date maturityDate, float couponRate, int fractionDigits) {
+    public BondState(Party issuer, String issuerName, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
         this.issuer = issuer;
         this.issuerName = issuerName;
         this.denomination = denomination;
@@ -135,11 +135,11 @@ public class BondState extends EvolvableTokenType {
         this.dealSize = dealSize;
     }
 
-    public float getInitialPrice() {
+    public double getInitialPrice() {
         return initialPrice;
     }
 
-    public void setInitialPrice(float initialPrice) {
+    public void setInitialPrice(double initialPrice) {
         this.initialPrice = initialPrice;
     }
 
@@ -151,11 +151,11 @@ public class BondState extends EvolvableTokenType {
         this.maturityDate = maturityDate;
     }
 
-    public float getCouponRate() {
+    public double getCouponRate() {
         return couponRate;
     }
 
-    public void setCouponRate(float couponRate) {
+    public void setCouponRate(double couponRate) {
         this.couponRate = couponRate;
     }
 
@@ -198,8 +198,8 @@ public class BondState extends EvolvableTokenType {
             getIncrement() == bondState.getIncrement() &&
             getRedemptionPrice() == bondState.getRedemptionPrice() &&
             getDealSize() == bondState.getDealSize() &&
-            Float.compare(bondState.getInitialPrice(), getInitialPrice()) == 0 &&
-            Float.compare(bondState.getCouponRate(), getCouponRate()) == 0 &&
+            Double.compare(bondState.getInitialPrice(), getInitialPrice()) == 0 &&
+            Double.compare(bondState.getCouponRate(), getCouponRate()) == 0 &&
             getFractionDigits() == bondState.getFractionDigits() &&
             Objects.equals(getIssuer(), bondState.getIssuer()) &&
             Objects.equals(getIssuerName(), bondState.getIssuerName()) &&

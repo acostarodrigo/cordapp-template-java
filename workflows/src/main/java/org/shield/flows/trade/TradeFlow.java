@@ -1,6 +1,7 @@
 package org.shield.flows.trade;
 
 import co.paralleluniverse.fibers.Suspendable;
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -208,6 +209,10 @@ public class TradeFlow {
                 .addInputState(tradeStateStateAndRef)
                 .addOutputState(trade, TradeContract.ID)
                 .addCommand(command);
+
+            // if buyer has enought Fiat to pay, we are including them as output and input
+            ///getServiceHub().getVaultService().queryBy(FungibleToken)
+
 
             SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
 

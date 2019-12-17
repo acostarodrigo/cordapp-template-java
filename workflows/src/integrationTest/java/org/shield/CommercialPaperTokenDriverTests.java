@@ -96,12 +96,7 @@ public class CommercialPaperTokenDriverTests {
 
                 System.out.println("Rodrigo starting test.");
 
-                Date offeringDate = new Date();
-                BigDecimal fungibleAmount = BigDecimal.ONE;
 
-                Party holder = broker1Node.getNodeInfo().getLegalIdentities().get(0);
-                UniqueIdentifier id = issuer.startFlowDynamic(TradeFlow.PreIssue.class,offeringDate,fungibleAmount,holder).getReturnValue().get();
-                Assert.assertNotNull(id);
             } catch (Exception e) {
                 System.out.println("Exception during node initialization:" + e.toString());
             }
