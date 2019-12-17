@@ -202,6 +202,8 @@ public class MembershipFlows {
             GetMembershipsFlow getMembershipsFlow = new GetMembershipsFlow(bno, false, false);
             StateAndRef<? extends MembershipState<? extends Object>> stateAndRef = subFlow(getMembershipsFlow).get(caller);
 
+            // no membership found for specified caller
+            if (stateAndRef == null) throw new FlowException(String.format("%s is not an organization member.",caller.toString()));
             return stateAndRef.getState().getData();
         }
     }
