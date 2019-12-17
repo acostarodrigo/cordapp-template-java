@@ -4,26 +4,24 @@ import co.paralleluniverse.fibers.Suspendable;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
-import com.r3.corda.lib.tokens.workflows.flows.evolvable.UpdateEvolvableTokenFlow;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
-import com.r3.corda.lib.tokens.workflows.internal.flows.distribution.UpdateDistributionListFlow;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.*;
+import net.corda.core.flows.FlowException;
+import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
-import net.corda.core.node.ServiceHub;
 import net.corda.core.transactions.SignedTransaction;
 import org.shield.bond.BondState;
 import org.shield.bond.BondTypeContract;
 import org.shield.flows.membership.MembershipFlows;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 
 public class BondFlow {
 
@@ -42,6 +40,7 @@ public class BondFlow {
         }
 
         @Override
+        @Suspendable
         public UniqueIdentifier call() throws FlowException {
             // we validate caller is an issuer
             if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only active issuer organizations can issue a bond.");
@@ -64,7 +63,7 @@ public class BondFlow {
 
             subFlow(new IssueTokens(Arrays.asList(fungibleToken),Arrays.asList(bond.getIssuer())));
 
-            return bond.getLinearId();
+            return bond.getId();
         }
     }
 
