@@ -80,9 +80,9 @@ public class MembershipFlows {
         public Boolean call() throws FlowException {
             MembershipState membershipState = null;
             if (this.buyer == null)
-                 subFlow(new getMembership());
+                membershipState = subFlow(new getMembership());
             else
-                subFlow(new getMembership(buyer));
+                membershipState = subFlow(new getMembership(buyer));
 
             // we will validate is an active member of the organization
             if (membershipState == null || !membershipState.isActive()) return false;

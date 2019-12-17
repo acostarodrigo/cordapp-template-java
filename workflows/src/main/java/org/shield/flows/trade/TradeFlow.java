@@ -44,7 +44,7 @@ public class TradeFlow {
             if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only an active issuer can send a trade to a buyer");
 
             // we validate the buyer of the trade is a buyer organization
-            if (!subFlow(new MembershipFlows.isBuyer(trade.getBuyer()))) throw new FlowException(String.format("Buyer %s is not registered is not an active buyer organization", trade.getBuyer().getName().getCommonName()));
+            if (!subFlow(new MembershipFlows.isBuyer(trade.getBuyer()))) throw new FlowException(String.format("%s is not an active buyer organization", trade.getBuyer().getName().getCommonName()));
 
             // we validate the bond to be traded is already issued.
             BondState bond = null;
