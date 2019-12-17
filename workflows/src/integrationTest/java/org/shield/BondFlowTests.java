@@ -63,7 +63,30 @@ public class BondFlowTests {
         // issuer must have the bond token 100% assigned to himself.
         FungibleToken token = issuerNode.getServices().getVaultService().queryBy(FungibleToken.class).getStates().get(0).getState().getData();
         assertEquals(token.getAmount().getQuantity(), bond.getDealSize());
+    }
 
+    @Test(expected = ExecutionException.class)
+    public void issueBondWithoutBeingMemberTest() throws ExecutionException, InterruptedException {
+        // we issue the bond
+        CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));
+
+        mockNet.runNetwork();
+        UniqueIdentifier id = issueFuture.get();
+        // this should never be reached
+        assertNotNull(null);
+    }
+
+    @Test(expected = ExecutionException.class)
+    public void issueBondWithoutBeingIssuerTest() throws ExecutionException, InterruptedException {
+        MembershipTests membershipTests = new MembershipTests();
+        membershipTests.configBuyerTest();
+        // we issue the bond
+        CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));
+
+        mockNet.runNetwork();
+        UniqueIdentifier id = issueFuture.get();
+        // this should never be reached
+        assertNotNull(null);
     }
 
     @After

@@ -56,4 +56,30 @@ public class MembershipTests {
         assertNotNull(membershipState);
         assertTrue(membershipState.isActive());
     }
+
+    @Test
+    public void configBuyerTest() throws ExecutionException, InterruptedException {
+        // the mocked BNO
+        CordaX500Name bnoName = CordaX500Name.parse("O=BNO,L=New York,C=US");
+        Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
+
+        // we execute the request
+        ShieldMetadata metadata = new ShieldMetadata("Buyer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.BUYER), null, null);
+        Future<SignedTransaction> signedTransactionFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
+        mockNet.runNetwork();
+        SignedTransaction signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
+
+        // BNO approves
+        signedTransactionFuture = bnoNode.startFlow(new ActivateMembershipFlow(signedTransaction.getCoreTransaction().outRef(0)));
+        mockNet.runNetwork();
+        signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
+
+        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = issuerNode.startFlow(new GetMembershipsFlow(bno,false,false));
+        mockNet.runNetwork();
+        MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(issuer).getState().getData();
+        assertNotNull(membershipState);
+        assertTrue(membershipState.isActive());
+    }
 }
