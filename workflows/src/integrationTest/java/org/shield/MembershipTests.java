@@ -61,11 +61,11 @@ public class MembershipTests {
     public void configBuyerTest() throws ExecutionException, InterruptedException {
         // the mocked BNO
         CordaX500Name bnoName = CordaX500Name.parse("O=BNO,L=New York,C=US");
-        Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
+        Party bno =  broker1Node.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
         ShieldMetadata metadata = new ShieldMetadata("Buyer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.BUYER), null, null);
-        Future<SignedTransaction> signedTransactionFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
+        Future<SignedTransaction> signedTransactionFuture = broker1Node.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
         assertNotNull(signedTransaction);
@@ -76,10 +76,37 @@ public class MembershipTests {
         signedTransaction = signedTransactionFuture.get();
         assertNotNull(signedTransaction);
 
-        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = issuerNode.startFlow(new GetMembershipsFlow(bno,false,false));
+        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = broker1Node.startFlow(new GetMembershipsFlow(bno,false,false));
         mockNet.runNetwork();
-        MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(issuer).getState().getData();
+        MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(broker1).getState().getData();
         assertNotNull(membershipState);
         assertTrue(membershipState.isActive());
     }
+
+    @Test
+    public void configTreasurerTest() throws ExecutionException, InterruptedException {
+        // the mocked BNO
+        CordaX500Name bnoName = CordaX500Name.parse("O=BNO,L=New York,C=US");
+        Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
+
+        // we execute the request
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.NETWORK_TREASURER), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER), null, null);
+        Future<SignedTransaction> signedTransactionFuture = broker2Node.startFlow(new RequestMembershipFlow(bno,metadata));
+        mockNet.runNetwork();
+        SignedTransaction signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
+
+        // BNO approves
+        signedTransactionFuture = bnoNode.startFlow(new ActivateMembershipFlow(signedTransaction.getCoreTransaction().outRef(0)));
+        mockNet.runNetwork();
+        signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
+
+        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = broker2Node.startFlow(new GetMembershipsFlow(bno,false,false));
+        mockNet.runNetwork();
+        MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(broker2).getState().getData();
+        assertNotNull(membershipState);
+        assertTrue(membershipState.isActive());
+    }
+
 }
