@@ -33,13 +33,13 @@ public class USDFiatTokenTests {
         MembershipTests membershipTests = new MembershipTests();
         membershipTests.configTreasurerTest();
 
-        CordaFuture<SignedTransaction> cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 1000));
+        CordaFuture<SignedTransaction> cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
 
         // we re issue more tokens
-        cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 1000));
+        cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
         mockNet.runNetwork();
         signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
@@ -49,7 +49,7 @@ public class USDFiatTokenTests {
         Amount tokenBalance = QueryUtilitiesKt.tokenBalance(broker1Node.getServices().getVaultService(), usd);
 
         // balance check
-        assertEquals(tokenBalance.getQuantity(), 2000);
+        assertEquals(tokenBalance.getQuantity(), 200000000);
     }
 
     @Test (expected = ExecutionException.class)

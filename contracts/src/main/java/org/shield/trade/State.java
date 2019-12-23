@@ -5,7 +5,7 @@ import net.corda.core.serialization.CordaSerializable;
 @CordaSerializable
 public enum State {
     SENT,
-    AKNOWLEDGE,
-    ACCEPTED,
+    ACCEPTED_NOTPAYED,
+    ACCEPTED_PAYED,
     CANCELLED
 }

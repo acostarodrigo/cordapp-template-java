@@ -38,7 +38,7 @@ public class BondFlowTests {
         TestHelper.setupNetwork();
 
         // we create the bond
-        bond = new BondState(new UniqueIdentifier(), issuer, "Rodrigo", Currency.getInstance("USD"), new Date(), 1,1,1, DealType.REG_S, 1,1000000,99,new Date(),99.8,0, new UniqueIdentifier());
+        bond = new BondState(new UniqueIdentifier(), issuer, "Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0, new UniqueIdentifier());
 
     }
 

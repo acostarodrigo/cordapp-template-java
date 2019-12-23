@@ -1,5 +1,6 @@
 package org.shield.bond;
 
+import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.CommandWithParties;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
@@ -23,5 +24,10 @@ public class BondContract implements Contract {
 
             return null;
         });
+    }
+
+    // Used to indicate the transaction's intent.
+    public interface Commands extends CommandData {
+        class issue implements TradeContract.Commands {}
     }
 }

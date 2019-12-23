@@ -41,7 +41,7 @@ public class USDFiatTokenFlow {
             Party treasurer = getOurIdentity();
 
             TokenType usd = FiatCurrency.Companion.getInstance("USD");
-            IssuedTokenType issuedTokenType = new IssuedTokenType(getOurIdentity(), usd);
+            IssuedTokenType issuedTokenType = new IssuedTokenType(treasurer, usd);
             Amount<IssuedTokenType> usdAmount = new Amount<>(amount, issuedTokenType);
 
             FlowSession ownerSession = initiateFlow(owner);

@@ -1,7 +1,6 @@
 package org.shield.flows.bond;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
@@ -10,20 +9,16 @@ import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount;
-import com.r3.corda.lib.tokens.workflows.types.PartyAndToken;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.crypto.SecureHash;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
-import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import org.shield.bond.BondContract;
 import org.shield.bond.BondState;
 import org.shield.bond.BondTypeContract;
 import org.shield.flows.membership.MembershipFlows;

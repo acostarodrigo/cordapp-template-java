@@ -7,6 +7,7 @@ import net.corda.core.contracts.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import org.jetbrains.annotations.NotNull;
+import org.shield.bond.BondState;
 
 import java.io.Serializable;
 import java.util.*;
@@ -16,7 +17,7 @@ import java.util.*;
 public class TradeState implements ContractState, Serializable {
     public static final String externalKey = "org.shield.trade.TradeState";
     private UniqueIdentifier id;
-    private UniqueIdentifier bondId;
+    private BondState bond;
     private Date tradeDate;
     private Date settleDate;
     private Party buyer;
@@ -34,9 +35,9 @@ public class TradeState implements ContractState, Serializable {
         return Arrays.asList(this.buyer, this.seller);
     }
 
-    public TradeState(UniqueIdentifier bondId, Date tradeDate, Date settleDate, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
-        this.id = new UniqueIdentifier();
-        this.bondId = bondId;
+    public TradeState(UniqueIdentifier id, BondState bond, Date tradeDate, Date settleDate, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
+        this.id = id;
+        this.bond = bond;
         this.tradeDate = tradeDate;
         this.settleDate = settleDate;
         this.buyer = buyer;
@@ -57,84 +58,44 @@ public class TradeState implements ContractState, Serializable {
         return id;
     }
 
-    public UniqueIdentifier getBondId() {
-        return bondId;
-    }
-
-    public void setBondId(UniqueIdentifier bondId) {
-        this.bondId = bondId;
+    public BondState getBond() {
+        return bond;
     }
 
     public Date getTradeDate() {
         return tradeDate;
     }
 
-    public void setTradeDate(Date tradeDate) {
-        this.tradeDate = tradeDate;
-    }
-
     public Date getSettleDate() {
         return settleDate;
-    }
-
-    public void setSettleDate(Date settleDate) {
-        this.settleDate = settleDate;
     }
 
     public Party getBuyer() {
         return buyer;
     }
 
-    public void setBuyer(Party buyer) {
-        this.buyer = buyer;
-    }
-
     public Party getSeller() {
         return seller;
-    }
-
-    public void setSeller(Party seller) {
-        this.seller = seller;
     }
 
     public float getPrice() {
         return price;
     }
 
-    public void setPrice(float price) {
-        this.price = price;
-    }
-
     public float getYield() {
         return yield;
-    }
-
-    public void setYield(float yield) {
-        this.yield = yield;
     }
 
     public long getSize() {
         return size;
     }
 
-    public void setSize(long size) {
-        this.size = size;
-    }
-
     public long getProceeds() {
         return proceeds;
     }
 
-    public void setProceeds(long proceeds) {
-        this.proceeds = proceeds;
-    }
-
     public Currency getCurrency() {
         return currency;
-    }
-
-    public void setCurrency(Currency currency) {
-        this.currency = currency;
     }
 
     public State getState() {
@@ -155,7 +116,7 @@ public class TradeState implements ContractState, Serializable {
             getSize() == that.getSize() &&
             getProceeds() == that.getProceeds() &&
             Objects.equals(getId(), that.getId()) &&
-            Objects.equals(getBondId(), that.getBondId()) &&
+            Objects.equals(getBond(), that.getBond()) &&
             Objects.equals(getTradeDate(), that.getTradeDate()) &&
             Objects.equals(getSettleDate(), that.getSettleDate()) &&
             Objects.equals(getBuyer(), that.getBuyer()) &&
@@ -166,6 +127,6 @@ public class TradeState implements ContractState, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getBondId(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
+        return Objects.hash(getId(), getBond(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
     }
 }
