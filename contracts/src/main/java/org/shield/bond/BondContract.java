@@ -16,11 +16,12 @@ public class BondContract implements Contract {
     @Override
     public void verify(@NotNull LedgerTransaction tx) throws IllegalArgumentException {
         CommandWithParties<TradeContract.Commands> cmd = requireSingleCommand(tx.getCommands(), TradeContract.Commands.class);
+        BondState output = (BondState) tx.getOutput(0);
 
         requireThat(require -> {
             //todo implement
             // Don't allow people to issue commercial paper under other entities.
-            //require.using("Must have issuer signature", cmd.getSigners().contains(output.getIssuer().getOwningKey()));
+            require.using("Must have issuer signature", cmd.getSigners().contains(output.getIssuer().getOwningKey()));
 
             return null;
         });

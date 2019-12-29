@@ -40,6 +40,7 @@ configurations {
 
 repositories {
     mavenCentral()
+    maven { url "https://jitpack.io" }
     maven {
         url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda-solutions-releases'
     }
@@ -69,9 +70,10 @@ dependencies {
     cordapp "com.r3.businessnetworks:membership-service:2.0"
     cordapp "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
 
-    // PayPal
-    compile 'com.paypal.sdk:checkout-sdk:1.0.0'
-    testCompile 'com.paypal.sdk:rest-api-sdk:+'
+    // Stellar Java SDK
+    compile 'com.github.stellar:java-stellar-sdk:0.12.0'
+
+
 }
 
 task integrationTest(type: Test, dependsOn: [jar]) {

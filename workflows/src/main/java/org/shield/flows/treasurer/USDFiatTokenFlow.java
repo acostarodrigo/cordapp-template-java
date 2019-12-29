@@ -23,6 +23,7 @@ public class USDFiatTokenFlow {
         // no instantiation allowed.
     }
     @InitiatingFlow
+    @StartableByService
     public static class Issue extends FlowLogic<SignedTransaction>{
         private Party owner;
         private long amount;
