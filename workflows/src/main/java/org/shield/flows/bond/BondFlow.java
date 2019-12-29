@@ -1,6 +1,8 @@
 package org.shield.flows.bond;
 
 import co.paralleluniverse.fibers.Suspendable;
+import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
+import com.r3.businessnetworks.membership.states.MembershipState;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
@@ -8,6 +10,7 @@ import com.r3.corda.lib.tokens.workflows.flows.rpc.CreateEvolvableTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.IssueTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
+import com.r3.corda.lib.tokens.workflows.internal.flows.distribution.UpdateDistributionListFlow;
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
@@ -22,9 +25,12 @@ import net.corda.core.transactions.SignedTransaction;
 import org.shield.bond.BondState;
 import org.shield.bond.BondTypeContract;
 import org.shield.flows.membership.MembershipFlows;
+import org.shield.membership.ShieldMetadata;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 public class BondFlow {
 
@@ -56,18 +62,43 @@ public class BondFlow {
             // todo validate contract
 
             // we create the bond type
-            subFlow(new IssueType(this.bond));
+            SignedTransaction signedTransaction = subFlow(new IssueType(this.bond));
 
             // now we issue the tokens
             TokenPointer tokenPointer = bond.toPointer(bond.getClass());
             IssuedTokenType issuedTokenType = new IssuedTokenType(bond.getIssuer(), tokenPointer);
             Amount<IssuedTokenType> amount = new Amount<>(bond.getDealSize(), BigDecimal.ONE, issuedTokenType);
             FungibleToken fungibleToken = new FungibleToken(amount,bond.getIssuer(), null);
-
+            // bond is issued
             subFlow(new IssueTokens(Arrays.asList(fungibleToken)));
+
+            // we will add all buyers of the business network as observers
+            // With this we are allowing any buyer to see issued bonds.
+            StateAndRef input = signedTransaction.getCoreTransaction().outRef(0);
+            List<PartyAndMembershipMetadata> partyAndMembershipMetadataList = subFlow(new MembershipFlows.GetAllMemberships());
+            List<Party> observers = getBuyers(partyAndMembershipMetadataList);
+            SignedTransaction updatedObservers = subFlow(new UpdateEvolvableToken(input,bond,observers));
+            subFlow(new UpdateDistributionListFlow(updatedObservers));
 
             return bond.getId();
         }
+    }
+
+    /**
+     * gets all the buyers from the business network
+     * @return
+     */
+    private static List<Party> getBuyers(List<PartyAndMembershipMetadata> list){
+        List<Party> buyers = new ArrayList<>();
+        for (PartyAndMembershipMetadata partyAndMembershipMetadata : list){
+            ShieldMetadata metadata = (ShieldMetadata) partyAndMembershipMetadata.getMembershipMetadata();
+            if (metadata.getOrgTypes().contains(ShieldMetadata.OrgType.BOND_PARTICIPANT)){
+                if (metadata.getBondRoles().contains(ShieldMetadata.BondRole.BUYER)){
+                    buyers.add(partyAndMembershipMetadata.getParty());
+                }
+            }
+        }
+        return buyers;
     }
 
     /**
