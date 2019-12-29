@@ -123,6 +123,28 @@ public class BondFlowTests {
         SignedTransaction signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
     }
+
+    @Test
+    public void multipleBondsVisibleToBuyerTest() throws ExecutionException, InterruptedException {
+        // we configure the buyer
+        MembershipTests membershipTests = new MembershipTests();
+        membershipTests.configBuyerTest();
+
+        // issue bond 1
+        issueBondTest();
+
+        //issue bond 2
+        BondState bond2 = new BondState(new UniqueIdentifier(), issuer, "Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0, new UniqueIdentifier());
+
+        // we issue the bond
+        CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond2));
+        mockNet.runNetwork();
+        UniqueIdentifier uniqueIdentifier = issueFuture.get();
+
+        // Broker1 as buyer, should be able to see both of them from his node.
+        assertEquals(bond,broker1Node.getServices().getVaultService().queryBy(BondState.class).getStates().get(0).getState().getData());
+        assertEquals(bond2,broker1Node.getServices().getVaultService().queryBy(BondState.class).getStates().get(1).getState().getData());
+    }
 }
 
 
