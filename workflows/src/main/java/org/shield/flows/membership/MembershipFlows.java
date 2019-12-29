@@ -2,14 +2,20 @@ package org.shield.flows.membership;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
+import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
 import com.r3.businessnetworks.membership.states.MembershipState;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import org.shield.membership.ShieldMetadata;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Deals with all role and membership validations
@@ -205,6 +211,29 @@ public class MembershipFlows {
             // no membership found for specified caller
             if (stateAndRef == null) throw new FlowException(String.format("%s is not an organization member.",caller.toString()));
             return stateAndRef.getState().getData();
+        }
+    }
+
+    /**
+     * retrieves all memberships of the business network
+     */
+    @InitiatingFlow
+    public static class GetAllMemberships extends FlowLogic<List<PartyAndMembershipMetadata>>{
+        @Override
+        @Suspendable
+        public List<PartyAndMembershipMetadata> call() throws FlowException {
+            Party bno = subFlow(new getBNO());
+
+            GetMembershipsFlow getMembershipsFlow = new GetMembershipsFlow(bno, false, false);
+
+            Map<Party,? extends StateAndRef<? extends MembershipState<? extends Object>>> memberships = subFlow(getMembershipsFlow);
+            List<PartyAndMembershipMetadata> partyAndMembershipMetadataList = new ArrayList<>();
+            for (Map.Entry<Party,? extends StateAndRef<? extends MembershipState<? extends Object>>> entry : memberships.entrySet()){
+                ShieldMetadata shieldMetadata = (ShieldMetadata) entry.getValue().getState().getData().getMembershipMetadata();
+                partyAndMembershipMetadataList.add(new PartyAndMembershipMetadata(entry.getKey(), shieldMetadata));
+            }
+
+            return partyAndMembershipMetadataList;
         }
     }
 
