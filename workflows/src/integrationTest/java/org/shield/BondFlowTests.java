@@ -38,7 +38,7 @@ public class BondFlowTests {
         TestHelper.setupNetwork();
 
         // we create the bond
-        bond = new BondState(new UniqueIdentifier(), issuer, "Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0, new UniqueIdentifier());
+        bond = new BondState("Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
 
     }
 
@@ -134,7 +134,7 @@ public class BondFlowTests {
         issueBondTest();
 
         //issue bond 2
-        BondState bond2 = new BondState(new UniqueIdentifier(), issuer, "Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0, new UniqueIdentifier());
+        BondState bond2 = new BondState("Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
 
         // we issue the bond
         CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond2));

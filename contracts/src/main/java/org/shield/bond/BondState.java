@@ -5,7 +5,9 @@ import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
 import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
+import net.corda.core.serialization.SerializableCalculatedProperty;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondTypeContract;
 
@@ -36,14 +38,14 @@ public class BondState extends EvolvableTokenType implements Serializable{
     private UniqueIdentifier linearId;
 
 
+    @ConstructorForDeserialization
     public BondState(){
         // for serialization
     }
 
 
-    public BondState(UniqueIdentifier id, Party issuer, String issuerName, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits, UniqueIdentifier linearId) {
-        this.id = id;
-        this.issuer = issuer;
+    public BondState(String issuerName, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
+        this.id = new UniqueIdentifier();
         this.issuerName = issuerName;
         this.denomination = denomination;
         this.startDate = startDate;
@@ -57,9 +59,11 @@ public class BondState extends EvolvableTokenType implements Serializable{
         this.maturityDate = maturityDate;
         this.couponRate = couponRate;
         this.fractionDigits = fractionDigits;
-        this.maintainers = Arrays.asList(issuer); //issuer is the maintainer
-        this.linearId = linearId;
+        this.linearId = new UniqueIdentifier();
+        this.maintainers = new ArrayList<>();
     }
+
+    // getters and setters
 
     public UniqueIdentifier getId() {
         return id;
@@ -194,7 +198,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
     @NotNull
     @Override
     public List<Party> getMaintainers() {
-        return this.maintainers;
+        return Arrays.asList((this.issuer));
     }
 
     @NotNull
