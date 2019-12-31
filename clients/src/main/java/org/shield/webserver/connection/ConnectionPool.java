@@ -1,6 +1,6 @@
 package org.shield.webserver.connection;
 
-import com.template.Client;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

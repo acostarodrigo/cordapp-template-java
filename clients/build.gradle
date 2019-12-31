@@ -16,10 +16,19 @@ dependencies {
     // CorDapp dependencies.
     compile project(":contracts")
     compile project(":workflows")
+    \
+
+
 
     compile("org.springframework.boot:spring-boot-starter-websocket:$spring_boot_version") {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
+
+
+    testCompile("org.springframework.boot:spring-boot-starter-test:$spring_boot_version"){
+        exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
+    }
+    testCompile 'junit:junit:4.12'
 
     compile "org.apache.logging.log4j:log4j-slf4j-impl:${log4j_version}"
     compile "org.apache.logging.log4j:log4j-web:${log4j_version}"

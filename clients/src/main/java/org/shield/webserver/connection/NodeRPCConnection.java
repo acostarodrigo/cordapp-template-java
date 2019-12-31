@@ -39,8 +39,8 @@ public class NodeRPCConnection {
         logger.debug("Connecting to node " + host + ":" + port + " with user " + username);
 
          GracefulReconnect gracefulReconnect = new GracefulReconnect(
-            () -> logger.info("on disconnect"), //todo implement
-            () -> logger.info("on reconnect"));
+            () -> logger.debug("on disconnect"), //todo implement
+            () -> logger.debug("on reconnect"));
         rpcConnection = rpcClient.start(username, password, gracefulReconnect);
         logger.debug("connected to node.");
         proxy = rpcConnection.getProxy();
