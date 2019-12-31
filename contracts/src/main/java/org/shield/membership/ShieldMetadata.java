@@ -32,6 +32,13 @@ public class ShieldMetadata  {
 
         public int getValue(){return this.value;}
 
+        public static OrgType parse (String orgType){
+            if (orgType.contentEquals("BOND_PARTICIPANT")) return OrgType.BOND_PARTICIPANT;
+            if (orgType.contentEquals("NETWORK_TREASURER")) return OrgType.NETWORK_TREASURER;
+            if (orgType.contentEquals("CUSTODIAN")) return OrgType.CUSTODIAN;
+            return null;
+        }
+
         public static OrgType getType(int value){
             if (value == 1) return OrgType.BOND_PARTICIPANT;
             if (value == 2) return OrgType.CUSTODIAN;
@@ -39,6 +46,8 @@ public class ShieldMetadata  {
 
             return null;
         }
+
+
     };
 
     /**

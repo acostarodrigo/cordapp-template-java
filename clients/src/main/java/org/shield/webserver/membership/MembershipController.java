@@ -1,5 +1,7 @@
 package org.shield.webserver.membership;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.r3.businessnetworks.membership.flows.bno.ActivateMembershipFlow;
 import com.r3.businessnetworks.membership.flows.bno.SuspendMembershipFlow;
 import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataFlow;
@@ -11,6 +13,7 @@ import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.transactions.SignedTransaction;
+import org.jetbrains.annotations.NotNull;
 import org.shield.membership.ShieldMetadata;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
@@ -21,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -55,14 +59,18 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/request")
-    public ResponseEntity<String> requestMembership(@Valid @RequestBody RequestWrapper body) throws ExecutionException, InterruptedException {
-        // we connect to the passed node
-        generateConnection(body.getUser());
+    public ResponseEntity<String> requestMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        // we parse the user object
+        User user = objectMapper.readValue(body.get("user").toString(),User.class);
+        // and generate the connection
+        generateConnection(user);
 
         CordaX500Name bnoName = CordaX500Name.parse(bnoString);
         Party bno = proxy.wellKnownPartyFromX500Name(bnoName);
 
-        ShieldMetadata metadata = body.getMetadata();
+        MetadataBuilder metadataBuilder = new MetadataBuilder(body.get("metadata"),proxy);
+        ShieldMetadata metadata = metadataBuilder.getMetadata();
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(RequestMembershipFlow.class,bno,metadata).getReturnValue().get();
 
@@ -70,14 +78,18 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/update")
-    public ResponseEntity<String> updateMembership(@Valid @RequestBody RequestWrapper body) throws ExecutionException, InterruptedException {
-        // we connect to the passed node
-        generateConnection(body.getUser());
+    public ResponseEntity<String> updateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        // we parse the user object
+        User user = objectMapper.readValue(body.get("user").toString(),User.class);
+        // and generate the connection
+        generateConnection(user);
 
         CordaX500Name bnoName = CordaX500Name.parse(bnoString);
         Party bno = proxy.wellKnownPartyFromX500Name(bnoName);
 
-        ShieldMetadata metadata = body.getMetadata();
+        MetadataBuilder metadataBuilder = new MetadataBuilder(body.get("metadata"),proxy);
+        ShieldMetadata metadata = metadataBuilder.getMetadata();
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(AmendMembershipMetadataFlow.class,bno,metadata).getReturnValue().get();
 
