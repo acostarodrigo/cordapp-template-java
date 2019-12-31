@@ -97,11 +97,17 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/activate")
-    public ResponseEntity<String> activateMembership(@Valid @RequestBody RequestWrapper2 body) throws ExecutionException, InterruptedException {
-        // we connect to the passed node
-        generateConnection(body.getUser());
+    public ResponseEntity<String> activateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        // we parse the user object
+        User user = objectMapper.readValue(body.get("user").toString(),User.class);
+        // and we get the index
+        int index = body.get("index").asInt();
 
-        StateAndRef<MembershipState> membership = proxy.vaultQuery(MembershipState.class).getStates().get(body.getIndex());
+        // and generate the connection
+        generateConnection(user);
+
+        StateAndRef<MembershipState> membership = proxy.vaultQuery(MembershipState.class).getStates().get(index);
         if (membership == null) throw new InterruptedException("No memberships available to activate");
 
         if (!membership.getState().getData().isPending()) throw new InterruptedException("Provided membership is not in pending state");

@@ -18,6 +18,7 @@ public class SpringTest {
 
     @Test
     public void testSomething() throws Exception {
+        TestHelper.setupNetwork();
         assertNotNull(bondController);
     }
 }

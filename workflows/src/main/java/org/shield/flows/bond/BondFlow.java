@@ -77,6 +77,8 @@ public class BondFlow {
             StateAndRef input = signedTransaction.getCoreTransaction().outRef(0);
             List<PartyAndMembershipMetadata> partyAndMembershipMetadataList = subFlow(new MembershipFlows.GetAllMemberships());
             List<Party> observers = getBuyers(partyAndMembershipMetadataList);
+            // we will remove ourselves from the list.
+            if (observers.contains(issuer)) observers.remove(issuer);
             SignedTransaction updatedObservers = subFlow(new UpdateEvolvableToken(input,bond,observers));
             subFlow(new UpdateDistributionListFlow(updatedObservers));
 
