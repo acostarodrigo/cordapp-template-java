@@ -24,6 +24,7 @@ public class USDFiatTokenFlow {
     }
     @InitiatingFlow
     @StartableByService
+    @StartableByRPC
     public static class Issue extends FlowLogic<SignedTransaction>{
         private Party owner;
         private long amount;

@@ -217,6 +217,7 @@ public class TradeFlow {
     }
 
     @InitiatingFlow
+    @StartableByRPC
     public static class Accept extends FlowLogic<SignedTransaction> {
         private UniqueIdentifier tradeId;
 
