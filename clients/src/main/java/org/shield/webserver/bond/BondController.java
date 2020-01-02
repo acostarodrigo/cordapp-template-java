@@ -3,6 +3,7 @@ package org.shield.webserver.bond;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import net.corda.core.concurrent.CordaFuture;
+import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.messaging.CordaRPCOps;
 import org.jetbrains.annotations.NotNull;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Currency;
 import java.util.Date;
 import java.util.List;
@@ -33,10 +35,17 @@ public class BondController {
     private CordaRPCOps proxy;
 
     @PostMapping("/")
-    public ResponseEntity<String> issueBond (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException, TimeoutException {
+    public ResponseEntity<String> issueBond (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, TimeoutException {
         ObjectMapper objectMapper = new ObjectMapper();
-        User user = objectMapper.readValue(body.get("user").toString(),User.class);
-        BondState bond = objectMapper.readValue(body.get("bond").toString(),BondState.class);
+        User user = null;
+        BondState bond = null;
+        try {
+            user = objectMapper.readValue(body.get("user").toString(),User.class);
+            bond = objectMapper.readValue(body.get("bond").toString(),BondState.class);
+        } catch (IOException e) {
+            return new ResponseEntity<>("Incorrect parameters. Can't parse into user and bond object.", HttpStatus.BAD_REQUEST);
+        }
+
         generateConnection(user);
         bond.setId(new UniqueIdentifier());
         bond.setLinearId(new UniqueIdentifier());
@@ -53,8 +62,19 @@ public class BondController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<BondState>> getBonds(){
+    public ResponseEntity<List<BondState>> getBonds(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
 
-        return null;
+        List<BondState> bondStates = new ArrayList<>();
+        for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
+            bondStates.add(stateAndRef.getState().getData());
+        }
+        return new ResponseEntity<>(bondStates, HttpStatus.OK);
     }
 }
