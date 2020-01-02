@@ -15,10 +15,7 @@ import org.shield.webserver.connection.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -27,14 +24,14 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
-@Controller
-@RequestMapping("/bond")
+@RestController
+@RequestMapping("/bond") // The paths for HTTP requests are relative to this base path.
 public class BondController {
     private Connection connection;
     private ProxyEntry proxyEntry;
     private CordaRPCOps proxy;
 
-    @PostMapping("/")
+    @PostMapping
     public ResponseEntity<String> issueBond (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, TimeoutException {
         ObjectMapper objectMapper = new ObjectMapper();
         User user = null;
@@ -66,7 +63,7 @@ public class BondController {
         proxy = proxyEntry.getProxy();
     }
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<List<String>> getBonds(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {

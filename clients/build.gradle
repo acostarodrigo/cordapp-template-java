@@ -42,7 +42,7 @@ dependencies {
 
     // For testing.
     testCompile "junit:junit:$junit_version"
-    testCompile "$corda_release_group:corda-node-driver:$corda_release_version"
+    compile "$corda_release_group:corda-node-driver:$corda_release_version"
     testCompile "com.r3.businessnetworks:membership-service:2.0"
     testCompile "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
 

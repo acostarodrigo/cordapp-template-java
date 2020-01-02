@@ -21,6 +21,7 @@ import org.shield.webserver.connection.User;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
@@ -32,7 +33,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
 @RestController
-@RequestMapping("/membership") // The paths for HTTP requests are relative to this base path.
+@RequestMapping("/membership")
 public class MembershipController {
     private Connection connection;
     private ProxyEntry proxyEntry;
@@ -40,10 +41,15 @@ public class MembershipController {
     @Value("${bno}")
     private String bnoString;
 
-    @GetMapping(value = "")
-    public ResponseEntity<List<ResponseWrapper>> getMemberships(@Valid @RequestBody User user) throws ExecutionException, InterruptedException {
-        // we connect to the passed node
-        generateConnection(user);
+    @GetMapping
+    public ResponseEntity<List<ResponseWrapper>> getMemberships (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
 
         List<ResponseWrapper> responses = new ArrayList<>();
         int index = 0;

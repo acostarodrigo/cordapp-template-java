@@ -17,10 +17,7 @@ import org.shield.webserver.connection.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -28,7 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-@Controller
+@RestController
 @RequestMapping("/trade")
 public class TradeController {
     private Connection connection;
@@ -41,7 +38,7 @@ public class TradeController {
         proxy = proxyEntry.getProxy();
     }
 
-    @GetMapping("/")
+    @GetMapping
     public ResponseEntity<List<String>> getTrades(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -58,24 +55,28 @@ public class TradeController {
         return new ResponseEntity<>(trades, HttpStatus.OK);
     }
 
-    @PostMapping("/")
-    public ResponseEntity<String> issueTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    @PostMapping("/issue")
+    public ResponseEntity<String> issueTrade(@NotNull @RequestBody JsonNode body) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
-        TradeState trade = null;
+        JsonNode tradeBody = null;
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
-            trade = objectMapper.readValue(body.get("trade").toString(),TradeState.class);
+            tradeBody = body.get("trade");
             generateConnection(user);
         } catch (IOException e) {
             return new ResponseEntity<>("Unable to parse user or trade.", HttpStatus.BAD_REQUEST);
         }
+
+        // we will generate the trade
+        TradeBuilder tradeBuilder = new TradeBuilder(tradeBody, proxy);
+        TradeState trade = tradeBuilder.getTrade();
 
         CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.SendToBuyer.class, trade).getReturnValue();
         SignedTransaction signedTransaction = cordaFuture.get();
         return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
     }
 
-    @PostMapping("/")
+    @PostMapping("/accept")
     public ResponseEntity<String> acceptTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
@@ -92,7 +93,7 @@ public class TradeController {
         return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
     }
 
-    @PostMapping("/")
+    @PostMapping("/cancel")
     public ResponseEntity<String> cancelTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
@@ -109,7 +110,7 @@ public class TradeController {
         return new ResponseEntity<>(tradeId.toString(), HttpStatus.OK);
     }
 
-    @PostMapping("/")
+    @PostMapping("/settle")
     public ResponseEntity<String> settleTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
