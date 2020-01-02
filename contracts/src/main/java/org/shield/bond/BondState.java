@@ -235,4 +235,25 @@ public class BondState extends EvolvableTokenType implements Serializable{
     public int hashCode() {
         return Objects.hash(getId(), getIssuer(), getIssuerName(), getDenomination(), getStartDate(), getCouponFrequency(), getMinDenomination(), getIncrement(), getDealType(), getRedemptionPrice(), getDealSize(), getInitialPrice(), getMaturityDate(), getCouponRate(), getFractionDigits(), getMaintainers(), getLinearId());
     }
+
+    @Override
+    public String toString() {
+        return "BondState{" +
+            "id=" + id +
+            ", issuer=" + issuer +
+            ", issuerName='" + issuerName + '\'' +
+            ", denomination=" + denomination +
+            ", startDate=" + startDate +
+            ", couponFrequency=" + couponFrequency +
+            ", minDenomination=" + minDenomination +
+            ", increment=" + increment +
+            ", dealType=" + dealType +
+            ", redemptionPrice=" + redemptionPrice +
+            ", dealSize=" + dealSize +
+            ", initialPrice=" + initialPrice +
+            ", maturityDate=" + maturityDate +
+            ", couponRate=" + couponRate +
+            ", fractionDigits=" + fractionDigits +
+            '}';
+    }
 }

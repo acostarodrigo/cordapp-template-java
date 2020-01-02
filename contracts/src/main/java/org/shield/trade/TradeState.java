@@ -129,4 +129,22 @@ public class TradeState implements ContractState, Serializable {
     public int hashCode() {
         return Objects.hash(getId(), getBond(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
     }
+
+    @Override
+    public String toString() {
+        return "TradeState{" +
+            "id=" + id +
+            ", bondId=" + bond.getId().toString() +
+            ", tradeDate=" + tradeDate +
+            ", settleDate=" + settleDate +
+            ", buyer=" + buyer +
+            ", seller=" + seller +
+            ", price=" + price +
+            ", yield=" + yield +
+            ", size=" + size +
+            ", proceeds=" + proceeds +
+            ", currency=" + currency +
+            ", state=" + state +
+            '}';
+    }
 }

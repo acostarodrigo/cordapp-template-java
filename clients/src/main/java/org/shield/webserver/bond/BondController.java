@@ -8,7 +8,6 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.messaging.CordaRPCOps;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
-import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
@@ -16,15 +15,16 @@ import org.shield.webserver.connection.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Currency;
-import java.util.Date;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 @Controller
@@ -46,14 +46,19 @@ public class BondController {
             return new ResponseEntity<>("Incorrect parameters. Can't parse into user and bond object.", HttpStatus.BAD_REQUEST);
         }
 
+        // we initiaite the connection
         generateConnection(user);
+
+        // manually defined ids of bond.
         bond.setId(new UniqueIdentifier());
         bond.setLinearId(new UniqueIdentifier());
 
+        // make the call to the node
         CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(BondFlow.Issue.class, bond).getReturnValue();
-        UniqueIdentifier uniqueIdentifier = cordaFuture.get(10, TimeUnit.SECONDS);
+        UniqueIdentifier uniqueIdentifier = cordaFuture.get();
         return new ResponseEntity<>(uniqueIdentifier.toString(), HttpStatus.OK);
     }
+
 
     private void generateConnection(User user){
         connection = new Connection(user);
@@ -62,18 +67,18 @@ public class BondController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<List<BondState>> getBonds(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<List<String>> getBonds(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(Arrays.asList("Unable to parse user to stablish connection."), HttpStatus.BAD_REQUEST);
         }
 
-        List<BondState> bondStates = new ArrayList<>();
+        List<String> bondStates = new ArrayList<>();
         for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
-            bondStates.add(stateAndRef.getState().getData());
+            bondStates.add(stateAndRef.getState().getData().toString());
         }
         return new ResponseEntity<>(bondStates, HttpStatus.OK);
     }
