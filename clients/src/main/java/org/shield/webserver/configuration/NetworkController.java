@@ -3,6 +3,7 @@ package org.shield.webserver.configuration;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.NetworkParameters;
 import net.corda.core.node.NodeInfo;
+
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;

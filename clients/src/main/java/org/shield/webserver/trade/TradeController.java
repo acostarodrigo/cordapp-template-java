@@ -82,7 +82,7 @@ public class TradeController {
         UniqueIdentifier tradeId = null;
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
-            tradeId = objectMapper.readValue(body.get("tradeId").toString(),UniqueIdentifier.class);
+            tradeId = UniqueIdentifier.Companion.fromString(body.get("tradeId").asText());
             generateConnection(user);
         } catch (IOException e) {
             return new ResponseEntity<>("Unable to parse user or tradeId.", HttpStatus.BAD_REQUEST);
