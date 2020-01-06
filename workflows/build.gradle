@@ -62,6 +62,10 @@ dependencies {
     // CorDapp dependencies.
     cordapp project(":contracts")
 
+    // Accounts
+    cordaCompile "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+    cordaCompile "$accounts_release_group:accounts-workflows:$accounts_release_version"
+
     // Token SDK dependencies.
     cordaCompile "$tokens_release_group:tokens-money:$tokens_release_version"
     cordaCompile "$tokens_release_group:tokens-workflows:$tokens_release_version"

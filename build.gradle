@@ -2,6 +2,12 @@ buildscript {
     ext {
         corda_release_group = 'net.corda'
         corda_release_version = '4.1'
+        // accounts
+        accounts_release_version = '1.0'
+        accounts_release_group = 'com.r3.corda.lib.accounts'
+        confidential_id_release_group = "com.r3.corda.lib.ci"
+        confidential_id_release_version = "1.0"
+
         tokens_release_group = 'com.r3.corda.lib.tokens'
         tokens_release_version = '1.0'
         corda_gradle_plugins_version = '4.0.42'
@@ -19,6 +25,10 @@ buildscript {
         mavenCentral()
         jcenter()
         maven { url 'https://ci-artifactory.corda.r3cev.com/artifactory/corda' }
+
+        // accounts
+        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib-dev' }
+        maven { url 'http://ci-artifactory.corda.r3cev.com/artifactory/corda-lib' }
     }
 
     dependencies {
@@ -104,6 +114,11 @@ dependencies {
     cordapp "com.r3.businessnetworks:membership-service:2.0"
     cordapp "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"
 
+    // account
+    cordapp "$confidential_id_release_group:ci-workflows:$confidential_id_release_version"
+    cordapp "$accounts_release_group:accounts-contracts:$accounts_release_version"
+    cordapp "$accounts_release_group:accounts-workflows:$accounts_release_version"
+
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
@@ -116,6 +131,9 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         cordapp("$tokens_release_group:tokens-money:$tokens_release_version")
         cordapp project(':contracts')
         cordapp project(':workflows')
+        cordapp("$confidential_id_release_group:ci-workflows:$confidential_id_release_version")
+        cordapp("$accounts_release_group:accounts-contracts:$accounts_release_version")
+        cordapp("$accounts_release_group:accounts-workflows:$accounts_release_version")
     }
     node {
         name "O=Notary,L=London,C=GB"
