@@ -19,7 +19,7 @@ import java.util.*;
 public class BondState extends EvolvableTokenType implements Serializable{
     private UniqueIdentifier id;
     private Party issuer;
-    private String issuerName;
+    private String issuerTicker;
     private Currency denomination;
     private Date startDate;
     private int couponFrequency;
@@ -44,9 +44,9 @@ public class BondState extends EvolvableTokenType implements Serializable{
     }
 
 
-    public BondState(String issuerName, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
+    public BondState(String issuerTicker, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
         this.id = new UniqueIdentifier();
-        this.issuerName = issuerName;
+        this.issuerTicker = issuerTicker;
         this.denomination = denomination;
         this.startDate = startDate;
         this.couponFrequency = couponFrequency;
@@ -81,12 +81,12 @@ public class BondState extends EvolvableTokenType implements Serializable{
         this.issuer = issuer;
     }
 
-    public String getIssuerName() {
-        return issuerName;
+    public String getIssuerTicker() {
+        return issuerTicker;
     }
 
-    public void setIssuerName(String issuerName) {
-        this.issuerName = issuerName;
+    public void setIssuerTicker(String issuerTicker) {
+        this.issuerTicker = issuerTicker;
     }
 
     public Currency getDenomination() {
@@ -222,7 +222,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
             getFractionDigits() == bondState.getFractionDigits() &&
             Objects.equals(getId(), bondState.getId()) &&
             Objects.equals(getIssuer(), bondState.getIssuer()) &&
-            Objects.equals(getIssuerName(), bondState.getIssuerName()) &&
+            Objects.equals(getIssuerTicker(), bondState.getIssuerTicker()) &&
             Objects.equals(getDenomination(), bondState.getDenomination()) &&
             Objects.equals(getStartDate(), bondState.getStartDate()) &&
             getDealType() == bondState.getDealType() &&
@@ -233,7 +233,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getIssuer(), getIssuerName(), getDenomination(), getStartDate(), getCouponFrequency(), getMinDenomination(), getIncrement(), getDealType(), getRedemptionPrice(), getDealSize(), getInitialPrice(), getMaturityDate(), getCouponRate(), getFractionDigits(), getMaintainers(), getLinearId());
+        return Objects.hash(getId(), getIssuer(), getIssuerTicker(), getDenomination(), getStartDate(), getCouponFrequency(), getMinDenomination(), getIncrement(), getDealType(), getRedemptionPrice(), getDealSize(), getInitialPrice(), getMaturityDate(), getCouponRate(), getFractionDigits(), getMaintainers(), getLinearId());
     }
 
     @Override
@@ -241,7 +241,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
         return "BondState{" +
             "id=" + id +
             ", issuer=" + issuer +
-            ", issuerName='" + issuerName + '\'' +
+            ", issuerTicker='" + issuerTicker + '\'' +
             ", denomination=" + denomination +
             ", startDate=" + startDate +
             ", couponFrequency=" + couponFrequency +
