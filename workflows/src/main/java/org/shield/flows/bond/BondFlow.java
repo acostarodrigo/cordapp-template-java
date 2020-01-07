@@ -12,6 +12,7 @@ import com.r3.corda.lib.tokens.workflows.flows.rpc.MoveFungibleTokens;
 import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
 import com.r3.corda.lib.tokens.workflows.internal.flows.distribution.UpdateDistributionListFlow;
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount;
+import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.TransactionState;
@@ -71,18 +72,56 @@ public class BondFlow {
             FungibleToken fungibleToken = new FungibleToken(amount,bond.getIssuer(), null);
             // bond is issued
             subFlow(new IssueTokens(Arrays.asList(fungibleToken)));
+            return bond.getId();
+        }
+    }
+
+
+    /**
+     * sets the Available For Sale state of the bonds.
+     */
+    @StartableByRPC
+    @InitiatingFlow
+    public static class setAFS extends FlowLogic<SignedTransaction>{
+        private UniqueIdentifier bondId;
+        private boolean afs;
+
+        public setAFS(UniqueIdentifier bondId, boolean afs) {
+            this.bondId = bondId;
+            this.afs = afs;
+        }
+
+        @Override
+        public SignedTransaction call() throws FlowException {
+            // we must have the bond in our vault
+            StateAndRef<BondState> input = null;
+            BondState bond = null;
+            for (StateAndRef<BondState> stateAndRef : getServiceHub().getVaultService().queryBy(BondState.class).getStates()){
+                if (stateAndRef.getState().getData().getId().equals(bondId)){
+                    input = stateAndRef;
+                    bond = stateAndRef.getState().getData();
+                    break;
+                }
+            }
+
+            if (input == null || bond == null) throw new FlowException(String.format("Specified bond %s doesn't exists.", bondId.toString()));
+
+            // we must have token balance of this bond too
+            TokenPointer tokenPointer = bond.toPointer(bond.getClass());
+            Amount balance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(), tokenPointer);
+
+            if (balance.getQuantity() == 0 && afs == true) throw new FlowException(String.format("You don't have balance to set bond %s Available for Sale.", bondId.toString()));
+
 
             // we will add all buyers of the business network as observers
             // With this we are allowing any buyer to see issued bonds.
-            StateAndRef input = signedTransaction.getCoreTransaction().outRef(0);
             List<PartyAndMembershipMetadata> partyAndMembershipMetadataList = subFlow(new MembershipFlows.GetAllMemberships());
             List<Party> observers = getBuyers(partyAndMembershipMetadataList);
             // we will remove ourselves from the list.
-            if (observers.contains(issuer)) observers.remove(issuer);
+            if (observers.contains(bond.getIssuer())) observers.remove(bond.getIssuer());
             SignedTransaction updatedObservers = subFlow(new UpdateEvolvableToken(input,bond,observers));
             subFlow(new UpdateDistributionListFlow(updatedObservers));
-
-            return bond.getId();
+            return updatedObservers;
         }
     }
 
