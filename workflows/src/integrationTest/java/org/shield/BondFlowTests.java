@@ -132,14 +132,24 @@ public class BondFlowTests {
 
         // issue bond 1
         issueBondTest();
+        CordaFuture issueFuture = issuerNode.startFlow(new BondFlow.setAFS(bond.getId(), true));
+        mockNet.runNetwork();
+        issueFuture.get();
 
         //issue bond 2
         BondState bond2 = new BondState("Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
 
         // we issue the bond
-        CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond2));
+        issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond2));
         mockNet.runNetwork();
-        UniqueIdentifier uniqueIdentifier = issueFuture.get();
+
+        issueFuture.get();
+
+        issueFuture = issuerNode.startFlow(new BondFlow.setAFS(bond2.getId(), true));
+        mockNet.runNetwork();
+        issueFuture.get();
+
+
 
         // Broker1 as buyer, should be able to see both of them from his node.
         assertEquals(bond,broker1Node.getServices().getVaultService().queryBy(BondState.class).getStates().get(0).getState().getData());

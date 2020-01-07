@@ -92,6 +92,7 @@ public class BondFlow {
         }
 
         @Override
+        @Suspendable
         public SignedTransaction call() throws FlowException {
             // we must have the bond in our vault
             StateAndRef<BondState> input = null;
