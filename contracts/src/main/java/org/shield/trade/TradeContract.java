@@ -18,23 +18,25 @@ public class TradeContract implements Contract {
     @Override
     public void verify(LedgerTransaction tx) {
         for (CommandWithParties<CommandData> command : tx.getCommands()){
-            if (command.getValue() instanceof Commands.sendToBuyer){
+            if (command.getValue() instanceof Commands.Proposed){
 
-            } else if (command.getValue() instanceof Commands.accept){
+            } else if (command.getValue() instanceof Commands.Pending){
 
-            } else if (command.getValue() instanceof Commands.settle){
+            } else if (command.getValue() instanceof Commands.Settled){
+
+            } else if (command.getValue() instanceof Commands.Cancelled){
 
             }
+
         }
 
     }
 
     // Used to indicate the transaction's intent.
     public interface Commands extends CommandData {
-        class sendToBuyer implements Commands {}
-        class accept implements Commands {}
-        class settle implements Commands{}
-        class cancel implements Commands {}
-        class issue implements Commands {}
+        class Proposed implements Commands {}
+        class Pending implements Commands {}
+        class Settled implements Commands{}
+        class Cancelled implements Commands {}
     }
 }

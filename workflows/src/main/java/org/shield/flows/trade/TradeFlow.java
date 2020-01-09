@@ -3,12 +3,11 @@ package org.shield.flows.trade;
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
-import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.contracts.types.TokenType;
 import com.r3.corda.lib.tokens.money.FiatCurrency;
 import com.r3.corda.lib.tokens.workflows.flows.move.MoveTokensUtilitiesKt;
-import com.r3.corda.lib.tokens.workflows.flows.rpc.UpdateEvolvableToken;
+import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.Exception;
 import com.r3.corda.lib.tokens.workflows.internal.flows.distribution.UpdateDistributionListFlow;
 import com.r3.corda.lib.tokens.workflows.internal.selection.TokenSelection;
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount;
@@ -20,21 +19,28 @@ import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
-import net.corda.core.utilities.UntrustworthyData;
+import net.corda.core.utilities.ProgressTracker;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.shield.bond.BondState;
 import org.shield.flows.membership.MembershipFlows;
+import org.shield.flows.offer.OfferFlow;
+import org.shield.offer.OfferContract;
+import org.shield.offer.OfferState;
 import org.shield.trade.State;
 import org.shield.trade.TradeContract;
 import org.shield.trade.TradeState;
 
 import java.security.PublicKey;
 import java.util.Arrays;
-import java.util.Currency;
 import java.util.List;
+
+import static com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt.tokenBalance;
 
 public class TradeFlow {
     // we are disabling instantiation
@@ -42,80 +48,96 @@ public class TradeFlow {
 
     @StartableByRPC
     @InitiatingFlow
-    public static class SendToBuyer extends FlowLogic<SignedTransaction>{
+    public static class Create extends FlowLogic<UniqueIdentifier>{
         private TradeState trade;
 
         /**
          * Constructor
           * @param trade the trade we are sending.
          */
-        public SendToBuyer(TradeState trade) {
+        public Create(TradeState trade) {
             this.trade = trade;
         }
 
+        // progress tracker steps
+        private static ProgressTracker.Step VALIDATE_OFFER = new ProgressTracker.Step("Validating offer of the trade.");
+        private static ProgressTracker.Step VALIDATE_TRADE = new ProgressTracker.Step("Validating values of the trade.");
+        private static ProgressTracker.Step TX_SIGNATURE = new ProgressTracker.Step("Signing and collecting signature from seller."){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return CollectSignaturesFlow.tracker();
+            }
+        };
+        private static ProgressTracker.Step FINISH = new ProgressTracker.Step("Finishing"){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return FinalityFlow.tracker();
+            }
+        };
+
+        public static final ProgressTracker progressTracker = new ProgressTracker(VALIDATE_OFFER, VALIDATE_TRADE, TX_SIGNATURE, FINISH);
+
         @Override
         @Suspendable
-        public SignedTransaction call() throws FlowException {
+        public UniqueIdentifier call() throws FlowException {
             // we validate the caller is an issuer
-            if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only an active issuer can send a trade to a buyer");
+            if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Only an active user can create a trade");
 
-            // we validate the buyer of the trade is a buyer organization
-            if (!subFlow(new MembershipFlows.isBuyer(trade.getBuyer()))) throw new FlowException(String.format("%s is not an active buyer organization", trade.getBuyer().getName().getCommonName()));
+            // we validate caller is the buyer
+            Party buyer = getOurIdentity();
+            if (!trade.getBuyer().equals(buyer)) throw new FlowException("Trade creator is not the trade buyer");
 
-            // we validate the bond to be traded is already issued.
-            BondState bond = null;
-            StateAndRef<BondState> bondStateStateAndRef = null;
-            for (StateAndRef<BondState> stateAndRef : getServiceHub().getVaultService().queryBy(BondState.class).getStates()){
-                if (stateAndRef.getState().getData().equals(trade.getBond())){
-                    bondStateStateAndRef = stateAndRef;
-                    bond = stateAndRef.getState().getData();
+            // we validate the offer included in the trade exists.
+            progressTracker.setCurrentStep(VALIDATE_OFFER);
+            boolean isOfferValid = false;
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
+                if (stateAndRef.getState().getData().equals(trade.getOffer())) {
+                    isOfferValid = true;
                     break;
                 }
             }
-            if (bondStateStateAndRef == null || bond == null) throw new FlowException(String.format("Specified bond %s does not exists.", this.trade.getBond().getId().toString()));
+            if (!isOfferValid) throw new FlowException(String.format("Provided offer %s in trade is not valid.", trade.getOffer().getOfferId().toString()));
 
-            // caller must be issuer of the bond
+            // we validate data of the trade
+            progressTracker.setCurrentStep(VALIDATE_TRADE);
+            trade.setState(State.PROPOSED);
+            if (trade.getId() == null) trade.setId(new UniqueIdentifier());
+            if (trade.getSize() > trade.getOffer().getAfsSize())
+                throw new FlowException(String.format("Trade size is incorrect. AFS is %s while trade size is %s",String.valueOf(trade.getOffer().getAfsSize()),String.valueOf(trade.getSize())));
             Party caller = getOurIdentity();
-            if (!caller.equals(bond.getIssuer())) throw new FlowException(String.format("Seller (%s) must be issuer (%s) of the bond.", caller.getName().getCommonName(), bond.getIssuer().getName().getCommonName() ));
 
-            // we validate issuer has enought balance
-            TokenPointer tokenPointer = bond.toPointer(bond.getClass());
-            Amount currentBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(), tokenPointer);
-            if (currentBalance.getQuantity()<trade.getSize()) throw new FlowException(String.format("Issuer doesn't have enought balance for this trade. Current balance is %s",String.valueOf(currentBalance.getQuantity())));
+            // Buyer must be the calling identity
+            if (!caller.equals(trade.getBuyer())) throw new FlowException("Buyer of the trade must be the caller to create one.");
 
-            // we are good to go. let's generate the transaction
+            // we create the transaction
+            progressTracker.setCurrentStep(TX_SIGNATURE);
+            List<PublicKey> signers = ImmutableList.of(trade.getBuyer().getOwningKey(),trade.getSeller().getOwningKey());
+            Command command = new Command<>(new TradeContract.Commands.Proposed(), signers);
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            List<PublicKey> requiredSigners = Arrays.asList(trade.getSeller().getOwningKey(), trade.getBuyer().getOwningKey());
-            Command command = new Command<>(new TradeContract.Commands.sendToBuyer(), requiredSigners);
-
-
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addCommand(command)
-                .addOutputState(trade, TradeContract.ID);
+                .addOutputState(trade, TradeContract.ID)
+                .addCommand(command);
 
-            // we sign it
+            // we are ready to sign and collect signatures
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
+            FlowSession sellerSession = initiateFlow(trade.getSeller());
+            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallySignedTx, Arrays.asList(sellerSession),progressTracker));
 
-            // we add the buyer as an observer, and send it to him.
-            subFlow(new UpdateEvolvableToken(bondStateStateAndRef, bond,ImmutableList.of(trade.getBuyer())));
-            subFlow(new UpdateDistributionListFlow(partiallySignedTx));
-
-            // collect signature from the buyer. he will validate trade and bond are accurate.
-            FlowSession buyerSession = initiateFlow(trade.getBuyer());
-            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallySignedTx, Arrays.asList(buyerSession)));
-
-            // we are done.
-            subFlow(new FinalityFlow(signedTransaction,buyerSession));
-
-            return signedTransaction;
+            // we complete it.
+            progressTracker.setCurrentStep(FINISH);
+            subFlow(new FinalityFlow(signedTransaction,Arrays.asList(sellerSession),progressTracker));
+            return trade.getId();
         }
     }
 
-    @InitiatedBy(SendToBuyer.class)
-    public static class SendToBuyerResponse extends FlowLogic<Void> {
+    @InitiatedBy(Create.class)
+    public static class CreateResponse extends FlowLogic<Void> {
         private FlowSession callerSession;
 
-        public SendToBuyerResponse(FlowSession callerSession) {
+        public CreateResponse(FlowSession callerSession) {
             this.callerSession = callerSession;
         }
 
@@ -127,20 +149,27 @@ public class TradeFlow {
                 @Override
                 protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
                     TradeState trade = (TradeState) stx.getCoreTransaction().outRef(0).getState().getData();
-                    // we validate trade is send from an Issuer organization
-                    if (!subFlow(new MembershipFlows.isIssuer(trade.getSeller()))) throw new FlowException(String.format("Trade seller (%s) is not an Issuer organization", trade.getSeller().getName().getCommonName()));
 
+                    // we validate the buyer of the trade is who is requesting the signing
+                    if (!trade.getBuyer().equals(callerSession.getCounterparty())) throw new FlowException();
 
-                    // we must have the bond as an observer
-                    BondState storedBond = null;
-                    for (StateAndRef<BondState> stateAndRef : getServiceHub().getVaultService().queryBy(BondState.class).getStates()){
-                        if (stateAndRef.getState().getData().equals(trade.getBond())) {
-                            storedBond = stateAndRef.getState().getData();
+                    // we validate trade is sent from a buyer organization
+                    if (!subFlow(new MembershipFlows.isBuyer(trade.getBuyer()))) throw new FlowException(String.format("Trade buyer (%s) is not an active Buyer organization", trade.getBuyer().getName().getCommonName()));
+
+                    // we must be the owners of the offer included in the trade
+                    OfferState offer = trade.getOffer();
+                    if (!offer.getIssuer().equals(getOurIdentity())) throw new FlowException("We are not the issuers of the Offer provided in the trade. Can't sign");
+
+                    // offer in transaction must be valid at the time of signature. Since buyer is just an observer, our offer is the only valid one.
+                    QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+                    boolean isOfferValid = false;
+                    for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class,criteria).getStates()){
+                        if (stateAndRef.getState().getData().equals(offer)){
+                            isOfferValid = true;
                             break;
                         }
-
                     }
-                    if (storedBond == null) throw new FlowException(String.format("Bond %s is not locally stored. We are not observers.", trade.getBond().getId().toString()));
+                    if (!isOfferValid) throw new FlowException("Provided offer in trade is no longer valid. Can't sign.");
                 }
             });
 
@@ -154,21 +183,42 @@ public class TradeFlow {
     public static class Cancel extends FlowLogic<Void>{
         private UniqueIdentifier tradeId;
 
+        // constructor
         public Cancel(UniqueIdentifier tradeId) {
             this.tradeId = tradeId;
         }
+
+        // progress tracker steps
+        private static ProgressTracker.Step VALIDATE_TRADE = new ProgressTracker.Step("Validating values of the trade.");
+        private static ProgressTracker.Step TX_SIGNATURE = new ProgressTracker.Step("Signing and collecting signature from seller."){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return CollectSignaturesFlow.tracker();
+            }
+        };
+        private static ProgressTracker.Step FINISH = new ProgressTracker.Step("Finishing"){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return FinalityFlow.tracker();
+            }
+        };
+
+        public static final ProgressTracker progressTracker = new ProgressTracker(VALIDATE_TRADE, TX_SIGNATURE, FINISH);
 
         @Override
         @Suspendable
         public Void call() throws FlowException {
             // check permissions.
-            if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Only an active Buyer organization can cancell a trade.");
+            if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Only an active Seller organization can cancel a trade.");
 
             // get the state
+            progressTracker.setCurrentStep(VALIDATE_TRADE);
             StateAndRef<TradeState> tradeStateStateAndRef = null;
             TradeState trade = null;
-
-            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class, criteria).getStates()){
                 if (stateAndRef.getState().getData().getId().equals(this.tradeId)){
                     tradeStateStateAndRef = stateAndRef;
                     trade = stateAndRef.getState().getData();
@@ -178,11 +228,19 @@ public class TradeFlow {
             // lets make sure the trade we are cancelling exists.
             if (tradeStateStateAndRef == null || trade == null) throw new FlowException(String.format("Specified trade %s does not exists.", this.tradeId.toString()));
 
+            // we can cacel only trades if we are the seller
+            Party caller = getOurIdentity();
+            if (!caller.equals(trade.getSeller())) throw new FlowException("Can cancel a trade if we are not the seller party");
+
+            // trade must be in Proposed state.
+            if (!trade.getState().equals(State.PROPOSED)) throw new FlowException(String.format("Can cancel a state not in Proposed state. Current state is %s", trade.getState().toString()));
 
             // we are ready to cancel it.
+            progressTracker.setCurrentStep(TX_SIGNATURE);
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            List<PublicKey> requiredSigners = Arrays.asList(trade.getBuyer().getOwningKey());
-            Command command = new Command<>(new TradeContract.Commands.cancel(), requiredSigners);
+            // we require signatures from both buyer and seller
+            List<PublicKey> requiredSigners = Arrays.asList(caller.getOwningKey(),trade.getBuyer().getOwningKey());
+            Command command = new Command<>(new TradeContract.Commands.Cancelled(), requiredSigners);
 
             trade.setState(State.CANCELLED);
 
@@ -191,10 +249,13 @@ public class TradeFlow {
                 .addOutputState(trade, TradeContract.ID)
                 .addCommand(command);
 
-            SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
+            // we collect signature from the buyer
+            SignedTransaction partiallysignedTx = getServiceHub().signInitialTransaction(txBuilder);
+            FlowSession buyerSession = initiateFlow(trade.getBuyer());
+            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTx, Arrays.asList(buyerSession), progressTracker));
 
-            FlowSession sellerSession = initiateFlow(trade.getSeller());
-            subFlow(new FinalityFlow(signedTx,sellerSession));
+            progressTracker.setCurrentStep(FINISH);
+            subFlow(new FinalityFlow(signedTransaction,Arrays.asList(buyerSession),progressTracker));
 
             return null;
         }
@@ -211,6 +272,16 @@ public class TradeFlow {
         @Override
         @Suspendable
         public Void call() throws FlowException {
+            subFlow(new SignTransactionFlow(this.callerSession) {
+                @Override
+                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
+                    // we get the trade being cancelled
+                    TradeState trade = (TradeState) stx.getCoreTransaction().getOutput(0);
+
+                    // we make sure cancellation comes from the seller of the trade
+                    if (!callerSession.getCounterparty().equals(trade.getSeller())) throw new FlowException(String.format("Cancellation of trade is not from the correct Seller. %s", callerSession.getCounterparty().toString()));
+                }
+            });
             subFlow(new ReceiveFinalityFlow(callerSession));
             return null;
         }
@@ -221,20 +292,50 @@ public class TradeFlow {
     public static class Accept extends FlowLogic<SignedTransaction> {
         private UniqueIdentifier tradeId;
 
+        // constructor
         public Accept(UniqueIdentifier tradeId) {
             this.tradeId = tradeId;
         }
 
+        // progress tracker steps
+        private static ProgressTracker.Step VALIDATE_TRADE = new ProgressTracker.Step("Validating values of the trade.");
+        private static ProgressTracker.Step VALIDATE_OFFER = new ProgressTracker.Step("Validating offer provided in the trade.");
+        private static ProgressTracker.Step TX_SIGNATURE = new ProgressTracker.Step("Signing and collecting signature from participants."){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return CollectSignaturesFlow.tracker();
+            }
+        };
+        private static ProgressTracker.Step FINISH = new ProgressTracker.Step("Finishing"){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return FinalityFlow.tracker();
+            }
+        };
+        private static ProgressTracker.Step NOTIFY_BUYERS = new ProgressTracker.Step("Notifying buyers of changed offer"){
+            @Nullable
+            @Override
+            public ProgressTracker childProgressTracker() {
+                return OfferFlow.NotifyBuyers.progressTracker;
+            }
+        };
+
+        public static final ProgressTracker progressTracker = new ProgressTracker(VALIDATE_TRADE, VALIDATE_OFFER, TX_SIGNATURE, FINISH, NOTIFY_BUYERS);
+
         @Override
         @Suspendable
         public SignedTransaction call() throws FlowException {
-            // lets make sure is a buyer.
-            if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Must be a valid Buyer organization to accept trade.");
+            // lets make sure is a seller.
+            if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Must be a valid Seller organization to accept trade.");
 
+            progressTracker.setCurrentStep(VALIDATE_TRADE);
             // we must have the trade already in order to accept it.
             StateAndRef<TradeState> tradeStateStateAndRef = null;
             TradeState trade = null;
-            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class, criteria).getStates()){
                 if (stateAndRef.getState().getData().getId().equals(this.tradeId)){
                     tradeStateStateAndRef = stateAndRef;
                     trade = stateAndRef.getState().getData();
@@ -244,44 +345,56 @@ public class TradeFlow {
             // lets make sure the trade to accept exists.
             if (tradeStateStateAndRef == null || trade == null) throw new FlowException(String.format("Specified trade %s does not exists.", this.tradeId.toString()));
 
+            // trade must include last Offer State
+            progressTracker.setCurrentStep(VALIDATE_OFFER);
+            StateAndRef<OfferState> offerStateStateAndRef = null;
+            OfferState offer = null;
+            for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
+                if (stateAndRef.getState().getData().equals(trade.getOffer())){
+                    offerStateStateAndRef = stateAndRef;
+                    offer = stateAndRef.getState().getData();
+                }
+            }
+            if (offer == null || offerStateStateAndRef == null) throw new FlowException("Provided offer in trade is not valid.");
+
+            // caller must be the issuer of the trade
+            Party caller = getOurIdentity();
+            if (!caller.equals(offer.getIssuer())) throw new FlowException("Caller is not the issuer of the provided trade. Can't accept.");
+            // and also the seller of the trade
+            if (!caller.equals(trade.getSeller())) throw new FlowException("Caller is not the seller of the trade. Can't accept");
+            // trade must be in Proposed state
+            if (!trade.getState().equals(State.PROPOSED)) throw new FlowException(String.format("Trade is not in Proposed state. Current state is %s", trade.getState().toString()));
+
             // we are ready to accept it.
+            progressTracker.setCurrentStep(TX_SIGNATURE);
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             List<PublicKey> requiredSigners = Arrays.asList(trade.getBuyer().getOwningKey(), trade.getSeller().getOwningKey());
 
-            // for now, we are only accepting
-            Command command = new Command<>(new TradeContract.Commands.accept(), requiredSigners);
-            trade.setState(State.ACCEPTED_NOTPAYED);
+            Command command = new Command<>(new TradeContract.Commands.Pending(), requiredSigners);
+            trade.setState(State.PENDING);
+
+            long currentAfsSize = offer.getAfsSize();
+            offer.setAfsSize(currentAfsSize-trade.getSize());
 
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(tradeStateStateAndRef)
+                .addInputState(offerStateStateAndRef)
+                .addOutputState(trade, TradeContract.ID)
+                .addOutputState(offer, OfferContract.ID)
                 .addCommand(command);
 
-            // lets validate if we have enought fiat token to pay
-            TokenType fiat = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
-            Amount tokenBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(), fiat);
-            boolean hasBalance = false;
-            if (tokenBalance.getQuantity()>= trade.getSize()){
-                hasBalance = true;
-            }
-
-            FlowSession sellerSession = initiateFlow(trade.getSeller());
-
-            if (hasBalance) {
-                txBuilder = subFlow(new GenerateSettleTx(trade,txBuilder));
-                trade.setState(State.ACCEPTED_PAYED);
-            } else{
-                trade.setState(State.ACCEPTED_NOTPAYED);
-            }
-
-            // we add the trade with the current status
-            txBuilder.addOutputState(trade, TradeContract.ID);
-            // we sign the transaction
+            // lets collect signatures
+            FlowSession buyerSession = initiateFlow(trade.getBuyer());
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
-            // we get the signature of the seller to validate bond outputs.
-            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx, ImmutableList.of(sellerSession)));
+            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx, ImmutableList.of(buyerSession)));
 
-            //end
-            subFlow(new FinalityFlow(fullySignedTx,sellerSession));
+
+            progressTracker.setCurrentStep(FINISH);
+            subFlow(new FinalityFlow(fullySignedTx,buyerSession));
+
+            // now we will notify all buyers about the new offer status
+            progressTracker.setCurrentStep(NOTIFY_BUYERS);
+            subFlow(new OfferFlow.NotifyBuyers(offerStateStateAndRef, offer));
 
             return fullySignedTx;
         }
@@ -298,15 +411,28 @@ public class TradeFlow {
         @Override
         @Suspendable
         public Void call() throws FlowException {
-            // trade is just being accepted, we will not execute fiat token validations
+            // trade is just being accepted, we will validate transaction
             subFlow(new SignTransactionFlow(callingSession) {
                 @Override
                 protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                    // Custom Logic to validate transaction.
+                    // trade seller and offer issuer must be from the caller
+                    TradeState trade = (TradeState) stx.getCoreTransaction().getOutput(0);
+                    OfferState offer = (OfferState) stx.getCoreTransaction().getOutput(1);
+                    if (!trade.getSeller().equals(callingSession.getCounterparty())) throw new FlowException("Can't accept trade. Caller is not the seller.");
+                    if (!offer.getIssuer().equals(callingSession.getCounterparty())) throw new FlowException("Can't accept trade. Caller is not the issuer of the offer");
                 }
             });
 
-            subFlow(new ReceiveFinalityFlow(callingSession));
+            SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callingSession));
+            TradeState trade = (TradeState) signedTransaction.getCoreTransaction().getOutput(0);
+            // now we will try to pay for it. Lets see if we have the money
+            TokenType fiatCurrency = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
+            Amount fiatBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(), fiatCurrency);
+
+            // we are ready to pay for it.
+            if (fiatBalance.getQuantity() >= trade.getSize()){
+                subFlow(new Settle(trade.getId()));
+            }
             return null;
         }
     }
@@ -371,7 +497,8 @@ public class TradeFlow {
             // trade must exists
             VaultService vaultService = getServiceHub().getVaultService();
             StateAndRef<TradeState> input = null;
-            for (StateAndRef<TradeState> stateAndRef : vaultService.queryBy(TradeState.class).getStates()){
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<TradeState> stateAndRef : vaultService.queryBy(TradeState.class, criteria).getStates()){
                 if (stateAndRef.getState().getData().getId().equals(trade.getId())) {
                     input = stateAndRef;
                     break;
@@ -381,15 +508,15 @@ public class TradeFlow {
             if (input==null) throw new FlowException(String.format("Specified trade %s does not exists.", trade.getId().toString()));
 
             // trade must be in accepted status
-            if (!trade.getState().equals(State.ACCEPTED_NOTPAYED)) throw new FlowException(String.format("Trade is not in Accepted status. Current status is %s", trade.getState()));
+            if (!trade.getState().equals(State.PENDING)) throw new FlowException(String.format("Trade is not in Accepted status. Current status is %s", trade.getState()));
 
             // lets validate we have the balance to pay
             TokenType fiatToken = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
-            if (QueryUtilitiesKt.tokenBalance(vaultService,fiatToken).getQuantity() < trade.getSize()) throw new FlowException("Not enought fiat balance to settle trade.");
+            if (tokenBalance(vaultService,fiatToken).getQuantity() < trade.getSize()) throw new FlowException("Not enought fiat balance to settle trade.");
 
             List<PublicKey> requiredSigners = ImmutableList.of(trade.getBuyer().getOwningKey(), trade.getSeller().getOwningKey());
             // and we add the settle command to perform validations on the contract.
-            Command settle = new Command<>(new TradeContract.Commands.settle(), requiredSigners);
+            Command settle = new Command<>(new TradeContract.Commands.Settled(), requiredSigners);
             txBuilder.addCommand(settle);
 
             Amount fiatAmount = new Amount(trade.getSize(),fiatToken);
@@ -426,7 +553,8 @@ public class TradeFlow {
 
             TradeState trade = null;
             StateAndRef<TradeState> input = null;
-            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class).getStates()){
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class, criteria).getStates()){
                 if (stateAndRef.getState().getData().getId().equals(tradeId)){
                     input = stateAndRef;
                     trade = input.getState().getData();
@@ -437,12 +565,16 @@ public class TradeFlow {
             if (input == null || trade == null)  throw new FlowException(String.format("Trade with id %s was not found on this node.", tradeId.toString()));
 
             // trade must be accepted and not payed yet.
-            if (trade.getState() != State.ACCEPTED_NOTPAYED) throw new FlowException(String.format("Trade must be in Accepted_NotPayed state to settle. current state is %s", trade.getState().toString()));
+            if (!trade.getState().equals(State.PENDING)) throw new FlowException(String.format("Trade must be in Accepted_NotPayed state to settle. current state is %s", trade.getState().toString()));
+
+            // we must be the owners of the buyers of the trade
+            Party caller = getOurIdentity();
+            if (!trade.getBuyer().equals(caller)) throw new FlowException("Caller is not the owner of the trade we are trying to settle.");
 
             // we are good to go. let's generate the transaction
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            List<PublicKey> requiredSigners = Arrays.asList(trade.getSeller().getOwningKey(), trade.getBuyer().getOwningKey());
-            Command command = new Command<>(new TradeContract.Commands.settle(), requiredSigners);
+            List<PublicKey> requiredSigners = Arrays.asList(trade.getSeller().getOwningKey(), caller.getOwningKey());
+            Command command = new Command<>(new TradeContract.Commands.Settled(), requiredSigners);
 
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(input)
@@ -452,7 +584,7 @@ public class TradeFlow {
             txBuilder = subFlow(new GenerateSettleTx(trade, txBuilder));
 
             // and add the trade as output.
-            trade.setState(State.ACCEPTED_PAYED);
+            trade.setState(State.SETTLED);
             txBuilder.addOutputState(trade, TradeContract.ID);
 
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
