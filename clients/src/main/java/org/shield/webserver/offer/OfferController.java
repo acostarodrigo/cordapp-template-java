@@ -5,7 +5,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.flows.offer.OfferFlow;
@@ -67,10 +70,13 @@ public class OfferController {
         }
 
         List<BondMonitor> offers = new ArrayList<>();
-        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQuery(OfferState.class).getStates()){
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+
+        Party myNode = proxy.nodeInfo().getLegalIdentities().get(0);
+        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()){
             OfferState offer = stateAndRef.getState().getData();
-            // we are getting the list of offers that are not ours.
-            if (!proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer())){
+            // we are getting the list of offers that are not ours and are AFS
+            if (!myNode.equals(offer.getIssuer()) && offer.isAfs()){
                 BondState bond = offer.getBond();
                 BondMonitor bondMonitor = new BondMonitor(bond.getId(),
                     bond.getIssuerTicker(),
