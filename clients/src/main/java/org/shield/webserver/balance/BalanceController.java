@@ -41,7 +41,7 @@ public class BalanceController {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(Arrays.asList("Unable to parse user to establish a connection."), HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
 
         List<String> tokens = new ArrayList<>();

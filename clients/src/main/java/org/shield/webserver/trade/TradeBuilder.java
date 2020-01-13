@@ -29,7 +29,6 @@ public class TradeBuilder {
     public TradeState getTrade() throws Exception {
         UniqueIdentifier id = new UniqueIdentifier();
         UniqueIdentifier offerId = UniqueIdentifier.Companion.fromString(body.get("offerId").asText());
-        UniqueIdentifier bondId = UniqueIdentifier.Companion.fromString(body.get("bondId").asText());
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         Date tradeDate = dateFormat.parse(body.get("tradeDate").asText());
         Date settleDate = dateFormat.parse(body.get("settleDate").asText());
@@ -55,16 +54,7 @@ public class TradeBuilder {
         if (offer == null) throw new Exception(String.format("Provided offerId %s does not exists.", offerId.toString()));
 
         // we get the bond
-        BondState bond = null;
-
-        for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
-            if (stateAndRef.getState().getData().getId().equals(bondId)){
-                bond = stateAndRef.getState().getData();
-                break;
-            }
-        }
-
-        if (bond == null) throw new Exception(String.format("Provided bondId %s does not exists.", bondId.toString()));
+        BondState bond = offer.getBond();
 
         // we get the buyer
         CordaX500Name buyerName = CordaX500Name.parse(buyerString);
