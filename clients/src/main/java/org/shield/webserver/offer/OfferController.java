@@ -78,7 +78,7 @@ public class OfferController {
             // we are getting the list of offers that are not ours and are AFS
             if (!myNode.equals(offer.getIssuer()) && offer.isAfs()){
                 BondState bond = offer.getBond();
-                BondMonitor bondMonitor = new BondMonitor(bond.getId(),
+                BondMonitor bondMonitor = new BondMonitor(offer.getOfferId(),bond.getId(),
                     bond.getIssuerTicker(),
                     offer.getOfferPrice(),
                     offer.getOfferYield(),

@@ -8,6 +8,7 @@ import java.util.Currency;
 import java.util.Date;
 
 public class BondMonitor {
+    private UniqueIdentifier offerId;
     private UniqueIdentifier bondId;
     private String ticker;
     private float currentPrice;
@@ -21,7 +22,8 @@ public class BondMonitor {
     private DealType dealType;
     private Currency currency;
 
-    public BondMonitor(UniqueIdentifier bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, String coupon, String couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
+    public BondMonitor(UniqueIdentifier offerId, UniqueIdentifier bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, String coupon, String couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
+        this.offerId = offerId;
         this.bondId = bondId;
         this.ticker = ticker;
         this.currentPrice = currentPrice;
@@ -34,6 +36,14 @@ public class BondMonitor {
         this.dealSize = dealSize;
         this.dealType = dealType;
         this.currency = currency;
+    }
+
+    public UniqueIdentifier getOfferId() {
+        return offerId;
+    }
+
+    public void setOfferId(UniqueIdentifier offerId) {
+        this.offerId = offerId;
     }
 
     public UniqueIdentifier getBondId() {
@@ -87,7 +97,8 @@ public class BondMonitor {
     @Override
     public String toString() {
         return "BondMonitor{" +
-            "bondId=" + bondId +
+            "offerId=" + offerId +
+            ", bondId=" + bondId +
             ", ticker='" + ticker + '\'' +
             ", currentPrice=" + currentPrice +
             ", currentYield=" + currentYield +
