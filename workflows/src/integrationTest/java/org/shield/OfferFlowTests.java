@@ -27,6 +27,8 @@ public class OfferFlowTests {
         bondFlowTests.setUp();
         bondFlowTests.issueBondTest();
 
+        bond = bondFlowTests.getBond();
+        assertNotNull(bond);
 
         MembershipTests membershipTests = new MembershipTests();
         // we configure broker1 as buyer
@@ -34,9 +36,13 @@ public class OfferFlowTests {
         // we configure broker2 as buyer
         membershipTests.configTreasurerTest();
 
-        bond = bondFlowTests.getBond();
+
 
         offer = new OfferState(new UniqueIdentifier(),TestHelper.issuer,bond,"ISSUER",99,99,1000,1000,true, new Date());
+    }
+
+    public OfferState getOffer() {
+        return offer;
     }
 
     @Test
@@ -47,8 +53,6 @@ public class OfferFlowTests {
         assertNotNull(uniqueIdentifier);
 
         // issuer, broker1 and broker2 should have the offer.
-        QueryCriteria linearCriteriaAll = new QueryCriteria.LinearStateQueryCriteria(null, Arrays.asList(offer.getOfferId()), Vault.StateStatus.UNCONSUMED,null);
-        assertNotNull(TestHelper.issuerNode.getServices().getVaultService().queryBy(OfferState.class,linearCriteriaAll).getStates().get(0).getState());
         assertEquals(TestHelper.issuerNode.getServices().getVaultService().queryBy(OfferState.class).getStates().get(0).getState().getData(),offer);
         assertEquals(TestHelper.broker1Node.getServices().getVaultService().queryBy(OfferState.class).getStates().get(0).getState().getData(),offer);
         assertEquals(TestHelper.broker2Node.getServices().getVaultService().queryBy(OfferState.class).getStates().get(0).getState().getData(),offer);

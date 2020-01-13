@@ -22,6 +22,8 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import org.shield.bond.BondState;
 import org.shield.bond.BondTypeContract;
@@ -180,7 +182,8 @@ public class BondFlow {
 
             // we make sure we have the bond in our vault
             StateAndRef<BondState> stateAndRef = null;
-            for (StateAndRef<BondState> stateAndRefs : getServiceHub().getVaultService().queryBy(BondState.class).getStates()){
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<BondState> stateAndRefs : getServiceHub().getVaultService().queryBy(BondState.class, criteria).getStates()){
                 if (stateAndRefs.getState().getData().getLinearId() == bond.getLinearId()) stateAndRef = stateAndRefs;
             }
 

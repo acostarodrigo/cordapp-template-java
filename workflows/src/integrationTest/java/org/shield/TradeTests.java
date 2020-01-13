@@ -15,6 +15,7 @@ import org.junit.Test;
 import org.shield.bond.BondState;
 import org.shield.bond.DealType;
 import org.shield.flows.trade.TradeFlow;
+import org.shield.offer.OfferState;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
 
@@ -29,30 +30,25 @@ public class TradeTests {
     private BondState bond;
     private BondFlowTests bondFlowTests = new BondFlowTests();
     private TradeState trade;
+    private OfferState offer;
 
     @Before
     public void setNetwork() throws ExecutionException, InterruptedException {
-        // we set up the network
-        bondFlowTests.setUp();
-        // and instantiate a new bond
-        bond = bondFlowTests.getBond();
-
-        // we issue the bond
-        bondFlowTests.issueBondTest();
+        OfferFlowTests offerFlowTests = new OfferFlowTests();
+        offerFlowTests.setUp();
+        offerFlowTests.createOfferTest();
+        offer = offerFlowTests.getOffer();
+        bond = offer.getBond();
     }
 
     @Test
     public void generateTradeTest() throws ExecutionException, InterruptedException {
-        // we make broker1 a buyer
-        MembershipTests membershipTests = new MembershipTests();
-        membershipTests.configBuyerTest();
-
         // Issuer sends trade
-        trade = new TradeState(new UniqueIdentifier(), bond,new Date(), new Date(), broker1, issuer, 100, 1,1000000, 123, Currency.getInstance("USD"), State.SENT);
-        CordaFuture<SignedTransaction> signedTransactionCordaFuture = issuerNode.startFlow(new TradeFlow.SendToBuyer(trade));
+        trade = new TradeState(new UniqueIdentifier(), offer,bond,new Date(), new Date(), broker1, issuer, 100, 1,100, 123, Currency.getInstance("USD"), State.PROPOSED);
+        CordaFuture<UniqueIdentifier> signedTransactionCordaFuture = broker1Node.startFlow(new TradeFlow.Create(trade));
         mockNet.runNetwork();
-        SignedTransaction signedTransaction = signedTransactionCordaFuture.get();
-        assertNotNull(signedTransaction);
+        UniqueIdentifier id = signedTransactionCordaFuture.get();
+        assertNotNull(id);
     }
 
     @Test
@@ -85,7 +81,7 @@ public class TradeTests {
 
 
         // buyer accepts trade and since it has enought balance, operation is completed.
-        CordaFuture<SignedTransaction> cordaFuture = broker1Node.startFlow(new TradeFlow.Accept(trade.getId()));
+        CordaFuture<SignedTransaction> cordaFuture = issuerNode.startFlow(new TradeFlow.Accept(trade.getId()));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
@@ -103,7 +99,7 @@ public class TradeTests {
 
         // Trade is in state payed in both nodes
         TradeState buyerState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
-        assertTrue(buyerState.getState().equals(State.ACCEPTED_PAYED));
+        assertTrue(buyerState.getState().equals(State.SETTLED));
         TradeState issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
         assertEquals(buyerState.getState(), issuerState.getState());
     }
@@ -152,7 +148,7 @@ public class TradeTests {
 
         // Trade is in state payed in both nodes
         TradeState buyerState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
-        assertTrue(buyerState.getState().equals(State.ACCEPTED_NOTPAYED));
+        assertTrue(buyerState.getState().equals(State.PENDING));
         TradeState issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
         assertEquals(buyerState.getState(), issuerState.getState());
     }
@@ -169,7 +165,7 @@ public class TradeTests {
         trade = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
 
         // we validate the new state
-        assertEquals(trade.getState(), State.ACCEPTED_NOTPAYED);
+        assertEquals(trade.getState(), State.PENDING);
 
         // and settle the trade.
         CordaFuture<SignedTransaction> cordaFuture = broker1Node.startFlow(new TradeFlow.Settle(trade.getId()));
@@ -178,7 +174,7 @@ public class TradeTests {
         assertNotNull(signedTransaction);
 
         trade = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
-        assertEquals(State.ACCEPTED_PAYED, trade.getState());
+        assertEquals(State.SETTLED, trade.getState());
 
         // we validate bond balance at buyer
         TokenPointer tokenPointer = bond.toPointer(bond.getClass());
@@ -204,8 +200,8 @@ public class TradeTests {
         generateTradeTest();
         acceptTradeWithBalance();
         cancelTradeTest();
-        assertEquals(State.ACCEPTED_PAYED, broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
-        assertEquals(State.ACCEPTED_PAYED, issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
+        assertEquals(State.SETTLED, broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
+        assertEquals(State.SETTLED, issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
     }
 
     @Test (expected = ExecutionException.class)

@@ -2,21 +2,20 @@ package org.shield.flows.trade;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.google.common.collect.ImmutableList;
+import com.r3.corda.lib.tokens.contracts.FungibleTokenContract;
+import com.r3.corda.lib.tokens.contracts.commands.MoveTokenCommand;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
+import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.contracts.types.TokenType;
 import com.r3.corda.lib.tokens.money.FiatCurrency;
 import com.r3.corda.lib.tokens.workflows.flows.move.MoveTokensUtilitiesKt;
-import com.r3.corda.lib.tokens.workflows.internal.flows.confidential.Exception;
 import com.r3.corda.lib.tokens.workflows.internal.flows.distribution.UpdateDistributionListFlow;
 import com.r3.corda.lib.tokens.workflows.internal.selection.TokenSelection;
 import com.r3.corda.lib.tokens.workflows.types.PartyAndAmount;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
 import kotlin.Pair;
-import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.Command;
-import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.contracts.*;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
@@ -25,6 +24,7 @@ import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
+import org.intellij.lang.annotations.Flow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.shield.bond.BondState;
@@ -37,6 +37,7 @@ import org.shield.trade.TradeContract;
 import org.shield.trade.TradeState;
 
 import java.security.PublicKey;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -124,11 +125,11 @@ public class TradeFlow {
             // we are ready to sign and collect signatures
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
             FlowSession sellerSession = initiateFlow(trade.getSeller());
-            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallySignedTx, Arrays.asList(sellerSession),progressTracker));
+            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallySignedTx, Arrays.asList(sellerSession)));
 
             // we complete it.
             progressTracker.setCurrentStep(FINISH);
-            subFlow(new FinalityFlow(signedTransaction,Arrays.asList(sellerSession),progressTracker));
+            subFlow(new FinalityFlow(signedTransaction,Arrays.asList(sellerSession)));
             return trade.getId();
         }
     }
@@ -370,7 +371,8 @@ public class TradeFlow {
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             List<PublicKey> requiredSigners = Arrays.asList(trade.getBuyer().getOwningKey(), trade.getSeller().getOwningKey());
 
-            Command command = new Command<>(new TradeContract.Commands.Pending(), requiredSigners);
+            Command tradeCommand = new Command<>(new TradeContract.Commands.Pending(), requiredSigners);
+            Command offerCommand = new Command<>(new OfferContract.Commands.notifyBuyers(), trade.getSeller().getOwningKey());
             trade.setState(State.PENDING);
 
             long currentAfsSize = offer.getAfsSize();
@@ -381,7 +383,8 @@ public class TradeFlow {
                 .addInputState(offerStateStateAndRef)
                 .addOutputState(trade, TradeContract.ID)
                 .addOutputState(offer, OfferContract.ID)
-                .addCommand(command);
+                .addCommand(offerCommand)
+                .addCommand(tradeCommand);
 
             // lets collect signatures
             FlowSession buyerSession = initiateFlow(trade.getBuyer());
@@ -392,9 +395,11 @@ public class TradeFlow {
             progressTracker.setCurrentStep(FINISH);
             subFlow(new FinalityFlow(fullySignedTx,buyerSession));
 
+
+
             // now we will notify all buyers about the new offer status
             progressTracker.setCurrentStep(NOTIFY_BUYERS);
-            subFlow(new OfferFlow.NotifyBuyers(offerStateStateAndRef, offer));
+            subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
 
             return fullySignedTx;
         }
@@ -438,10 +443,10 @@ public class TradeFlow {
     }
 
     @InitiatedBy(GenerateSettleTx.class)
-    private static class SettleResponse extends FlowLogic<SignedTransaction>{
+    private static class GenerateSettleTxResponse extends FlowLogic<SignedTransaction>{
         private FlowSession callingSession;
 
-        public SettleResponse(FlowSession callingSession) {
+        public GenerateSettleTxResponse(FlowSession callingSession) {
             this.callingSession = callingSession;
         }
 
@@ -453,27 +458,34 @@ public class TradeFlow {
             // trade is being payed, so we are sending the bond
             BondState bond = trade.getBond();
             TokenSelection tokenSelection = new TokenSelection(getServiceHub(), 8, 100, 2000);
+
             // we get the pointer based on the bond of the trade
             TokenPointer tokenPointer = bond.toPointer(bond.getClass());
             Amount amount = new Amount(trade.getSize(), tokenPointer);
             PartyAndAmount partyAndAmount = new PartyAndAmount<>(callingSession.getCounterparty(), amount);
+
+
+
             // we generate inputs and outputs of the bond and send them to the buyer
             Pair<List<StateAndRef<FungibleToken>>, List<FungibleToken>> inputsAndOutputs =
                 tokenSelection.generateMove(getRunId().getUuid(), ImmutableList.of(partyAndAmount), getOurIdentity(), null);
+            // we send the intputs and outputs to the buyer
             subFlow(new SendStateAndRefFlow(callingSession, inputsAndOutputs.getFirst()));
             callingSession.send(inputsAndOutputs.getSecond());
 
-            // at this point, buyer has send us the fiat token, we will validate this.
-            SignedTransaction signedTransaction = subFlow(new SignTransactionFlow(callingSession) {
-                @Override
-                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                    TokenType fiatCurrency = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
-                    // validate output has fiat currency and with the correct amount
-                    // and we are the destination of the fiat.
 
-                }
-            });
-            subFlow(new UpdateDistributionListFlow(signedTransaction));
+            // at this point, buyer has send us the fiat token, we will validate this.
+//            SignedTransaction signedTransaction = subFlow(new SignTransactionFlow(callingSession) {
+//                @Override
+//                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
+//                    TokenType fiatCurrency = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
+//                    // validate output has fiat currency and with the correct amount
+//                    // and we are the destination of the fiat.
+//
+//                }
+//            });
+//
+//            subFlow(new UpdateDistributionListFlow(signedTransaction));
             return null;
         }
     }
@@ -481,18 +493,21 @@ public class TradeFlow {
     @InitiatingFlow
     private static class GenerateSettleTx extends FlowLogic<TransactionBuilder>{
         private TradeState trade;
-        private TransactionBuilder txBuilder;
 
-        public GenerateSettleTx(TradeState trade, TransactionBuilder txBuilder) {
+        public GenerateSettleTx(TradeState trade) {
             this.trade = trade;
-            this.txBuilder = txBuilder;
         }
 
         @Suspendable
         @Override
         public TransactionBuilder call() throws FlowException {
+            // we build the txBuilder
+            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            TransactionBuilder txBuilder = new TransactionBuilder(notary);
+
             // must be buyer
             if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Must be an active registered buyer to settle a trade.");
+            Party caller = getOurIdentity();
 
             // trade must exists
             VaultService vaultService = getServiceHub().getVaultService();
@@ -514,14 +529,9 @@ public class TradeFlow {
             TokenType fiatToken = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
             if (tokenBalance(vaultService,fiatToken).getQuantity() < trade.getSize()) throw new FlowException("Not enought fiat balance to settle trade.");
 
-            List<PublicKey> requiredSigners = ImmutableList.of(trade.getBuyer().getOwningKey(), trade.getSeller().getOwningKey());
-            // and we add the settle command to perform validations on the contract.
-            Command settle = new Command<>(new TradeContract.Commands.Settled(), requiredSigners);
-            txBuilder.addCommand(settle);
-
             Amount fiatAmount = new Amount(trade.getSize(),fiatToken);
             // we generate outputs and inputs for our fiat token
-            MoveTokensUtilitiesKt.addMoveFungibleTokens(txBuilder,getServiceHub(),fiatAmount,trade.getSeller(), getOurIdentity());
+            txBuilder = MoveTokensUtilitiesKt.addMoveFungibleTokens(txBuilder,getServiceHub(),fiatAmount, trade.getSeller(), caller);
 
             // we send the update trade to the seller so that he sends the bond token
             FlowSession sellerSession = initiateFlow(trade.getSeller());
@@ -530,9 +540,31 @@ public class TradeFlow {
             List<StateAndRef<FungibleToken>> inputs =  subFlow(new ReceiveStateAndRefFlow<>(sellerSession));
             // we received the outputs
             List<FungibleToken> outputs = sellerSession.receive(List.class).unwrap(value -> value);
-            MoveTokensUtilitiesKt.addMoveTokens(txBuilder, inputs, outputs);
-            // at this point, transaction includes my fiat token and seller bond tokens.
 
+            // Since we don't have local states of BondToken, the StateAndRef validations fails, but apparently inputs and outputs are still being added to tx Builder.
+            //txBuilder = MoveTokensUtilitiesKt.addMoveTokens(txBuilder, inputs, outputs);
+            for (StateAndRef<FungibleToken> sellerInput : inputs){
+                try {
+                    txBuilder.addInputState(sellerInput);
+
+                } catch (IllegalStateException e){
+                    System.out.println(e.getMessage());
+                }
+
+            }
+            for (FungibleToken sellerOutput : outputs){
+                try {
+                    txBuilder.addOutputState(sellerOutput);
+                } catch (IllegalStateException e){
+                    System.out.println(e.getMessage());
+                }
+            }
+            // Since MoveTokensUitilitiesKt is not working, I have to manually add the command.
+            IssuedTokenType issuedTokenType = outputs.get(0).getIssuedTokenType();
+            Command bondTokenCommand = new Command<>(new MoveTokenCommand(issuedTokenType, Arrays.asList(1), Arrays.asList(2,3)), trade.getSeller().getOwningKey());
+            txBuilder.addCommand(bondTokenCommand);
+
+            // at this point, transaction includes my fiat token and seller bond tokens.
             return txBuilder;
         }
     }
@@ -572,16 +604,14 @@ public class TradeFlow {
             if (!trade.getBuyer().equals(caller)) throw new FlowException("Caller is not the owner of the trade we are trying to settle.");
 
             // we are good to go. let's generate the transaction
-            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             List<PublicKey> requiredSigners = Arrays.asList(trade.getSeller().getOwningKey(), caller.getOwningKey());
             Command command = new Command<>(new TradeContract.Commands.Settled(), requiredSigners);
 
-            TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addInputState(input)
+            // we generate the trade transaction with the fiat and bond tokens inputs outputs
+            TransactionBuilder txBuilder = subFlow(new GenerateSettleTx(trade));
+            // we add the trade inputs and outputs.
+            txBuilder.addInputState(input)
                 .addCommand(command);
-
-            // we generate the trade transaction
-            txBuilder = subFlow(new GenerateSettleTx(trade, txBuilder));
 
             // and add the trade as output.
             trade.setState(State.SETTLED);
@@ -600,10 +630,10 @@ public class TradeFlow {
     }
 
     @InitiatedBy(Settle.class)
-    public static class SettleAcceptedResponse extends FlowLogic<Void>{
+    public static class SettleResponse extends FlowLogic<Void>{
         private FlowSession callerSession;
 
-        public SettleAcceptedResponse(FlowSession callerSession) {
+        public SettleResponse(FlowSession callerSession) {
             this.callerSession = callerSession;
         }
 
@@ -613,7 +643,31 @@ public class TradeFlow {
             subFlow(new SignTransactionFlow(callerSession) {
                 @Override
                 protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                    // todo add validations.
+                    // we will validate that the buyer is sending us the correct amount of fiat tokens and is signed by him
+                    // before submitting the signature
+                    TradeState trade = stx.getCoreTransaction().outputsOfType(TradeState.class).get(0);
+                    TokenType fiatCurrency = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
+                    boolean isFiatToken = false;
+                    for (FungibleToken token : stx.getCoreTransaction().outputsOfType(FungibleToken.class)){
+                        if (token.getIssuedTokenType().getTokenType().equals(fiatCurrency)){
+                            // we will only focus in the output that put us as new holder
+                            if (token.getHolder().getOwningKey().equals(getOurIdentity().getOwningKey())){
+                                isFiatToken = true;
+                                // lets make sure the amount is correct
+                                if (token.getAmount().getQuantity() != trade.getSize()) throw new FlowException(String.format("Token amount sent does not match trade amount. Can't sign"));
+                                break;
+                            }
+                        }
+                    }
+                    // we couldn't find an output with the correct token
+                    if (!isFiatToken) throw new FlowException("Unable to find a token output that matches the trade. Can't sign.");
+
+                    // lets make sure the tx is already signed by caller.
+                    if (!stx.getSigs().get(0).getBy().equals(callerSession.getCounterparty().getOwningKey())) throw new FlowException("Transaction is not signed by caller. Won't sign");
+                    if (stx.getSigs().size() > 1) throw new FlowException("Too many signatures included in the transaction. Won't sign.");
+
+                    // lets make sure caller is the buyer
+                    if (!callerSession.getCounterparty().equals(trade.getBuyer())) throw new FlowException("Caller is not the buyer. Won't sign.");
                 }
             });
 

@@ -31,9 +31,6 @@ public class USDFiatTokenTests {
 
     @Test
     public void issueUSDTokenTest() throws ExecutionException, InterruptedException {
-        MembershipTests membershipTests = new MembershipTests();
-        membershipTests.configTreasurerTest();
-
         CordaFuture<SignedTransaction> cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
