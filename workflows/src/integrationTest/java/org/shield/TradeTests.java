@@ -130,7 +130,7 @@ public class TradeTests {
 
 
         // buyer accepts trade and since it has enought balance, operation is completed.
-        CordaFuture<SignedTransaction> cordaFuture = broker1Node.startFlow(new TradeFlow.Accept(trade.getId()));
+        CordaFuture<SignedTransaction> cordaFuture = issuerNode.startFlow(new TradeFlow.Accept(trade.getId()));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
@@ -185,7 +185,7 @@ public class TradeTests {
     @Test
     public void cancelTradeTest() throws ExecutionException, InterruptedException {
         generateTradeTest();
-        CordaFuture<Void> cordaFuture = broker1Node.startFlow(new TradeFlow.Cancel(trade.getId()));
+        CordaFuture<Void> cordaFuture = issuerNode.startFlow(new TradeFlow.Cancel(trade.getId()));
         mockNet.runNetwork();
         cordaFuture.get();
 
@@ -197,24 +197,13 @@ public class TradeTests {
 
     @Test (expected = ExecutionException.class)
     public void cancelAndAcceptedTrade() throws ExecutionException, InterruptedException {
-        generateTradeTest();
         acceptTradeWithBalance();
-        cancelTradeTest();
+        CordaFuture<Void> cordaFuture = issuerNode.startFlow(new TradeFlow.Cancel(trade.getId()));
+        mockNet.runNetwork();
+        cordaFuture.get();
         assertEquals(State.SETTLED, broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
         assertEquals(State.SETTLED, issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
     }
-
-    @Test (expected = ExecutionException.class)
-    public void settleACancelledTrade() throws ExecutionException, InterruptedException {
-        generateTradeTest();
-        cancelTradeTest();
-        settleTradeTest();
-
-        assertEquals(State.CANCELLED, broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
-        assertEquals(State.CANCELLED, issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData().getState());
-    }
-
-
     @After
     public void cleanUp(){
         TestHelper.cleanUpNetwork();
