@@ -6,7 +6,10 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import org.shield.bond.BondState;
+import org.shield.offer.OfferState;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
 
@@ -25,6 +28,7 @@ public class TradeBuilder {
 
     public TradeState getTrade() throws Exception {
         UniqueIdentifier id = new UniqueIdentifier();
+        UniqueIdentifier offerId = UniqueIdentifier.Companion.fromString(body.get("offerId").asText());
         UniqueIdentifier bondId = UniqueIdentifier.Companion.fromString(body.get("bondId").asText());
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         Date tradeDate = dateFormat.parse(body.get("tradeDate").asText());
@@ -36,15 +40,31 @@ public class TradeBuilder {
         long size = body.get("size").asLong();
         long proceeds = body.get("proceeds").asLong();
         Currency currency = Currency.getInstance(body.get("currency").textValue());
-        State state = State.SENT;
+        State state = State.PROPOSED;
+
+        // we get the offer
+        OfferState offer = null;
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria,OfferState.class).getStates()){
+            if (stateAndRef.getState().getData().getOfferId().equals(offerId)){
+                offer = stateAndRef.getState().getData();
+                break;
+            }
+        }
+
+        if (offer == null) throw new Exception(String.format("Provided offerId %s does not exists.", offerId.toString()));
+
         // we get the bond
         BondState bond = null;
+
         for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(bondId)){
                 bond = stateAndRef.getState().getData();
                 break;
             }
         }
+
+        if (bond == null) throw new Exception(String.format("Provided bondId %s does not exists.", bondId.toString()));
 
         // we get the buyer
         CordaX500Name buyerName = CordaX500Name.parse(buyerString);
@@ -54,9 +74,10 @@ public class TradeBuilder {
         CordaX500Name sellerName = CordaX500Name.parse(sellerString);
         Party seller = proxy.wellKnownPartyFromX500Name(sellerName);
 
-        if (bond == null) throw new Exception(String.format("Provided bondId %s does not exists.", bondId.toString()));
 
-        TradeState trade = new TradeState(id,bond,tradeDate,settleDate,buyer,seller, price,yield,size,proceeds, currency,state);
+
+        // we generate the trade
+        TradeState trade = new TradeState(id,offer, bond,tradeDate,settleDate,buyer,seller, price,yield,size,proceeds, currency,state);
         return trade;
     }
 

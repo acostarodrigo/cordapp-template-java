@@ -71,9 +71,9 @@ public class TradeController {
         TradeBuilder tradeBuilder = new TradeBuilder(tradeBody, proxy);
         TradeState trade = tradeBuilder.getTrade();
 
-        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.SendToBuyer.class, trade).getReturnValue();
-        SignedTransaction signedTransaction = cordaFuture.get();
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+        CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(TradeFlow.Create.class, trade).getReturnValue();
+        UniqueIdentifier id = cordaFuture.get();
+        return new ResponseEntity<>(id.toString(), HttpStatus.OK);
     }
 
     @PostMapping("/accept")
