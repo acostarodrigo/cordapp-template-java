@@ -253,10 +253,10 @@ public class TradeFlow {
             // we collect signature from the buyer
             SignedTransaction partiallysignedTx = getServiceHub().signInitialTransaction(txBuilder);
             FlowSession buyerSession = initiateFlow(trade.getBuyer());
-            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTx, Arrays.asList(buyerSession), progressTracker));
+            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTx, Arrays.asList(buyerSession)));
 
             progressTracker.setCurrentStep(FINISH);
-            subFlow(new FinalityFlow(signedTransaction,Arrays.asList(buyerSession),progressTracker));
+            subFlow(new FinalityFlow(signedTransaction,Arrays.asList(buyerSession)));
 
             return null;
         }
@@ -473,19 +473,6 @@ public class TradeFlow {
             subFlow(new SendStateAndRefFlow(callingSession, inputsAndOutputs.getFirst()));
             callingSession.send(inputsAndOutputs.getSecond());
 
-
-            // at this point, buyer has send us the fiat token, we will validate this.
-//            SignedTransaction signedTransaction = subFlow(new SignTransactionFlow(callingSession) {
-//                @Override
-//                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-//                    TokenType fiatCurrency = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
-//                    // validate output has fiat currency and with the correct amount
-//                    // and we are the destination of the fiat.
-//
-//                }
-//            });
-//
-//            subFlow(new UpdateDistributionListFlow(signedTransaction));
             return null;
         }
     }
@@ -543,17 +530,24 @@ public class TradeFlow {
 
             // Since we don't have local states of BondToken, the StateAndRef validations fails, but apparently inputs and outputs are still being added to tx Builder.
             //txBuilder = MoveTokensUtilitiesKt.addMoveTokens(txBuilder, inputs, outputs);
+            List<Integer> inputIndexes = new ArrayList<>();
+            int inputIndex = txBuilder.inputStates().size() -1;
             for (StateAndRef<FungibleToken> sellerInput : inputs){
                 try {
+                    inputIndex++;
+                    inputIndexes.add(inputIndex);
                     txBuilder.addInputState(sellerInput);
-
                 } catch (IllegalStateException e){
                     System.out.println(e.getMessage());
                 }
 
             }
+            List<Integer> outputIndexes = new ArrayList<>();
+            int outputIndex = txBuilder.outputStates().size() -1;
             for (FungibleToken sellerOutput : outputs){
                 try {
+                    outputIndex++;
+                    outputIndexes.add(outputIndex);
                     txBuilder.addOutputState(sellerOutput);
                 } catch (IllegalStateException e){
                     System.out.println(e.getMessage());
@@ -561,8 +555,12 @@ public class TradeFlow {
             }
             // Since MoveTokensUitilitiesKt is not working, I have to manually add the command.
             IssuedTokenType issuedTokenType = outputs.get(0).getIssuedTokenType();
-            Command bondTokenCommand = new Command<>(new MoveTokenCommand(issuedTokenType, Arrays.asList(1), Arrays.asList(2,3)), trade.getSeller().getOwningKey());
+
+            // todo indexes of inputs and outputs must be determined dinamically
+            Command bondTokenCommand = new Command<>(new MoveTokenCommand(issuedTokenType, inputIndexes,outputIndexes), trade.getSeller().getOwningKey());
             txBuilder.addCommand(bondTokenCommand);
+
+
 
             // at this point, transaction includes my fiat token and seller bond tokens.
             return txBuilder;
