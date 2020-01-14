@@ -87,7 +87,7 @@ public class OfferController {
                     "Zero", // hardcoding for now
                     "Vanila", // hardcoding for now
                     "Primary", // hardcoding for now
-                    bond.getDealSize(),
+                    offer.getAfsSize(),
                     bond.getDealType(),
                     bond.getDenomination());
 
