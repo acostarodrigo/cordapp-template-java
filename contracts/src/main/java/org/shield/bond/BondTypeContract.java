@@ -26,9 +26,9 @@ public class BondTypeContract extends EvolvableTokenContract implements Contract
         BondState output = (BondState) tx.getOutput(0);
         Date now = new Date();
         requireThat(require -> {
-//            require.using("Valuation must be zero during creation.", output.getValuation() == 0);
-//            require.using("Digits supported is zero.", output.getFractionDigits() == 0);
-//            require.using("Offering date can't be in the past", output.getofferingDate().after(now));
+            require.using("Deal size can't less than zero.", output.getDealSize() > 0);
+            require.using("Digits supported is zero.", output.getFractionDigits() == 0);
+            require.using("Start date can't be in the past", output.getStartDate().after(now));
             return null;
         });
     }
@@ -38,13 +38,12 @@ public class BondTypeContract extends EvolvableTokenContract implements Contract
         BondState input = (BondState) tx.getInput(0);
         BondState output = (BondState) tx.getOutput(0);
 
-        // we make sure only some values change. Only valuation and maintainers for now.
+        // we make sure only some values change.
         requireThat(require -> {
-//            require.using("offering date can't change", input.getofferingDate().equals(output.getofferingDate()));
-//            require.using("digits can't change", input.getFractionDigits()==output.getFractionDigits());
-//            require.using("issuer can't change",input.getIssuer().equals(output.getIssuer()));
-//            require.using("Linear Id can't change", input.getLinearId().equals(output.getLinearId()));
-                return null;
+            require.using("offering date can't change", input.getStartDate().equals(output.getStartDate()));
+            require.using("digits can't change", input.getFractionDigits()==output.getFractionDigits());
+            require.using("issuer can't change",input.getIssuer().equals(output.getIssuer()));
+            return null;
         });
 
     }

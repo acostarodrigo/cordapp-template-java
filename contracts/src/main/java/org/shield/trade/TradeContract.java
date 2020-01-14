@@ -24,6 +24,7 @@ public class TradeContract implements Contract {
             } else if (command.getValue() instanceof Commands.Pending){
 
             } else if (command.getValue() instanceof Commands.Settled){
+                // need to validate that there is an output with fiat to the seller and an output with bonds to the buyer
 
             } else if (command.getValue() instanceof Commands.Cancelled){
 

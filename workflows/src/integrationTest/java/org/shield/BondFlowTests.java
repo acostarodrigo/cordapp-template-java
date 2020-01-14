@@ -18,6 +18,7 @@ import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
 
 import java.math.BigDecimal;
+import java.util.Calendar;
 import java.util.Currency;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
@@ -38,7 +39,12 @@ public class BondFlowTests {
         TestHelper.setupNetwork();
 
         // we create the bond
-        bond = new BondState("Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        // manipulate date
+        c.add(Calendar.YEAR, 1);
+        Date startDate = c.getTime();
+        bond = new BondState("Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
 
     }
 
