@@ -22,6 +22,8 @@ import org.shield.flows.membership.MembershipFlows;
 import org.shield.membership.ShieldMetadata;
 import org.shield.offer.OfferContract;
 import org.shield.offer.OfferState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -43,6 +45,8 @@ public class OfferFlow {
     @InitiatingFlow
     @StartableByRPC
     public static class Create extends FlowLogic<UniqueIdentifier>{
+        private static final Logger logger = LoggerFactory.getLogger(Create.class);
+
         private OfferState offer;
 
         public Create(OfferState offer) {
@@ -66,6 +70,9 @@ public class OfferFlow {
         @Override
         @Suspendable
         public UniqueIdentifier call() throws FlowException {
+            Party caller = getOurIdentity();
+            logger.debug(String.format("Offer create started by %s", caller.getName().getCommonName()));
+
             //must be buyer to create an offer.
             if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Must be an active buyer organization to create an offer.");
 
@@ -75,12 +82,14 @@ public class OfferFlow {
             BondState bond = this.offer.getBond();
             TokenPointer tokenPointer = bond.toPointer(bond.getClass());
             Amount balance = QueryUtilitiesKt.tokenBalance(vaultService,tokenPointer);
+            logger.info(String.format("Current bond balance is %s", balance.getQuantity()));
+
             if (balance.getQuantity() < offer.getAfsSize()) throw new FlowException(String.format("Not enought balance to submit offer. Current balance is %s", String.valueOf(balance.getQuantity())));
 
             // will validate data of the offer
             progressTracker.setCurrentStep(VALIDATE_OFFER);
             if (offer.getOfferId() == null) offer.setOfferId(new UniqueIdentifier());
-            Party caller = getOurIdentity();
+
             if (!offer.getIssuer().equals(caller)) throw new FlowException("Can issue an offer of behalf of someone else.");
 
 

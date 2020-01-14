@@ -7,27 +7,35 @@ import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
+import net.corda.core.messaging.DataFeed;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.offer.OfferState;
+import org.shield.webserver.Starter;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import rx.Observable;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Consumer;
 
 @RestController
 @RequestMapping("/offer")
 public class OfferController {
+    private static final Logger logger = LoggerFactory.getLogger(OfferController.class);
+
     private Connection connection;
     private ProxyEntry proxyEntry;
     private CordaRPCOps proxy;
@@ -73,7 +81,10 @@ public class OfferController {
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
 
         Party myNode = proxy.nodeInfo().getLegalIdentities().get(0);
-        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()){
+        // we get the data feed from the vault.
+        DataFeed<Vault.Page<OfferState>, Vault.Update<OfferState>> dataFeed = proxy.vaultTrackByCriteria(OfferState.class, criteria);
+
+        for (StateAndRef<OfferState> stateAndRef : dataFeed.getSnapshot().getStates()){
             OfferState offer = stateAndRef.getState().getData();
             // we are getting the list of offers that are not ours and are AFS
             if (!myNode.equals(offer.getIssuer()) && offer.isAfs()){
@@ -95,10 +106,20 @@ public class OfferController {
             }
         }
 
+        Observable<Vault.Update<OfferState>> offerUpdates = dataFeed.getUpdates();
+        offerUpdates.toBlocking().subscribe(offerStateUpdate -> offerStateUpdate.getProduced().forEach(new Consumer<StateAndRef<OfferState>>() {
+            @Override
+            public void accept(StateAndRef<OfferState> offerStateStateAndRef) {
+                System.out.println("Rodrigo:" + offerStateStateAndRef.getState().getData().toString());
+                logger.info("{}", offerStateStateAndRef.getState().getData());
+            }
+        }));
 
         return new ResponseEntity<>(offers, HttpStatus.OK);
 
     }
+
+
 
     @PostMapping()
     public ResponseEntity<UniqueIdentifier> createOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
