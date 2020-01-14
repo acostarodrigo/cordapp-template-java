@@ -21,6 +21,9 @@ dependencies {
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"
     }
 
+    // web flux for reactive responses
+    compile("org.springframework.boot:spring-boot-starter-webflux:$spring_boot_version")
+
 
     testCompile("org.springframework.boot:spring-boot-starter-test:$spring_boot_version"){
         exclude group: "org.springframework.boot", module: "spring-boot-starter-logging"

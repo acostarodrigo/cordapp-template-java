@@ -19,7 +19,6 @@ public class TradeState implements ContractState, Serializable {
     public static final String externalKey = "org.shield.trade.TradeState";
     private UniqueIdentifier id;
     private OfferState offer;
-    private BondState bond;
     private Date tradeDate;
     private Date settleDate;
     private Party buyer;
@@ -42,10 +41,9 @@ public class TradeState implements ContractState, Serializable {
         // construtor for deserialization
     }
 
-    public TradeState(UniqueIdentifier id, OfferState offer, BondState bond, Date tradeDate, Date settleDate, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
+    public TradeState(UniqueIdentifier id, OfferState offer, Date tradeDate, Date settleDate, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
         this.id = id;
         this.offer = offer;
-        this.bond = bond;
         this.tradeDate = tradeDate;
         this.settleDate = settleDate;
         this.buyer = buyer;
@@ -73,14 +71,6 @@ public class TradeState implements ContractState, Serializable {
 
     public void setOffer(OfferState offer) {
         this.offer = offer;
-    }
-
-    public BondState getBond() {
-        return bond;
-    }
-
-    public void setBond(BondState bond) {
-        this.bond = bond;
     }
 
     public Date getTradeDate() {
@@ -174,7 +164,6 @@ public class TradeState implements ContractState, Serializable {
             getProceeds() == that.getProceeds() &&
             Objects.equals(getId(), that.getId()) &&
             Objects.equals(getOffer(), that.getOffer()) &&
-            Objects.equals(getBond(), that.getBond()) &&
             Objects.equals(getTradeDate(), that.getTradeDate()) &&
             Objects.equals(getSettleDate(), that.getSettleDate()) &&
             Objects.equals(getBuyer(), that.getBuyer()) &&
@@ -185,7 +174,7 @@ public class TradeState implements ContractState, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getOffer(), getBond(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
+        return Objects.hash(getId(), getOffer(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
     }
 
     @Override
@@ -193,7 +182,6 @@ public class TradeState implements ContractState, Serializable {
         return "TradeState{" +
             "id=" + id +
             ", offer=" + offer +
-            ", bond=" + bond +
             ", tradeDate=" + tradeDate +
             ", settleDate=" + settleDate +
             ", buyer=" + buyer +

@@ -456,7 +456,7 @@ public class TradeFlow {
             TradeState trade = callingSession.receive(TradeState.class).unwrap(amount -> amount);
 
             // trade is being payed, so we are sending the bond
-            BondState bond = trade.getBond();
+            BondState bond = trade.getOffer().getBond();
             TokenSelection tokenSelection = new TokenSelection(getServiceHub(), 8, 100, 2000);
 
             // we get the pointer based on the bond of the trade

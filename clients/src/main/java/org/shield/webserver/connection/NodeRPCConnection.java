@@ -33,17 +33,25 @@ public class NodeRPCConnection {
 
     public void initialiseNodeRPCConnection() {
         NetworkHostAndPort rpcAddress = new NetworkHostAndPort(host, port);
-        CordaRPCClientConfiguration configuration = new CordaRPCClientConfiguration(Duration.ofMinutes(3), 4, java.lang.Boolean.getBoolean("net.corda.client.rpc.trackRpcCallSites"), Duration.ofSeconds(1), 4, 1, Duration.ofSeconds(5), new Double(1), 10, 10485760, Duration.ofDays(1));
+        CordaRPCClientConfiguration configuration = new CordaRPCClientConfiguration(Duration.ofSeconds(30), 4, java.lang.Boolean.getBoolean("net.corda.client.rpc.trackRpcCallSites"), Duration.ofSeconds(1), 4, 1, Duration.ofSeconds(1), new Double(1), 5, 10485760, Duration.ofDays(1));
         CordaRPCClient rpcClient = new CordaRPCClient(rpcAddress, configuration);
 
         logger.debug("Connecting to node " + host + ":" + port + " with user " + username);
 
-         GracefulReconnect gracefulReconnect = new GracefulReconnect(
-            () -> logger.debug("on disconnect"), //todo implement
-            () -> logger.debug("on reconnect"));
+        GracefulReconnect gracefulReconnect = new GracefulReconnect(this::onDisconnect, this::onReconnect, 3);
         rpcConnection = rpcClient.start(username, password, gracefulReconnect);
         logger.debug("connected to node.");
         proxy = rpcConnection.getProxy();
+    }
+
+    private void onDisconnect() {
+        // Insert implementation
+        logger.debug("On Disconnet triggered");
+    }
+
+    private void onReconnect() {
+        // Insert implementation
+        logger.debug("On reconnect triggered");
     }
 
     public CordaRPCConnection getRpcConnection() {

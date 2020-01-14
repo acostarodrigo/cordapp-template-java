@@ -44,7 +44,7 @@ public class TradeTests {
     @Test
     public void generateTradeTest() throws ExecutionException, InterruptedException {
         // Issuer sends trade
-        trade = new TradeState(new UniqueIdentifier(), offer,bond,new Date(), new Date(), broker1, issuer, 100, 1,100, 123, Currency.getInstance("USD"), State.PROPOSED);
+        trade = new TradeState(new UniqueIdentifier(), offer, new Date(), new Date(), broker1, issuer, 100, 1,100, 123, Currency.getInstance("USD"), State.PROPOSED);
         CordaFuture<UniqueIdentifier> signedTransactionCordaFuture = broker1Node.startFlow(new TradeFlow.Create(trade));
         mockNet.runNetwork();
         UniqueIdentifier id = signedTransactionCordaFuture.get();
@@ -61,7 +61,7 @@ public class TradeTests {
         usdFiatTokenTests.issueUSDTokenTest();
 
         // lets get current balances of bond and fiat
-        BondState bond = trade.getBond();
+        BondState bond = trade.getOffer().getBond();
         TokenPointer tokenPointer = bond.toPointer(bond.getClass());
         TokenType usd = FiatCurrency.Companion.getInstance("USD");
         // issuer bond balance should be the entire amount tof tokens of the bond
@@ -110,7 +110,7 @@ public class TradeTests {
         if (trade == null) throw new InterruptedException("Trade not generated");
 
         // lets get current balances of bond and fiat
-        BondState bond = trade.getBond();
+        BondState bond = trade.getOffer().getBond();
         TokenPointer tokenPointer = bond.toPointer(bond.getClass());
         TokenType usd = FiatCurrency.Companion.getInstance("USD");
         // issuer bond balance should be the entire amount tof tokens of the bond

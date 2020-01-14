@@ -19,6 +19,7 @@ public class TradeContract implements Contract {
     public void verify(LedgerTransaction tx) {
         for (CommandWithParties<CommandData> command : tx.getCommands()){
             if (command.getValue() instanceof Commands.Proposed){
+                // issuer
 
             } else if (command.getValue() instanceof Commands.Pending){
 

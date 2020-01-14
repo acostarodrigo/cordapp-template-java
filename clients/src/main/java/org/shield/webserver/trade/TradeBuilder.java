@@ -53,9 +53,6 @@ public class TradeBuilder {
 
         if (offer == null) throw new Exception(String.format("Provided offerId %s does not exists.", offerId.toString()));
 
-        // we get the bond
-        BondState bond = offer.getBond();
-
         // we get the buyer
         CordaX500Name buyerName = CordaX500Name.parse(buyerString);
         Party buyer = proxy.wellKnownPartyFromX500Name(buyerName);
@@ -67,7 +64,7 @@ public class TradeBuilder {
 
 
         // we generate the trade
-        TradeState trade = new TradeState(id,offer, bond,tradeDate,settleDate,buyer,seller, price,yield,size,proceeds, currency,state);
+        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,buyer,seller, price,yield,size,proceeds, currency,state);
         return trade;
     }
 
