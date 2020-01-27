@@ -1,58 +1,49 @@
 package org.shield.flows.treasurer;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.r3.corda.lib.tokens.money.FiatCurrency;
-import net.corda.core.contracts.Amount;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
-import net.corda.core.flows.StartableByRPC;
-import net.corda.core.identity.Party;
-import net.corda.core.transactions.SignedTransaction;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.CloseableHttpResponse;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.message.BufferedHeader;
 
-import java.math.BigDecimal;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.List;
+
 
 public class SignetFlow {
     private SignetFlow(){
         // we don't allow instantiation
     }
 
+    /**
+     * logs in into Signature Bank and retrieves the access token.
+     */
     @InitiatingFlow
-    public static class GetAccountBalance extends FlowLogic<Amount<FiatCurrency>>{
-        private String accountId;
-
-        public GetAccountBalance(String accountId) {
-            this.accountId = accountId;
-        }
-
+    private static class Login extends FlowLogic<String> {
         @Override
         @Suspendable
-        public Amount<FiatCurrency> call() throws FlowException {
-            FiatCurrency usd = new FiatCurrency();
-            Amount<FiatCurrency> amount = new Amount<>(1000L, BigDecimal.ONE, usd);
-            return amount;
+        public String call() throws FlowException {
+            String url = subFlow(new ConfigurationFlow.GetLoginURL());
+
+            // we set the header for the login request
+            List<NameValuePair> header = subFlow(new ConfigurationFlow.GetLoginHeader());
+            List<NameValuePair> loginParameters = subFlow(new ConfigurationFlow.GetLoginBody());
+
+            SignetLogin signetLogin = new SignetLogin(url, header, loginParameters);
+            String accessToken = null;
+            try {
+                accessToken = signetLogin.login();
+            } catch (IOException e) {
+                throw new FlowException(e);
+            }
+            return accessToken;
         }
     }
-
-    @InitiatingFlow
-    @StartableByRPC
-    public static class TransferToOmnibus extends FlowLogic<SignedTransaction>{
-        private Party from;
-        private long amount;
-
-        public TransferToOmnibus(Party from, long amount) {
-            this.from = from;
-            this.amount = amount;
-        }
-
-        @Override
-        @Suspendable
-        public SignedTransaction call() throws FlowException {
-            // TODO add validation to transfer fiat  money to omnibus account
-            // issue USD tokens
-            return subFlow(new USDFiatTokenFlow.Issue(from, amount));
-        }
-    }
-
-
 }
