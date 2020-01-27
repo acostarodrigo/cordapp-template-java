@@ -3,9 +3,11 @@ package org.shield.webserver.offer;
 import net.corda.core.contracts.UniqueIdentifier;
 import org.shield.bond.BondState;
 import org.shield.bond.DealType;
+import org.springframework.stereotype.Component;
 
 import java.util.Currency;
 import java.util.Date;
+
 
 public class BondMonitor {
     private UniqueIdentifier offerId;

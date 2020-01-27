@@ -21,8 +21,14 @@ import org.shield.webserver.connection.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.server.ServerRequest;
+import org.springframework.web.reactive.function.server.ServerResponse;
+import reactor.core.publisher.Mono;
 import rx.Observable;
 
 import java.io.IOException;
@@ -33,6 +39,7 @@ import java.util.function.Consumer;
 
 @RestController
 @RequestMapping("/offer")
+@Component
 public class OfferController {
     private static final Logger logger = LoggerFactory.getLogger(OfferController.class);
 
@@ -67,8 +74,14 @@ public class OfferController {
 
     }
 
+    /**
+     * Generates the Bond Monitor view, which is the list of all the AFS Offers.
+     * @param body
+     * @return
+     */
     @GetMapping("/bondMonitor")
     public ResponseEntity<List<BondMonitor>> getBondMonitor(@NotNull @RequestBody JsonNode body){
+        // we parse the user from the body and establish the connection to the node
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
@@ -77,14 +90,14 @@ public class OfferController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
 
+        // we query the vault for Offers.
         List<BondMonitor> offers = new ArrayList<>();
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
 
         Party myNode = proxy.nodeInfo().getLegalIdentities().get(0);
         // we get the data feed from the vault.
         DataFeed<Vault.Page<OfferState>, Vault.Update<OfferState>> dataFeed = proxy.vaultTrackByCriteria(OfferState.class, criteria);
-
-        for (StateAndRef<OfferState> stateAndRef : dataFeed.getSnapshot().getStates()){
+        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria,OfferState.class).getStates()){
             OfferState offer = stateAndRef.getState().getData();
             // we are getting the list of offers that are not ours and are AFS
             if (!myNode.equals(offer.getIssuer()) && offer.isAfs()){
@@ -105,18 +118,51 @@ public class OfferController {
                 offers.add(bondMonitor);
             }
         }
+        return new ResponseEntity<>(offers, HttpStatus.OK);
 
+    }
+
+    /**
+     * subcribe to updates on bondMonitor
+     * @param body
+     * @return
+     */
+    @GetMapping("/subscribeBondMonitor")
+    public ResponseEntity<BondMonitor> subscribeBondMonitor(@NotNull @RequestBody JsonNode body){
+        // we validate user sent in body and stablish connection
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+        }
+
+        // lets create the data feed with all unconsumed offer states
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        DataFeed<Vault.Page<OfferState>, Vault.Update<OfferState>> dataFeed = proxy.vaultTrackByCriteria(OfferState.class, criteria);
         Observable<Vault.Update<OfferState>> offerUpdates = dataFeed.getUpdates();
         offerUpdates.toBlocking().subscribe(offerStateUpdate -> offerStateUpdate.getProduced().forEach(new Consumer<StateAndRef<OfferState>>() {
             @Override
             public void accept(StateAndRef<OfferState> offerStateStateAndRef) {
-                System.out.println("Rodrigo:" + offerStateStateAndRef.getState().getData().toString());
-                logger.info("{}", offerStateStateAndRef.getState().getData());
+                OfferState offer = offerStateStateAndRef.getState().getData();
+                BondState bond = offer.getBond();
+                BondMonitor bondMonitor = new BondMonitor(offer.getOfferId(),bond.getId(),
+                    bond.getIssuerTicker(),
+                    offer.getOfferPrice(),
+                    offer.getOfferYield(),
+                    bond.getMaturityDate(),
+                    "Zero", // hardcoding for now
+                    "Zero", // hardcoding for now
+                    "Vanila", // hardcoding for now
+                    "Primary", // hardcoding for now
+                    offer.getAfsSize(),
+                    bond.getDealType(),
+                    bond.getDenomination());
             }
         }));
 
-        return new ResponseEntity<>(offers, HttpStatus.OK);
-
+        return null;
     }
 
 
@@ -136,6 +182,12 @@ public class OfferController {
         } catch (IOException e) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
+    }
+
+    @GetMapping("/hello")
+    public Mono<ServerResponse> hello(ServerRequest request) {
+        return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
+            .body(BodyInserters.fromObject("Hello, Spring!"));
     }
 
 }
