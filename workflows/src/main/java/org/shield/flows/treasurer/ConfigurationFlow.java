@@ -1,17 +1,14 @@
 package org.shield.flows.treasurer;
 
 import co.paralleluniverse.fibers.Suspendable;
-import com.sun.tools.javac.comp.Flow;
 import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
-import org.apache.http.NameValuePair;
-import org.apache.http.message.BasicNameValuePair;
 import org.shield.flows.membership.MembershipFlows;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Used to get configuration values from treasurer configuration file
@@ -78,35 +75,35 @@ public class ConfigurationFlow {
     }
 
     @InitiatingFlow
-    public static class GetLoginHeader extends FlowLogic<List<NameValuePair>>{
+    public static class GetLoginHeader extends FlowLogic<Map<String,String>>{
         @Override
         @Suspendable
-        public List<NameValuePair> call() throws FlowException {
+        public Map<String,String> call() throws FlowException {
             // we get the configuration file
             CordappConfig config = subFlow(new GetConfiguration());
             if (!config.exists("UUID") || !config.exists("SourceId") || !config.exists("user_token")) throw new FlowException("Configuration file for treasurer is not correct.");
 
-            List<NameValuePair> loginParameters = new ArrayList<>();
-            loginParameters.add(new BasicNameValuePair("UUID", config.getString("UUID")));
-            loginParameters.add(new BasicNameValuePair("SourceId", config.getString("SourceId")));
-            loginParameters.add(new BasicNameValuePair("user_token", config.getString("user_token")));
+            Map<String,String> loginParameters = new HashMap<>();
+            loginParameters.put("UUID", config.getString("UUID"));
+            loginParameters.put("SourceId", config.getString("SourceId"));
+            loginParameters.put("user_token", config.getString("user_token"));
             return loginParameters;
         }
     }
 
     @InitiatingFlow
-    public static class GetLoginBody extends FlowLogic<List<NameValuePair>>{
+    public static class GetLoginBody extends FlowLogic<Map<String,String>>{
         @Override
         @Suspendable
-        public List<NameValuePair> call() throws FlowException {
+        public Map<String,String> call() throws FlowException {
             // we get the configuration file
             CordappConfig config = subFlow(new GetConfiguration());
             if ( !config.exists("client_id") || !config.exists("client_secret") || !config.exists("audience")) throw new FlowException("Configuration file for treasurer is not correct.");
 
-            List<NameValuePair> loginParameters = new ArrayList<>();
-            loginParameters.add(new BasicNameValuePair("client_id", config.getString("client_id")));
-            loginParameters.add(new BasicNameValuePair("client_secret", config.getString("client_secret")));
-            loginParameters.add(new BasicNameValuePair("audience", config.getString("audience")));
+            Map<String,String> loginParameters = new HashMap<>();
+            loginParameters.put("client_id", config.getString("client_id"));
+            loginParameters.put("client_secret", config.getString("client_secret"));
+            loginParameters.put("audience", config.getString("audience"));
             return loginParameters;
         }
     }
