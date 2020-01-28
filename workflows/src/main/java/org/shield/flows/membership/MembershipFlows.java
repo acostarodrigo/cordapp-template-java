@@ -177,6 +177,22 @@ public class MembershipFlows {
     }
 
     /**
+     * Validates if caller is a member of the organization
+     */
+    public static class isMember extends FlowLogic<Boolean>{
+        @Override
+        @Suspendable
+        public Boolean call() throws FlowException {
+            MembershipState membershipState = subFlow(new getMembership());
+
+            // we will validate is an active member of the organization
+            if (membershipState == null || !membershipState.isActive()) return false;
+
+            return true;
+        }
+    }
+
+    /**
      * Retrieves the membership state from the BNO node.
      * Will fail if caller is not a member
      */
