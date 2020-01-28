@@ -6,6 +6,7 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import org.json.simple.parser.ParseException;
 import org.shield.flows.membership.MembershipFlows;
+import org.shield.signet.SignetAccountState;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,7 +79,9 @@ public class SignetFlow {
     }
 
     @InitiatingFlow
-    public static class DepositUSD extends FlowLogic<Void>{
+    private static class IssueFiatToken extends FlowLogic<Void>{
+        SignetAccountState sourceAccount;
+
         @Override
         @Suspendable
         public Void call() throws FlowException {

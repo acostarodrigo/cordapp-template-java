@@ -9,32 +9,47 @@ import org.jetbrains.annotations.NotNull;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 @CordaSerializable
 public class SignetAccountState implements ContractState, Serializable {
     private Party owner;
-    private List<String> walletAddresses;
+    private String walletAddress;
 
-    public SignetAccountState(Party owner, List<String> walletAddresses) {
+
+    public SignetAccountState(Party owner, String walletAddresses) {
         this.owner = owner;
-        this.walletAddresses = walletAddresses;
+        this.walletAddress = walletAddresses;
     }
 
     public Party getOwner() {
         return owner;
     }
 
-    public List<String> getWalletAddresses() {
-        return walletAddresses;
+    public String getWalletAddress() {
+        return walletAddress;
     }
 
-    public void setWalletAddresses(List<String> walletAddresses) {
-        this.walletAddresses = walletAddresses;
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SignetAccountState that = (SignetAccountState) o;
+        return Objects.equals(getOwner(), that.getOwner()) &&
+            Objects.equals(getWalletAddress(), that.getWalletAddress());
     }
 
-    public void addWalletAddress(String address){
-        if (!this.walletAddresses.contains(address))
-            this.walletAddresses.add(address);
+    @Override
+    public int hashCode() {
+        return Objects.hash(getOwner(), getWalletAddress());
+    }
+
+    @Override
+    public String toString() {
+        return "SignetAccountState{" +
+            "owner=" + owner +
+            ", walletAddresses='" + walletAddress + '\'' +
+            '}';
     }
 
     @NotNull
