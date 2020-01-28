@@ -8,8 +8,11 @@ buildscript {
         confidential_id_release_group = "com.r3.corda.lib.ci"
         confidential_id_release_version = "1.0"
 
+        //tokens
         tokens_release_group = 'com.r3.corda.lib.tokens'
         tokens_release_version = '1.0'
+
+
         corda_gradle_plugins_version = '4.0.42'
         junit_version = '4.12'
         quasar_version = '0.7.10'
@@ -120,6 +123,8 @@ dependencies {
     cordapp "$accounts_release_group:accounts-contracts:$accounts_release_version"
     cordapp "$accounts_release_group:accounts-workflows:$accounts_release_version"
 
+    // Http Client -- tried with many different ones. But they are giving me signing errors when building jar
+    compile 'com.squareup.okhttp3:okhttp:4.3.1'
 }
 
 task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
