@@ -64,12 +64,11 @@ public class ConfigurationFlow {
     }
 
     @InitiatingFlow
-    public static class GetLoginURL extends FlowLogic<String>{
+    public static class GetURL extends FlowLogic<String>{
         @Override
         @Suspendable
         public String call() throws FlowException {
             String url = subFlow(new GetAPIURL());
-            url.concat("login/");
             return url;
         }
     }

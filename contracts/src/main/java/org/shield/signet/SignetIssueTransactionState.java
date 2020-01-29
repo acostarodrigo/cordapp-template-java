@@ -25,7 +25,75 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
     private IssueState state;
 
 
+    public SignetIssueTransactionState(UUID transactionId, Timestamp timestamp, Amount<Currency> amount, SignetAccountState source, SignetAccountState escrow, String signetConfirmationId, IssueState state) {
+        this.transactionId = transactionId;
+        this.timestamp = timestamp;
+        this.amount = amount;
+        this.source = source;
+        this.escrow = escrow;
+        this.signetConfirmationId = signetConfirmationId;
+        this.state = state;
+    }
 
+    public UUID getTransactionId() {
+        return transactionId;
+    }
+
+    public Timestamp getTimestamp() {
+        return timestamp;
+    }
+
+    public Amount<Currency> getAmount() {
+        return amount;
+    }
+
+    public SignetAccountState getSource() {
+        return source;
+    }
+
+    public SignetAccountState getEscrow() {
+        return escrow;
+    }
+
+    public String getSignetConfirmationId() {
+        return signetConfirmationId;
+    }
+
+    public IssueState getState() {
+        return state;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SignetIssueTransactionState that = (SignetIssueTransactionState) o;
+        return Objects.equals(getTransactionId(), that.getTransactionId()) &&
+            Objects.equals(getTimestamp(), that.getTimestamp()) &&
+            Objects.equals(getAmount(), that.getAmount()) &&
+            Objects.equals(getSource(), that.getSource()) &&
+            Objects.equals(getEscrow(), that.getEscrow()) &&
+            Objects.equals(getSignetConfirmationId(), that.getSignetConfirmationId()) &&
+            getState() == that.getState();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getTransactionId(), getTimestamp(), getAmount(), getSource(), getEscrow(), getSignetConfirmationId(), getState());
+    }
+
+    @Override
+    public String toString() {
+        return "SignetIssueTransactionState{" +
+            "transactionId=" + transactionId +
+            ", timestamp=" + timestamp +
+            ", amount=" + amount +
+            ", source=" + source +
+            ", escrow=" + escrow +
+            ", signetConfirmationId='" + signetConfirmationId + '\'' +
+            ", state=" + state +
+            '}';
+    }
 
     @NotNull
     @Override

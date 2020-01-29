@@ -15,11 +15,13 @@ import java.util.Objects;
 public class SignetAccountState implements ContractState, Serializable {
     private Party owner;
     private String walletAddress;
+    private String userToken;
 
 
-    public SignetAccountState(Party owner, String walletAddresses) {
+    public SignetAccountState(Party owner, String walletAddresses, String userToken) {
         this.owner = owner;
         this.walletAddress = walletAddresses;
+        this.userToken = userToken;
     }
 
     public Party getOwner() {
@@ -30,25 +32,31 @@ public class SignetAccountState implements ContractState, Serializable {
         return walletAddress;
     }
 
+    public String getUserToken() {
+        return userToken;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         SignetAccountState that = (SignetAccountState) o;
         return Objects.equals(getOwner(), that.getOwner()) &&
-            Objects.equals(getWalletAddress(), that.getWalletAddress());
+            Objects.equals(getWalletAddress(), that.getWalletAddress()) &&
+            Objects.equals(getUserToken(), that.getUserToken());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOwner(), getWalletAddress());
+        return Objects.hash(getOwner(), getWalletAddress(), getUserToken());
     }
 
     @Override
     public String toString() {
         return "SignetAccountState{" +
             "owner=" + owner +
-            ", walletAddresses='" + walletAddress + '\'' +
+            ", walletAddress='" + walletAddress + '\'' +
+            ", userToken='" + userToken + '\'' +
             '}';
     }
 
