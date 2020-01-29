@@ -1,4 +1,4 @@
-package org.shield.flows.treasurer;
+package org.shield.flows.treasurer.signet;
 
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.flows.FlowException;
@@ -6,6 +6,8 @@ import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
 import org.json.simple.parser.ParseException;
 import org.shield.flows.membership.MembershipFlows;
+import org.shield.flows.treasurer.signet.ConfigurationFlow;
+import org.shield.flows.treasurer.signet.SignetAPI;
 import org.shield.signet.SignetAccountState;
 
 import java.io.IOException;
@@ -78,7 +80,6 @@ public class SignetFlow {
         }
     }
 
-    @InitiatingFlow
     private static class IssueFiatToken extends FlowLogic<Void>{
         SignetAccountState sourceAccount;
 

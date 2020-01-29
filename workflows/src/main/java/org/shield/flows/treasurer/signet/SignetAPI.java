@@ -1,4 +1,4 @@
-package org.shield.flows.treasurer;
+package org.shield.flows.treasurer.signet;
 
 
 import org.json.simple.JSONObject;

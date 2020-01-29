@@ -1,4 +1,4 @@
-package org.shield.flows.treasurer;
+package org.shield.flows.treasurer.signet;
 
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.cordapp.CordappConfig;
