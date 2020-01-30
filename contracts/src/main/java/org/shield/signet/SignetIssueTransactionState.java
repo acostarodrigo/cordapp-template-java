@@ -63,6 +63,10 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
         return state;
     }
 
+    public void setState(IssueState state) {
+        this.state = state;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -76,6 +80,8 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
             Objects.equals(getSignetConfirmationId(), that.getSignetConfirmationId()) &&
             getState() == that.getState();
     }
+
+
 
     @Override
     public int hashCode() {

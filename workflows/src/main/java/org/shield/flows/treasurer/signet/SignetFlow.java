@@ -2,23 +2,23 @@ package org.shield.flows.treasurer.signet;
 
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Amount;
+import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.flows.FlowException;
-import net.corda.core.flows.FlowLogic;
-import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.contracts.StateRef;
+import net.corda.core.flows.*;
+import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
+import net.corda.core.transactions.SignedTransaction;
+import net.corda.core.transactions.TransactionBuilder;
 import org.json.simple.parser.ParseException;
 import org.shield.flows.membership.MembershipFlows;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
-import org.shield.signet.SignetAccountState;
-import org.shield.signet.SignetIssueTransactionState;
+import org.shield.signet.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.security.PublicKey;
+import java.util.*;
 
 
 public class SignetFlow {
@@ -123,25 +123,99 @@ public class SignetFlow {
         @Override
         @Suspendable
         public Void call() throws FlowException {
+            // only treasurer can call
+            if (!subFlow(new MembershipFlows.isTreasure())) throw new FlowException("Only an active treasurer organization can issue tokerns.");
+
+            // lets validate the state
+            if (!signetIssueTransaction.getState().equals(IssueState.CREATED)) throw new FlowException("Issue transaction must be in Created status");
+
             // we will validate that this issue request doesn't exists from before
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             for (StateAndRef<SignetIssueTransactionState> stateAndRef : getServiceHub().getVaultService().queryBy(SignetIssueTransactionState.class, criteria).getStates()){
                 if (stateAndRef.getState().getData().getTransactionId().equals(signetIssueTransaction.getTransactionId())) throw new FlowException("Provided Signet issue state already exists");
             }
 
+            // caller must be escrow owner
+            Party caller = getOurIdentity();
+            if (caller.equals(signetIssueTransaction.getEscrow().getOwner())) throw new FlowException("Escrow account owner is not the caller.");
+
             // we will generate the transaction
+            List<PublicKey> requiredSigners = Arrays.asList(signetIssueTransaction.getSource().getOwner().getOwningKey(), caller.getOwningKey());
+            Command createCommand = new Command<>(new SignetIssueTransactionContract.Commands.create(), requiredSigners);
+            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            TransactionBuilder txBuilder = new TransactionBuilder(notary)
+                .addOutputState(signetIssueTransaction, SignetIssueTransactionContract.ID)
+                .addCommand(createCommand);
 
             // get it signed
+            SignedTransaction partiallysignedTransaction = getServiceHub().signInitialTransaction(txBuilder);
+            FlowSession traderSession = initiateFlow(signetIssueTransaction.getSource().getOwner());
+            SignedTransaction signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTransaction,Arrays.asList(traderSession)));
+
+            // finalty for creation
+            subFlow(new FinalityFlow(signedTransaction,traderSession));
+
 
             // transfer from account to escrow
             boolean transferCompleted = subFlow(new TransferToEscrow(signetIssueTransaction.getSource(), signetIssueTransaction.getEscrow(), signetIssueTransaction.getAmount()));
             if (transferCompleted) {
-                // update signet Issue State
+                // update signet Issue State to TRANSFER_COMPLETE
+                Command updateCommand = new Command<>(new SignetIssueTransactionContract.Commands.updateState(),requiredSigners);
+                StateAndRef<SignetIssueTransactionState> input = signedTransaction.getCoreTransaction().outRef(0);
+                signetIssueTransaction.setState(IssueState.TRANSFER_COMPLETE);
+                txBuilder = new TransactionBuilder(notary)
+                    .addInputState(input)
+                    .addOutputState(signetIssueTransaction, SignetIssueTransactionContract.ID)
+                    .addCommand(updateCommand);
+
+                partiallysignedTransaction = getServiceHub().signInitialTransaction(txBuilder);
+                signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTransaction, Arrays.asList(traderSession)));
+                subFlow(new FinalityFlow(signedTransaction, traderSession));
+
+                // now we will issue the tokens
                 subFlow(new USDFiatTokenFlow.Issue(signetIssueTransaction.getSource().getOwner(), signetIssueTransaction.getAmount().getQuantity()));
-                // update signet Issue State
+                // and change the status of the transaction
+                input = signedTransaction.getCoreTransaction().outRef(0);
+                signetIssueTransaction.setState(IssueState.ISSUE_COMPLETE);
+                txBuilder = new TransactionBuilder(notary)
+                    .addInputState(input)
+                    .addOutputState(signetIssueTransaction, SignetIssueTransactionContract.ID)
+                    .addCommand(updateCommand);
+
+                partiallysignedTransaction = getServiceHub().signInitialTransaction(txBuilder);
+                signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTransaction, Arrays.asList(traderSession)));
+                subFlow(new FinalityFlow(signedTransaction, traderSession));
             } else {
-                // update Signet issue state with value
+                // update signet Issue State to TRANSFER_COMPLETE
+                Command updateCommand = new Command<>(new SignetIssueTransactionContract.Commands.updateState(),requiredSigners);
+                StateAndRef<SignetIssueTransactionState> input = signedTransaction.getCoreTransaction().outRef(0);
+                signetIssueTransaction.setState(IssueState.ERROR);
+                txBuilder = new TransactionBuilder(notary)
+                    .addInputState(input)
+                    .addOutputState(signetIssueTransaction, SignetIssueTransactionContract.ID)
+                    .addCommand(updateCommand);
+
+                partiallysignedTransaction = getServiceHub().signInitialTransaction(txBuilder);
+                signedTransaction = subFlow(new CollectSignaturesFlow(partiallysignedTransaction, Arrays.asList(traderSession)));
+                subFlow(new FinalityFlow(signedTransaction, traderSession));
             }
+            return null;
+        }
+    }
+
+    @InitiatedBy(TransferToEscrowAndIssue.class)
+    public static class TransferToEscrowAndIssueResponder extends FlowLogic<Void>{
+        private FlowSession otherSession;
+
+        public TransferToEscrowAndIssueResponder(FlowSession otherSession) {
+            this.otherSession = otherSession;
+        }
+
+        @Override
+        @Suspendable
+        public Void call() throws FlowException {
+            subFlow(new ReceiveTransactionFlow(otherSession));
+            subFlow(new ReceiveFinalityFlow(otherSession));
             return null;
         }
     }
