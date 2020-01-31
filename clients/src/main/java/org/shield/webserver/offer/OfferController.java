@@ -127,7 +127,7 @@ public class OfferController {
      * @param body
      * @return
      */
-    @GetMapping("/subscribeBondMonitor")
+    @PostMapping("/subscribeBondMonitor")
     public ResponseEntity<BondMonitor> subscribeBondMonitor(@NotNull @RequestBody JsonNode body){
         // we validate user sent in body and stablish connection
         ObjectMapper objectMapper = new ObjectMapper();
@@ -159,6 +159,8 @@ public class OfferController {
                     offer.getAfsSize(),
                     bond.getDealType(),
                     bond.getDenomination());
+
+                System.out.println(bondMonitor.toString());
             }
         }));
 

@@ -113,6 +113,7 @@ public class SignetFlow {
     /**
      * takes care of sending funds from trader to escrow and issue tokens to trader.
      */
+    @InitiatingFlow
     public static class TransferToEscrowAndIssue extends FlowLogic<Void>{
         private SignetIssueTransactionState signetIssueTransaction;
 
