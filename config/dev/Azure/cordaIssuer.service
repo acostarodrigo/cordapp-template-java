@@ -1,0 +1,13 @@
+Description=Corda Node - Issuer
+Requires=network.target
+
+[Service]
+Type=simple
+User=acostarodrigo
+WorkingDirectory=/home/acostarodrigo/ShieldCorda/build/nodes/issuer
+ExecStart=/usr/bin/java -jar /home/acostarodrigo/ShieldCorda/build/nodes/issuer/corda.jar
+Restart=on-failure
+Environment="CAPSULE_CACHE_DIR=./capsule"
+
+[Install]
+WantedBy=multi-user.target

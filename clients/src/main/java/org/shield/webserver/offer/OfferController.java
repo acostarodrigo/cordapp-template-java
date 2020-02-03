@@ -11,6 +11,9 @@ import net.corda.core.messaging.DataFeed;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
+import org.reactivestreams.Publisher;
+import org.reactivestreams.Subscriber;
+import org.reactivestreams.Subscription;
 import org.shield.bond.BondState;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.offer.OfferState;
@@ -26,10 +29,21 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.reactive.function.BodyInserters;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
+import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.server.ServerRequest;
 import org.springframework.web.reactive.function.server.ServerResponse;
+import org.springframework.web.reactive.function.server.support.ServerResponseResultHandler;
+import reactor.core.CoreSubscriber;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.FluxProcessor;
 import reactor.core.publisher.Mono;
+import rx.Notification;
 import rx.Observable;
+import rx.functions.Action1;
+import rx.internal.reactivestreams.PublisherAdapter;
+import rx.internal.reactivestreams.PublisherAsCompletable;
+import rx.internal.reactivestreams.SubscriberAdapter;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -128,43 +142,27 @@ public class OfferController {
      * @return
      */
     @PostMapping("/subscribeBondMonitor")
-    public ResponseEntity<BondMonitor> subscribeBondMonitor(@NotNull @RequestBody JsonNode body){
+    public Observable<Vault.Update<OfferState>> subscribeBondMonitor(@NotNull @RequestBody JsonNode body){
         // we validate user sent in body and stablish connection
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            //
         }
 
         // lets create the data feed with all unconsumed offer states
+        List<BondMonitor> offers = new ArrayList<>();
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
         DataFeed<Vault.Page<OfferState>, Vault.Update<OfferState>> dataFeed = proxy.vaultTrackByCriteria(OfferState.class, criteria);
         Observable<Vault.Update<OfferState>> offerUpdates = dataFeed.getUpdates();
-        offerUpdates.toBlocking().subscribe(offerStateUpdate -> offerStateUpdate.getProduced().forEach(new Consumer<StateAndRef<OfferState>>() {
-            @Override
-            public void accept(StateAndRef<OfferState> offerStateStateAndRef) {
-                OfferState offer = offerStateStateAndRef.getState().getData();
-                BondState bond = offer.getBond();
-                BondMonitor bondMonitor = new BondMonitor(offer.getOfferId(),bond.getId(),
-                    bond.getIssuerTicker(),
-                    offer.getOfferPrice(),
-                    offer.getOfferYield(),
-                    bond.getMaturityDate(),
-                    "Zero", // hardcoding for now
-                    "Zero", // hardcoding for now
-                    "Vanila", // hardcoding for now
-                    "Primary", // hardcoding for now
-                    offer.getAfsSize(),
-                    bond.getDealType(),
-                    bond.getDenomination());
 
-                System.out.println(bondMonitor.toString());
-            }
-        }));
+        PublisherAdapter publisherAdapter = new PublisherAdapter(offerUpdates);
 
-        return null;
+
+        //return Flux.from(publisherAdapter).toString();
+        return offerUpdates;
     }
 
 
@@ -185,11 +183,4 @@ public class OfferController {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
     }
-
-    @GetMapping("/hello")
-    public Mono<ServerResponse> hello(ServerRequest request) {
-        return ServerResponse.ok().contentType(MediaType.TEXT_PLAIN)
-            .body(BodyInserters.fromObject("Hello, Spring!"));
-    }
-
 }
