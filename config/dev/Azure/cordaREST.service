@@ -1,0 +1,13 @@
+Description=Corda REST API
+Requires=network.target
+
+[Service]
+Type=simple
+User=acostarodrigo
+WorkingDirectory=/home/acostarodrigo/ShieldCorda
+ExecStart=/home/acostarodrigo/ShieldCorda/gradlew runTemplateServer
+Restart=on-failure
+Environment="CAPSULE_CACHE_DIR=./capsule"
+
+[Install]
+WantedBy=multi-user.target
