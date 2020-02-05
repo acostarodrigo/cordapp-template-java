@@ -52,12 +52,12 @@ public class SignetFlow {
     /**
      * Takes care of sending funds from trader wallet to escrow account
      */
-    private static class TransferToEscrow extends FlowLogic<Boolean>{
+    private static class SendToEscrow extends FlowLogic<Boolean>{
         private SignetAccountState source;
         private SignetAccountState escrow;
         private Amount amount;
 
-        public TransferToEscrow(SignetAccountState source, SignetAccountState escrow, Amount amount) {
+        public SendToEscrow(SignetAccountState source, SignetAccountState escrow, Amount amount) {
             this.source = source;
             this.escrow = escrow;
             this.amount = amount;
@@ -158,7 +158,7 @@ public class SignetFlow {
 
 
             // transfer from account to escrow
-            boolean transferCompleted = subFlow(new TransferToEscrow(signetIssueTransaction.getSource(), signetIssueTransaction.getEscrow(), signetIssueTransaction.getAmount()));
+            boolean transferCompleted = subFlow(new SendToEscrow(signetIssueTransaction.getSource(), signetIssueTransaction.getEscrow(), signetIssueTransaction.getAmount()));
             if (transferCompleted) {
                 // update signet Issue State to TRANSFER_COMPLETE
                 Command updateCommand = new Command<>(new SignetIssueTransactionContract.Commands.updateState(),requiredSigners);
