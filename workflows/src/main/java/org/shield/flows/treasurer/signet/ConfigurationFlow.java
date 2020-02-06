@@ -33,7 +33,7 @@ public class ConfigurationFlow {
             String address = config.getString("URL");
             int port = config.getInt("PORT");
             String url = address.concat(":").concat(String.valueOf(port));
-            url.concat("/mydomain/v1/");
+            url = url.concat("/mydomain/v1/");
             return url;
         }
     }
@@ -80,11 +80,10 @@ public class ConfigurationFlow {
         public Map<String,String> call() throws FlowException {
             // we get the configuration file
             CordappConfig config = subFlow(new GetConfiguration());
-            if (!config.exists("UUID") || !config.exists("SourceId") || !config.exists("user_token")) throw new FlowException("Configuration file for treasurer is not correct.");
+            if (!config.exists("SourceID") || !config.exists("user_token")) throw new FlowException("Configuration file for treasurer is not correct.");
 
             Map<String,String> loginParameters = new HashMap<>();
-            loginParameters.put("UUID", config.getString("UUID"));
-            loginParameters.put("SourceId", config.getString("SourceId"));
+            loginParameters.put("SourceID", config.getString("SourceID"));
             loginParameters.put("user_token", config.getString("user_token"));
             return loginParameters;
         }

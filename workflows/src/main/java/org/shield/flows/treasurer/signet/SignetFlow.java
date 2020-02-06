@@ -4,25 +4,29 @@ import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.StateRef;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
-import org.json.simple.parser.ParseException;
+import org.json.simple.JSONObject;
 import org.shield.flows.membership.MembershipFlows;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
-import org.shield.signet.*;
+import org.shield.signet.IssueState;
+import org.shield.signet.SignetAccountState;
+import org.shield.signet.SignetIssueTransactionContract;
+import org.shield.signet.SignetIssueTransactionState;
 
-import java.io.IOException;
 import java.security.PublicKey;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 
 public class SignetFlow {
-    private static SignetAPI signetAPI;
+    private static SignetAPI signetAPI = null;
 
     private SignetFlow(){
         // we don't allow instantiation
@@ -90,12 +94,12 @@ public class SignetFlow {
 
             // we are ready to perform the transfer. We start the request
             try {
-                String referenceId = signetAPI.transferSend(source.getWalletAddress(), escrow.getWalletAddress(), amount.getQuantity());
+                String referenceId = signetAPI.sendRequest(source.getWalletAddress(), escrow.getWalletAddress(), amount.getQuantity());
 
                 // transfer is in progress. Let's check the status until completed or for 5 times
                 SignetAPI.SendStatus sendStatus = null;
                 for (int i=0; i<5; i++){
-                    sendStatus = signetAPI.transferStatus(referenceId);
+                    sendStatus = signetAPI.sendStatus(referenceId);
 
                     // transfer is done. we are good to go
                     if (sendStatus.equals(SignetAPI.SendStatus.DONE)){
@@ -114,10 +118,10 @@ public class SignetFlow {
      * takes care of sending funds from trader to escrow and issue tokens to trader.
      */
     @InitiatingFlow
-    public static class TransferToEscrowAndIssue extends FlowLogic<Void>{
+    public static class SendToEscrowAndIssue extends FlowLogic<Void>{
         private SignetIssueTransactionState signetIssueTransaction;
 
-        public TransferToEscrowAndIssue(SignetIssueTransactionState signetIssueTransaction) {
+        public SendToEscrowAndIssue(SignetIssueTransactionState signetIssueTransaction) {
             this.signetIssueTransaction = signetIssueTransaction;
         }
 
@@ -204,11 +208,11 @@ public class SignetFlow {
         }
     }
 
-    @InitiatedBy(TransferToEscrowAndIssue.class)
-    public static class TransferToEscrowAndIssueResponder extends FlowLogic<Void>{
+    @InitiatedBy(SendToEscrowAndIssue.class)
+    public static class SendToEscrowAndIssueResponder extends FlowLogic<Void>{
         private FlowSession otherSession;
 
-        public TransferToEscrowAndIssueResponder(FlowSession otherSession) {
+        public SendToEscrowAndIssueResponder(FlowSession otherSession) {
             this.otherSession = otherSession;
         }
 
@@ -217,6 +221,102 @@ public class SignetFlow {
         public Void call() throws FlowException {
             subFlow(new ReceiveTransactionFlow(otherSession));
             subFlow(new ReceiveFinalityFlow(otherSession));
+            return null;
+        }
+    }
+
+
+    private static class DepositToEscrow extends FlowLogic<String>{
+        private SignetAccountState escrow;
+        private Amount amount;
+
+        public DepositToEscrow(SignetAccountState escrow, Amount amount) {
+            this.escrow = escrow;
+            this.amount = amount;
+        }
+
+        @Override
+        @Suspendable
+        public String call() throws FlowException {
+            // we initialize the API
+            signetAPI = subFlow(new Configure());
+
+            // lets validate the escrow account exists on signet
+            try {
+                if (!signetAPI.getUserWallets(escrow.getUserToken()).contains(escrow.getWalletAddress())) throw new FlowException(String.format("Specified escrow account doesn't contain wallet %s in Signet", escrow.getWalletAddress()));
+            } catch (Exception e) {
+                throw new FlowException(String.format("Unable to determine if escrow account exists. No action was performed. Exception: %s", e.toString()));
+            }
+
+            String referenceId = null;
+            try {
+                JSONObject response = signetAPI.depositRequest(escrow.getWalletAddress(), amount.getQuantity());
+                if (!response.get("Status").toString().equals("0")) {
+                    // todo there was an error on the request. Handle
+                }
+                referenceId = response.get("ReferenceId").toString();
+            } catch (Exception e) {
+                throw new FlowException("Unable to process deposit request.");
+            }
+
+            String confirmationId = null;
+            for (int i = 0; i<10;i++){
+                try {
+                    JSONObject response = signetAPI.depositStatus(referenceId);
+                    if (!response.get("Status").toString().equals("0")){
+                        // handle error in response
+                    }
+                    String depositStatus = response.get("RequestStatus").toString();
+                    if (depositStatus.equals("Done")){
+                        // todo get the confirmationId
+                        confirmationId = response.get("ConfirmationId").toString();
+                        break;
+                    }
+                } catch (Exception e) {
+                    throw new FlowException(String.format("Unable to get status of deposit request %s", referenceId));
+                }
+            }
+            return confirmationId;
+        }
+    }
+
+    @InitiatingFlow
+    @StartableByRPC
+    public static class DepositToEscrowAndIssue extends FlowLogic<Void>{
+        private SignetIssueTransactionState signetIssueTransactionState;
+        private UUID transactionId;
+
+        public DepositToEscrowAndIssue(SignetIssueTransactionState signetIssueTransactionState) {
+            this.signetIssueTransactionState = signetIssueTransactionState;
+            this.transactionId = signetIssueTransactionState.getTransactionId();
+        }
+
+        public DepositToEscrowAndIssue(UUID transactionId) {
+            this.transactionId = transactionId;
+        }
+
+        @Override
+        @Suspendable
+        public Void call() throws FlowException {
+            // we initialize the API
+            signetAPI = subFlow(new Configure());
+
+            // validate if it already exist.
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            StateAndRef<SignetIssueTransactionState> input = null;
+            for (StateAndRef<SignetIssueTransactionState> stateAndRef : getServiceHub().getVaultService().queryBy(SignetIssueTransactionState.class, criteria).getStates()){
+                if (stateAndRef.getState().getData().getTransactionId().equals(transactionId)){
+                    input = stateAndRef;
+                    signetIssueTransactionState = stateAndRef.getState().getData();
+                }
+            }
+
+            if (signetIssueTransactionState == null) throw new FlowException("Signet transaction does not exists.");
+
+            String confirmationId = subFlow(new DepositToEscrow(signetIssueTransactionState.getEscrow(), signetIssueTransactionState.getAmount()));
+
+            subFlow(new USDFiatTokenFlow.Issue(signetIssueTransactionState.getSource().getOwner(), signetIssueTransactionState.getAmount().getQuantity()));
+
             return null;
         }
     }

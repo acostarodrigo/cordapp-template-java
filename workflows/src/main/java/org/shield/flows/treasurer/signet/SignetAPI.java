@@ -7,16 +7,12 @@ import io.jsonwebtoken.Jwts;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
-import shadow.okhttp3.FormBody;
-import shadow.okhttp3.OkHttpClient;
-import shadow.okhttp3.Request;
-import shadow.okhttp3.Response;
+import shadow.okhttp3.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
+import java.util.*;
 
 public class SignetAPI {
     private OkHttpClient client;
@@ -28,6 +24,9 @@ public class SignetAPI {
 
     // possible send status for transfer operations
     public enum SendStatus{PENDING, DONE};
+    public enum RequestStatus{PENDING, DONE, REJECTED, REQUESTCONFIRMED};
+
+    private final SimpleDateFormat dateTimeFormatter = new SimpleDateFormat("YYYY/mm/dd hh:mm:ss a zzz");
 
 
 
@@ -47,18 +46,20 @@ public class SignetAPI {
     private void login() throws IOException, ParseException {
         // we create the request with the login url
         requestBuilder = new Request.Builder()
-            .url(url.concat("login"));
+            .url(this.url.concat("login"));
 
         // add the header
         for (Map.Entry<String,String> entry  : loginHeader.entrySet()){
             requestBuilder.addHeader(entry.getKey(), entry.getValue());
         }
+        requestBuilder.addHeader("UUID", UUID.randomUUID().toString());
 
         // Lets create the body of the request.
         FormBody.Builder formBodyBuilder = new FormBody.Builder();
         for (Map.Entry<String, String> entry : loginBody.entrySet()){
             formBodyBuilder.add(entry.getKey(), entry.getValue());
         }
+        formBodyBuilder.add("grant_type", "client_credentials");
         FormBody body = formBodyBuilder.build();
 
         // we add the body to the request
@@ -80,7 +81,7 @@ public class SignetAPI {
      * @return true if expired (or close to expire)
      */
     public boolean isTokenExpired(){
-        if (this.accessToken.isEmpty()) return true;
+        if (this.accessToken == null || this.accessToken.isEmpty()) return true;
 
         // we will parse the token without signature
         int i = this.accessToken.lastIndexOf('.');
@@ -107,7 +108,11 @@ public class SignetAPI {
      * @throws ParseException
      */
     public List<String> getUserWallets(String userToken) throws IOException, ParseException {
-        if (isTokenExpired()) login();
+        if (isTokenExpired())
+        {
+            login();
+        }
+
         loginHeader.put("access_token", this.accessToken);
 
         // we create the request with the clientData url
@@ -121,6 +126,8 @@ public class SignetAPI {
         for (Map.Entry<String,String> entry : header.entrySet()){
             requestBuilder.addHeader(entry.getKey(), entry.getValue());
         }
+        requestBuilder.addHeader("UUID", UUID.randomUUID().toString());
+
         // we add the body and build the request
         FormBody body = new FormBody.Builder()
             .add("Time", new Date().toString())
@@ -154,6 +161,8 @@ public class SignetAPI {
         for (Map.Entry<String,String> entry : header.entrySet()){
             requestBuilder.addHeader(entry.getKey(), entry.getValue());
         }
+        requestBuilder.addHeader("UUID", UUID.randomUUID().toString());
+
         // we add the body and build the request
         FormBody body = new FormBody.Builder()
             .add("Time", new Date().toString())
@@ -172,13 +181,15 @@ public class SignetAPI {
         return balance;
     }
 
-    public String transferSend(String fromWallet, String toWallet, long amount) throws IOException, ParseException {
+    public String sendRequest(String fromWallet, String toWallet, long amount) throws IOException, ParseException {
         if (isTokenExpired()) login();
         loginHeader.put("access_token", this.accessToken);
 
         // we create the request with the balance url
         requestBuilder = new Request.Builder()
             .url(url.concat("send/request"));
+
+        requestBuilder.addHeader("UUID", UUID.randomUUID().toString());
 
         // we add the body and build the request
         FormBody body = new FormBody.Builder()
@@ -202,8 +213,79 @@ public class SignetAPI {
 
     }
 
-    public SendStatus transferStatus(String referenceId) {
+    public SendStatus sendStatus(String referenceId) {
         return null;
 
+    }
+
+    public JSONObject depositRequest(String wallet, long amount) throws IOException, ParseException {
+        if (isTokenExpired()) login();
+        loginHeader.put("access_token", this.accessToken);
+
+        // we create the request with the balance url
+        requestBuilder = new Request.Builder()
+            .url(this.url.concat("deposit/request"));
+
+
+
+        for (Map.Entry<String,String> entry : loginHeader.entrySet()){
+            requestBuilder.addHeader(entry.getKey(), entry.getValue());
+        }
+        // we add the body and build the request
+        requestBuilder.addHeader("Content-Type", "application/json");
+        requestBuilder.addHeader("UUID", UUID.randomUUID().toString());
+
+        MediaType mediaType = MediaType.parse("application/json; charset=utf-8");
+        JSONObject json = new JSONObject();
+
+        json.put("Wallet", wallet);
+        json.put("Amount",amount);
+        json.put("Description", "Test Description");
+        json.put("Time", dateTimeFormatter.format(new Date()));
+        RequestBody body = RequestBody.create(mediaType, json.toString());
+        requestBuilder.post(body);
+        Request request = this.requestBuilder.build();
+
+        // execute the request and get the response
+        Response response = client.newCall(request).execute();
+
+        // we will parse the response and get the token
+        JSONParser jsonParser = new JSONParser();
+        json  = (JSONObject) jsonParser.parse(response.body().string());
+        return json;
+    }
+
+    public JSONObject depositStatus (String referenceId) throws IOException, ParseException {
+        if (isTokenExpired()) login();
+        loginHeader.put("access_token", this.accessToken);
+
+        // we create the request with the balance url
+        requestBuilder = new Request.Builder()
+            .url(url.concat("deposit/status"));
+
+        for (Map.Entry<String,String> entry : loginHeader.entrySet()){
+            requestBuilder.addHeader(entry.getKey(), entry.getValue());
+        }
+
+        // we add the body and build the request
+        requestBuilder.addHeader("Content-Type", "application/json");
+        requestBuilder.addHeader("UUID", UUID.randomUUID().toString());
+
+        MediaType mediaType = MediaType.parse("application/json");
+        JSONObject json = new JSONObject();
+        json.put("ReferenceId", referenceId);
+        json.put("Description", "Status request for " + referenceId);
+        json.put("Time", dateTimeFormatter.format(new Date()));
+        RequestBody body = RequestBody.create(mediaType, json.toString());
+        requestBuilder.post(body);
+        Request request = this.requestBuilder.build();
+
+        // execute the request and get the response
+        Response response = client.newCall(request).execute();
+
+        // we will parse the response and get the response
+        JSONParser jsonParser = new JSONParser();
+        json  = (JSONObject) jsonParser.parse(response.body().string());
+        return json;
     }
 }

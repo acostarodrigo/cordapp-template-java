@@ -57,8 +57,9 @@ public class TradeTests {
         if (trade == null) throw new InterruptedException("Trade not generated");
 
         // we send the buyer some fiat tokens US 2000000
-        USDFiatTokenTests usdFiatTokenTests = new USDFiatTokenTests();
-        usdFiatTokenTests.issueUSDTokenTest();
+        SignetTests signetTests = new SignetTests();
+        signetTests.depositToEscrowAndIssueTest();
+
 
         // lets get current balances of bond and fiat
         BondState bond = trade.getOffer().getBond();

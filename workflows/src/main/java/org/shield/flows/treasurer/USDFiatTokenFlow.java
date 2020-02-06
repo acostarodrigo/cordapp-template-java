@@ -14,6 +14,7 @@ import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
 import org.shield.flows.membership.MembershipFlows;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 
@@ -22,9 +23,8 @@ public class USDFiatTokenFlow {
     private USDFiatTokenFlow(){
         // no instantiation allowed.
     }
+
     @InitiatingFlow
-    @StartableByService
-    @StartableByRPC
     public static class Issue extends FlowLogic<SignedTransaction>{
         private Party owner;
         private long amount;

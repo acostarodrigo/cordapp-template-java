@@ -34,9 +34,19 @@ public class TestHelper {
      */
     public static void setupNetwork() {
         Map<String, String> config = new HashMap<>();
+        // membership configuration
         config.put("bnoWhitelist","O=BNO,L=New York,C=US");
         config.put("notaryName","O=Notary,L=London,C=GB");
         config.put("bno","O=BNO,L=New York,C=US");
+        // Treasurer signet configuration
+        config.put("SourceID","MyFirmAPI01");
+        config.put("user_token","signetapidev+00@tassat.com");
+        config.put("client_id","QUiee6QNGBzdOI7Lhl3XMk1v0OzSNw05");
+        config.put("client_secret","gv3MdMSN2WhFrSo86nXHVzDjCJqk-a2nmvdI_7fKehVAaPg2ClP2SzbU3PS5W1Zb");
+        config.put("audience","myfirmapi01");
+        config.put("URL","https://api-dev.app.signet.com");
+        config.put("PORT","443");
+
         HashSet<TestCordapp> cordapps = new HashSet<>(asList(
             TestCordapp.findCordapp("org.shield.flows").withConfig(config),
             TestCordapp.findCordapp("com.r3.corda.lib.tokens.money"),
@@ -47,7 +57,7 @@ public class TestHelper {
 
 
 
-        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade", "org.shield.offer");
+        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade", "org.shield.offer", "org.shield.treasurer", "org.shield.treasurer.signet");
 
         DriverParameters driverParameters = new DriverParameters().withIsDebug(true).withCordappsForAllNodes(cordapps);
         NetworkParameters networkParameters = driverParameters.getNetworkParameters();
