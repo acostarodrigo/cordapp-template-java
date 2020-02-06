@@ -41,7 +41,7 @@ public class SignetTests {
         Amount balance = QueryUtilitiesKt.tokenBalance(broker2Node.getServices().getVaultService(),FiatCurrency.Companion.getInstance("USD"));
 
         SignetIssueTransactionState signetIssueTransactionState = new SignetIssueTransactionState(UUID.randomUUID(), Timestamp.from(Instant.now()),amount,source,escrow,"", IssueState.CREATED);
-        CompletableFuture<Void> future = broker2Node.startFlow(new SignetFlow.DepositToEscrowAndIssue(signetIssueTransactionState)).toCompletableFuture();
+        CompletableFuture<UUID> future = broker2Node.startFlow(new SignetFlow.DepositToEscrowAndIssue(signetIssueTransactionState)).toCompletableFuture();
         mockNet.runNetwork();
         future.get();
 

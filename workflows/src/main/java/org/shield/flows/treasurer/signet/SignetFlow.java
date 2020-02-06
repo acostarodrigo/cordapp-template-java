@@ -282,7 +282,7 @@ public class SignetFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class DepositToEscrowAndIssue extends FlowLogic<Void>{
+    public static class DepositToEscrowAndIssue extends FlowLogic<UUID>{
         private SignetIssueTransactionState signetIssueTransactionState;
         private UUID transactionId;
 
@@ -297,7 +297,7 @@ public class SignetFlow {
 
         @Override
         @Suspendable
-        public Void call() throws FlowException {
+        public UUID call() throws FlowException {
             // we initialize the API
             signetAPI = subFlow(new Configure());
 
@@ -317,7 +317,7 @@ public class SignetFlow {
 
             subFlow(new USDFiatTokenFlow.Issue(signetIssueTransactionState.getSource().getOwner(), signetIssueTransactionState.getAmount().getQuantity()));
 
-            return null;
+            return transactionId;
         }
     }
 }

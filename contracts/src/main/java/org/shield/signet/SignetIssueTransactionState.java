@@ -18,14 +18,14 @@ import java.util.*;
 public class SignetIssueTransactionState implements ContractState, Serializable {
     private UUID transactionId;
     private Timestamp timestamp;
-    private Amount<Currency> amount;
+    private Amount amount;
     private SignetAccountState source;
     private SignetAccountState escrow;
     private String signetConfirmationId;
     private IssueState state;
 
 
-    public SignetIssueTransactionState(UUID transactionId, Timestamp timestamp, Amount<Currency> amount, SignetAccountState source, SignetAccountState escrow, String signetConfirmationId, IssueState state) {
+    public SignetIssueTransactionState(UUID transactionId, Timestamp timestamp, Amount amount, SignetAccountState source, SignetAccountState escrow, String signetConfirmationId, IssueState state) {
         this.transactionId = transactionId;
         this.timestamp = timestamp;
         this.amount = amount;
@@ -43,7 +43,7 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
         return timestamp;
     }
 
-    public Amount<Currency> getAmount() {
+    public Amount getAmount() {
         return amount;
     }
 
