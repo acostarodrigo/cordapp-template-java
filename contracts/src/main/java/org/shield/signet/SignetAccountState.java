@@ -3,6 +3,7 @@ package org.shield.signet;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 import org.jetbrains.annotations.NotNull;
 
@@ -18,6 +19,11 @@ public class SignetAccountState implements ContractState, Serializable {
     private String userToken;
 
 
+    @ConstructorForDeserialization
+    public SignetAccountState(){
+        // for deserialization
+    }
+
     public SignetAccountState(Party owner, String walletAddresses, String userToken) {
         this.owner = owner;
         this.walletAddress = walletAddresses;
@@ -28,12 +34,24 @@ public class SignetAccountState implements ContractState, Serializable {
         return owner;
     }
 
+    public void setOwner(Party owner) {
+        this.owner = owner;
+    }
+
     public String getWalletAddress() {
         return walletAddress;
     }
 
+    public void setWalletAddress(String walletAddress) {
+        this.walletAddress = walletAddress;
+    }
+
     public String getUserToken() {
         return userToken;
+    }
+
+    public void setUserToken(String userToken) {
+        this.userToken = userToken;
     }
 
     @Override

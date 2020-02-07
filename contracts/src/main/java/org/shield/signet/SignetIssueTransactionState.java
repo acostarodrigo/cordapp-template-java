@@ -5,6 +5,7 @@ import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
+import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,6 +25,10 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
     private String signetConfirmationId;
     private IssueState state;
 
+    @ConstructorForDeserialization
+    public SignetIssueTransactionState(){
+        // default constructor for deserialization
+    }
 
     public SignetIssueTransactionState(UUID transactionId, Timestamp timestamp, Amount amount, SignetAccountState source, SignetAccountState escrow, String signetConfirmationId, IssueState state) {
         this.transactionId = transactionId;
@@ -39,24 +44,48 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
         return transactionId;
     }
 
+    public void setTransactionId(UUID transactionId) {
+        this.transactionId = transactionId;
+    }
+
     public Timestamp getTimestamp() {
         return timestamp;
+    }
+
+    public void setTimestamp(Timestamp timestamp) {
+        this.timestamp = timestamp;
     }
 
     public Amount getAmount() {
         return amount;
     }
 
+    public void setAmount(Amount amount) {
+        this.amount = amount;
+    }
+
     public SignetAccountState getSource() {
         return source;
+    }
+
+    public void setSource(SignetAccountState source) {
+        this.source = source;
     }
 
     public SignetAccountState getEscrow() {
         return escrow;
     }
 
+    public void setEscrow(SignetAccountState escrow) {
+        this.escrow = escrow;
+    }
+
     public String getSignetConfirmationId() {
         return signetConfirmationId;
+    }
+
+    public void setSignetConfirmationId(String signetConfirmationId) {
+        this.signetConfirmationId = signetConfirmationId;
     }
 
     public IssueState getState() {
