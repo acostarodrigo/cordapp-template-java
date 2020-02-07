@@ -1,5 +1,7 @@
 package org.shield.webserver.signet;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.r3.corda.lib.tokens.money.FiatCurrency;
 import net.corda.core.contracts.Amount;
 import net.corda.core.identity.CordaX500Name;
@@ -14,19 +16,20 @@ import java.time.Instant;
 import java.util.UUID;
 
 public class SignetTransactionBuilder {
-    private long amount;
-    private String sourceNode;
-    private String escrowWallet;
+    private JsonNode body;
     private CordaRPCOps proxy;
 
-    public SignetTransactionBuilder(CordaRPCOps proxy,long amount, String sourceNode, String escrowWallet) {
+
+    public SignetTransactionBuilder(JsonNode body, CordaRPCOps proxy) {
+        this.body = body;
         this.proxy = proxy;
-        this.amount = amount;
-        this.sourceNode = sourceNode;
-        this.escrowWallet = escrowWallet;
     }
 
     public SignetIssueTransactionState build(){
+        long amount = body.get("amount").asLong();
+        String sourceNode = body.get("sourceNode").asText();
+        String escrowWallet = body.get("escrowWallet").asText();
+
         Timestamp timestamp = Timestamp.from(Instant.now());
         Amount tokenAmount = new Amount(amount, FiatCurrency.Companion.getInstance("USD"));
 

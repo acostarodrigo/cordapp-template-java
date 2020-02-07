@@ -48,9 +48,10 @@ public class SignetController {
         SignetIssueTransactionState signetIssueTransactionState = null;
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
-            SignetTransactionBuilder builder = objectMapper.readValue(body.get("signet").toString(),SignetTransactionBuilder.class);
-            signetIssueTransactionState = builder.build();
             generateConnection(user);
+
+            SignetTransactionBuilder builder = new SignetTransactionBuilder(body.get("signet"),proxy);
+            signetIssueTransactionState = builder.build();
         } catch (IOException e) {
             return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
         }
