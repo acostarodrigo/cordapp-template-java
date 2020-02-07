@@ -53,17 +53,6 @@ public class ConfigurationFlow {
     }
 
     @InitiatingFlow
-    public static class GetTransactionsURL extends FlowLogic<String>{
-        @Override
-        @Suspendable
-        public String call() throws FlowException {
-            String url = subFlow(new GetAPIURL());
-            url.concat("transactions/");
-            return url;
-        }
-    }
-
-    @InitiatingFlow
     public static class GetURL extends FlowLogic<String>{
         @Override
         @Suspendable
