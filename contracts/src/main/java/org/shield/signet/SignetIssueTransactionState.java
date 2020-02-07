@@ -18,7 +18,7 @@ import java.util.*;
 @BelongsToContract(SignetIssueTransactionContract.class)
 public class SignetIssueTransactionState implements ContractState, Serializable {
     private UUID transactionId;
-    private Timestamp timestamp;
+    private int timestamp;
     private Amount amount;
     private SignetAccountState source;
     private SignetAccountState escrow;
@@ -30,7 +30,7 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
         // default constructor for deserialization
     }
 
-    public SignetIssueTransactionState(UUID transactionId, Timestamp timestamp, Amount amount, SignetAccountState source, SignetAccountState escrow, String signetConfirmationId, IssueState state) {
+    public SignetIssueTransactionState(UUID transactionId, int timestamp, Amount amount, SignetAccountState source, SignetAccountState escrow, String signetConfirmationId, IssueState state) {
         this.transactionId = transactionId;
         this.timestamp = timestamp;
         this.amount = amount;
@@ -48,11 +48,11 @@ public class SignetIssueTransactionState implements ContractState, Serializable 
         this.transactionId = transactionId;
     }
 
-    public Timestamp getTimestamp() {
+    public int getTimestamp() {
         return timestamp;
     }
 
-    public void setTimestamp(Timestamp timestamp) {
+    public void setTimestamp(int timestamp) {
         this.timestamp = timestamp;
     }
 

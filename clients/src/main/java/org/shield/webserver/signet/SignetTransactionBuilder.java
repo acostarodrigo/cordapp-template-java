@@ -30,7 +30,7 @@ public class SignetTransactionBuilder {
         String sourceNode = body.get("sourceNode").asText();
         String escrowWallet = body.get("escrowWallet").asText();
 
-        Timestamp timestamp = Timestamp.from(Instant.now());
+        int timestamp = Timestamp.from(Instant.now()).getNanos();
         Amount tokenAmount = new Amount(amount, FiatCurrency.Companion.getInstance("USD"));
 
         CordaX500Name x500Name = CordaX500Name.parse(sourceNode);
