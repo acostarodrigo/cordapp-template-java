@@ -263,12 +263,10 @@ public class MembershipFlows {
         public Party call() throws FlowException {
             CordappConfig config = getServiceHub().getAppContext().getConfig();
 
-//            String bnoString = config.getString("bno");
-//            if (bnoString.isEmpty()) {
-                //throw new FlowException("Configuration file doesn't include BNO data.");
-                // for now we are forcing a bno name
-                String bnoString = "O=BNO,L=New York,C=US";
-//            }
+            String bnoString = config.getString("bno");
+            if (bnoString.isEmpty()) {
+                throw new FlowException("Configuration file doesn't include BNO data.");
+            }
 
             CordaX500Name bnoName = CordaX500Name.parse(bnoString);
             Party bno = getServiceHub().getNetworkMapCache().getPeerByLegalName(bnoName);
