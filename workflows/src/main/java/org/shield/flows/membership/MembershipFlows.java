@@ -5,6 +5,7 @@ import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
 import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
 import com.r3.businessnetworks.membership.states.MembershipState;
 import net.corda.core.contracts.StateAndRef;
+import net.corda.core.cordapp.Cordapp;
 import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
@@ -262,9 +263,10 @@ public class MembershipFlows {
         @Suspendable
         public Party call() throws FlowException {
             CordappConfig config = getServiceHub().getAppContext().getConfig();
-
+            Cordapp cordapp = getServiceHub().getAppContext().getCordapp();
             String bnoString = config.getString("bno");
-            if (bnoString.isEmpty()) {
+
+            if (bnoString == "" || bnoString.isEmpty()) {
                 throw new FlowException("Configuration file doesn't include BNO data.");
             }
 

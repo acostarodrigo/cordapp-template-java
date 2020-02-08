@@ -1,4 +1,6 @@
 cd ~/ShieldCorda
+# brind latest changes
+git pull origin master
 #Stop nodes
 sudo systemctl stop cordaIssuer
 sudo systemctl stop cordaTrader1
