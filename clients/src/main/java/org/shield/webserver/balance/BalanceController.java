@@ -2,30 +2,34 @@ package org.shield.webserver.balance;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.Gson;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
-import com.r3.corda.lib.tokens.money.FiatCurrency;
-import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
+import jdk.nashorn.internal.parser.JSONParser;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.messaging.CordaRPCOps;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
+import org.json.simple.JSONObject;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
+import org.shield.webserver.response.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+
+import static org.shield.webserver.response.Response.getErrorResponse;
+import static org.shield.webserver.response.Response.getValidResponse;
 
 @RestController
 @RequestMapping("/balance")
@@ -35,22 +39,36 @@ public class BalanceController {
     private CordaRPCOps proxy;
 
     @GetMapping
-    public ResponseEntity<List<String>> getBalances(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<String> getBalances(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("reason", "Unable to establish a connection with node. Verify user credentials.");
+            jsonObject.put("error", e.toString());
+            return new ResponseEntity<>(getErrorResponse(jsonObject), HttpStatus.BAD_REQUEST);
         }
 
-        List<String> tokens = new ArrayList<>();
-        for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQuery(FungibleToken.class).getStates()){
+        List<JSONObject> tokens = new ArrayList<>();
+
+        // we get unconsumed tokens from vault
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
             FungibleToken token = stateAndRef.getState().getData();
-            tokens.add(token.toString());
+            // we generate the response on JSON
+            JSONObject jsonObject = new JSONObject();
+            jsonObject.put("issuer", token.getIssuer().getName().toString());
+            jsonObject.put("tokenIdentifier",token.getTokenType().getTokenIdentifier());
+            jsonObject.put("quantity",token.getAmount().getQuantity());
+            jsonObject.put("holder", token.getHolder().nameOrNull().toString());
+            jsonObject.put("name", token.getTokenType().getTokenClass().getCanonicalName());
+
+            tokens.add(jsonObject);
         }
 
-        return new ResponseEntity<>(tokens,HttpStatus.OK);
+        return new ResponseEntity<>(getValidResponse(tokens),HttpStatus.OK);
     }
 
     @PostMapping
