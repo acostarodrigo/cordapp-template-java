@@ -2,11 +2,20 @@ package org.shield.webserver.bond;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
+import org.apache.commons.collections4.MultiMapUtils;
+import org.apache.commons.collections4.MultiValuedMap;
+import org.apache.commons.collections4.multimap.HashSetValuedHashMap;
+import org.gradle.internal.impldep.com.google.common.collect.Maps;
+import org.gradle.internal.impldep.com.google.common.collect.Multimaps;
 import org.jetbrains.annotations.NotNull;
+import org.json.simple.JSONObject;
 import org.shield.bond.BondState;
 import org.shield.flows.bond.BondFlow;
 import org.shield.webserver.connection.Connection;
@@ -14,15 +23,16 @@ import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
+
+import static org.shield.webserver.response.Response.getConnectionErrorResponse;
+import static org.shield.webserver.response.Response.getValidResponse;
 
 @RestController
 @RequestMapping("/bond") // The paths for HTTP requests are relative to this base path.
@@ -40,7 +50,7 @@ public class BondController {
             user = objectMapper.readValue(body.get("user").toString(),User.class);
             bond = objectMapper.readValue(body.get("bond").toString(),BondState.class);
         } catch (IOException e) {
-            return new ResponseEntity<>("Incorrect parameters. Can't parse into user and bond object.", HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         // we initiaite the connection
@@ -53,7 +63,13 @@ public class BondController {
         // make the call to the node
         CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(BondFlow.Issue.class, bond).getReturnValue();
         UniqueIdentifier uniqueIdentifier = cordaFuture.get();
-        return new ResponseEntity<>(uniqueIdentifier.toString(), HttpStatus.OK);
+
+        // we set the issuer to provide the response
+        Party caller = proxy.nodeInfo().getLegalIdentities().get(0);
+        bond.setIssuer(caller);
+
+        // we prepare the response
+        return getValidResponse(bond.toJson());
     }
 
 
@@ -64,19 +80,20 @@ public class BondController {
     }
 
     @GetMapping
-    public ResponseEntity<List<String>> getBonds(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<String> getBonds(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(Arrays.asList("Unable to parse user to stablish connection."), HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
-        List<String> bondStates = new ArrayList<>();
+        JsonArray response = new JsonArray();
         for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
-            bondStates.add(stateAndRef.getState().getData().toString());
+            BondState bond = stateAndRef.getState().getData();
+            response.add(bond.toJson());
         }
-        return new ResponseEntity<>(bondStates, HttpStatus.OK);
+        return getValidResponse(response);
     }
 }

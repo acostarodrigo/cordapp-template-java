@@ -2,9 +2,9 @@ package org.shield.webserver.balance;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
-import jdk.nashorn.internal.parser.JSONParser;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.CordaX500Name;
@@ -18,7 +18,6 @@ import org.shield.flows.treasurer.USDFiatTokenFlow;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
-import org.shield.webserver.response.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -28,7 +27,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.shield.webserver.response.Response.getErrorResponse;
+import static org.shield.webserver.response.Response.getConnectionErrorResponse;
 import static org.shield.webserver.response.Response.getValidResponse;
 
 @RestController
@@ -45,30 +44,27 @@ public class BalanceController {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("reason", "Unable to establish a connection with node. Verify user credentials.");
-            jsonObject.put("error", e.toString());
-            return new ResponseEntity<>(getErrorResponse(jsonObject), HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
-        List<JSONObject> tokens = new ArrayList<>();
+        JsonArray tokens = new JsonArray();
 
         // we get unconsumed tokens from vault
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
         for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
             FungibleToken token = stateAndRef.getState().getData();
             // we generate the response on JSON
-            JSONObject jsonObject = new JSONObject();
-            jsonObject.put("issuer", token.getIssuer().getName().toString());
-            jsonObject.put("tokenIdentifier",token.getTokenType().getTokenIdentifier());
-            jsonObject.put("quantity",token.getAmount().getQuantity());
-            jsonObject.put("holder", token.getHolder().nameOrNull().toString());
-            jsonObject.put("name", token.getTokenType().getTokenClass().getCanonicalName());
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.addProperty("issuer", token.getIssuer().getName().toString());
+            jsonObject.addProperty("tokenIdentifier",token.getTokenType().getTokenIdentifier());
+            jsonObject.addProperty("quantity",token.getAmount().getQuantity());
+            jsonObject.addProperty("holder", token.getHolder().nameOrNull().toString());
+            jsonObject.addProperty("name", token.getTokenType().getTokenClass().getCanonicalName());
 
             tokens.add(jsonObject);
         }
 
-        return new ResponseEntity<>(getValidResponse(tokens),HttpStatus.OK);
+        return getValidResponse(tokens);
     }
 
     @PostMapping
