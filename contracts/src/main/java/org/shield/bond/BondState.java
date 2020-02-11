@@ -1,15 +1,14 @@
 package org.shield.bond;
 
+import com.google.gson.JsonObject;
 import com.r3.corda.lib.tokens.contracts.states.EvolvableTokenType;
-
 import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
-import net.corda.core.serialization.SerializableCalculatedProperty;
 import org.jetbrains.annotations.NotNull;
-import org.shield.bond.BondTypeContract;
+
 
 import java.io.Serializable;
 import java.util.*;
@@ -18,6 +17,7 @@ import java.util.*;
 @CordaSerializable
 public class BondState extends EvolvableTokenType implements Serializable{
     private UniqueIdentifier id;
+
     private Party issuer;
     private String issuerTicker;
     private Currency denomination;
@@ -255,5 +255,25 @@ public class BondState extends EvolvableTokenType implements Serializable{
             ", couponRate=" + couponRate +
             ", fractionDigits=" + fractionDigits +
             '}';
+    }
+
+    public JsonObject toJson(){
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("id", id.getId().toString());
+        jsonObject.addProperty("issuer", issuer.getName().toString());
+        jsonObject.addProperty("issuerTicker", issuerTicker);
+        jsonObject.addProperty("denomination", denomination.getCurrencyCode());
+        jsonObject.addProperty("startDate", startDate.toString());
+        jsonObject.addProperty("couponFrequency", couponFrequency);
+        jsonObject.addProperty("minDenomination", minDenomination);
+        jsonObject.addProperty("increment", increment);
+        jsonObject.addProperty("dealType", dealType.toString());
+        jsonObject.addProperty("redemptionPrice", redemptionPrice);
+        jsonObject.addProperty("dealSize", dealSize);
+        jsonObject.addProperty("initialPrice", initialPrice);
+        jsonObject.addProperty("maturityDate", maturityDate.toString());
+        jsonObject.addProperty("couponRate", couponRate);
+        jsonObject.addProperty("fractionDigits", fractionDigits);
+        return jsonObject;
     }
 }

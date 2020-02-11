@@ -1,5 +1,6 @@
 package org.shield.offer;
 
+import com.google.gson.JsonObject;
 import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -178,5 +179,20 @@ public class OfferState implements ContractState, Serializable {
             ", creationDate=" + creationDate +
             ", participants=" + participants +
             '}';
+    }
+
+    public JsonObject toJson(){
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("offerId", offerId.getId().toString());
+        jsonObject.addProperty("issuer", issuer.getName().toString());
+        jsonObject.add("bond", bond.toJson());
+        jsonObject.addProperty("ticker", ticker);
+        jsonObject.addProperty("offerPrice", offerPrice);
+        jsonObject.addProperty("offerYield", offerYield);
+        jsonObject.addProperty("aggregatedTradeSize", aggregatedTradeSize);
+        jsonObject.addProperty("afsSize", afsSize);
+        jsonObject.addProperty("afs", afs);
+        jsonObject.addProperty("creationDate", creationDate.toString());
+        return jsonObject;
     }
 }
