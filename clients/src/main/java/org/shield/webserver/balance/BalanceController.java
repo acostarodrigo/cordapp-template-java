@@ -39,7 +39,7 @@ public class BalanceController {
     private CordaRPCOps proxy;
 
     @GetMapping
-    public ResponseEntity<String> getBalances(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<Response> getBalances(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
@@ -64,8 +64,9 @@ public class BalanceController {
 
             tokens.add(jsonObject);
         }
-
-        return getValidResponse(tokens);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("tokens", tokens);
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping

@@ -1,8 +1,12 @@
 package org.shield.webserver.response;
 
+import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import org.glassfish.jersey.server.JSONP;
 import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -10,25 +14,62 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 public class Response implements Serializable {
-    public static ResponseEntity<String> getValidResponse(JsonElement message){
-        JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("success", true);
-        jsonObject.add("message", message);
+    private boolean success;
+    private JSONObject message;
 
-        return new ResponseEntity<>(jsonObject.toString(),HttpStatus.OK);
+    public Response(boolean success, JSONObject message) {
+        this.success = success;
+        this.message = message;
     }
 
-    public static String getErrorResponse(Object message){
-        JSONObject response = new JSONObject();
-        response.put("message", message);
-        response.put("success", false);
-        return  response.toJSONString();
+    public boolean isSuccess() {
+        return success;
     }
 
-    public static ResponseEntity getConnectionErrorResponse(Exception exception){
+    public void setSuccess(boolean success) {
+        this.success = success;
+    }
+
+    public JSONObject getMessage() {
+        return message;
+    }
+
+    public void setMessage(JSONObject message) {
+        this.message = message;
+    }
+
+    public static ResponseEntity<Response> getValidResponse(JsonObject message){
+        JSONParser parser = new JSONParser();
+        try {
+            JSONObject jsonObject = (JSONObject) parser.parse(message.toString());
+            Response response = new Response(true, jsonObject);
+            return new ResponseEntity<>(response,HttpStatus.OK);
+        } catch (ParseException e) {
+            return null;
+        }
+
+    }
+
+
+    public static ResponseEntity<Response> getErrorResponse(JsonObject message){
+        JSONParser parser = new JSONParser();
+        JSONObject jsonObject = null;
+        try {
+            jsonObject = (JSONObject) parser.parse(message.toString());
+            Response response = new Response(true, jsonObject);
+            return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+        } catch (ParseException e) {
+            return null;
+        }
+    }
+
+    public static ResponseEntity<Response> getConnectionErrorResponse(Exception exception){
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("reason", "Unable to establish a connection with node. Verify user credentials.");
         jsonObject.put("error", exception.toString());
-        return new ResponseEntity<>(Arrays.asList("Unable to parse user to establish connection."), HttpStatus.BAD_REQUEST);
+
+
+        Response response = new Response(false, jsonObject);
+        return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
     }
 }

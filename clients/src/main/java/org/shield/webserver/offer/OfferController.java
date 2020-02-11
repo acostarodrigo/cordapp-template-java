@@ -3,6 +3,7 @@ package org.shield.webserver.offer;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -12,45 +13,25 @@ import net.corda.core.messaging.DataFeed;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
-import org.reactivestreams.Publisher;
-import org.reactivestreams.Subscriber;
-import org.reactivestreams.Subscription;
 import org.shield.bond.BondState;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.offer.OfferState;
-import org.shield.webserver.Starter;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
+import org.shield.webserver.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
-import org.springframework.web.reactive.function.client.WebClient;
-import org.springframework.web.reactive.function.server.ServerRequest;
-import org.springframework.web.reactive.function.server.ServerResponse;
-import org.springframework.web.reactive.function.server.support.ServerResponseResultHandler;
-import reactor.core.CoreSubscriber;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.FluxProcessor;
-import reactor.core.publisher.Mono;
-import rx.Notification;
 import rx.Observable;
-import rx.functions.Action1;
 import rx.internal.reactivestreams.PublisherAdapter;
-import rx.internal.reactivestreams.PublisherAsCompletable;
-import rx.internal.reactivestreams.SubscriberAdapter;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Consumer;
 
 import static org.shield.webserver.response.Response.getConnectionErrorResponse;
 import static org.shield.webserver.response.Response.getValidResponse;
@@ -72,7 +53,7 @@ public class OfferController {
     }
 
     @GetMapping
-    public ResponseEntity<String> getMyOffers(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<Response> getMyOffers(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
@@ -88,7 +69,9 @@ public class OfferController {
             if (proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer()))
                 offers.add(offer.toJson());
         }
-        return getValidResponse(offers);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("offers", offers);
+        return getValidResponse(jsonObject);
 
     }
 
@@ -98,7 +81,7 @@ public class OfferController {
      * @return
      */
     @GetMapping("/bondMonitor")
-    public ResponseEntity<String> getBondMonitor(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<Response> getBondMonitor(@NotNull @RequestBody JsonNode body){
         // we parse the user from the body and establish the connection to the node
         ObjectMapper objectMapper = new ObjectMapper();
         try {
@@ -137,7 +120,9 @@ public class OfferController {
                 offers.add(bondMonitor.toJson());
             }
         }
-        return getValidResponse(offers);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("offers",offers);
+        return getValidResponse(jsonObject);
 
     }
 
@@ -173,7 +158,7 @@ public class OfferController {
 
 
     @PostMapping()
-    public ResponseEntity<String> createOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> createOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);

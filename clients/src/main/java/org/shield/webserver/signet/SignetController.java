@@ -15,6 +15,7 @@ import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
 import org.shield.webserver.offer.OfferController;
+import org.shield.webserver.response.Response;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -47,7 +48,7 @@ public class SignetController {
     }
 
     @PostMapping("/signetDeposit")
-    public ResponseEntity<String> TransferToEscrowAndIssue(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> TransferToEscrowAndIssue(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         SignetIssueTransactionState signetIssueTransactionState = null;
         try {

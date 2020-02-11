@@ -2,6 +2,7 @@ package org.shield.webserver.membership;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.r3.businessnetworks.membership.flows.bno.ActivateMembershipFlow;
 import com.r3.businessnetworks.membership.flows.bno.SuspendMembershipFlow;
@@ -19,12 +20,14 @@ import org.shield.membership.ShieldMetadata;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
+import org.shield.webserver.response.Response;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import javax.json.Json;
 import javax.validation.Valid;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,7 +49,7 @@ public class MembershipController {
     private String bnoString;
 
     @GetMapping
-    public ResponseEntity<List<ResponseWrapper>> getMemberships (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> getMemberships (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
@@ -55,21 +58,22 @@ public class MembershipController {
             return getConnectionErrorResponse(e);
         }
 
-        List<ResponseWrapper> responses = new ArrayList<>();
+        JsonArray responses = new JsonArray();
         int index = 0;
         for (StateAndRef<MembershipState> memberships : proxy.vaultQuery(MembershipState.class).getStates()){
             MembershipState membership = memberships.getState().getData();
             ShieldMetadata metadata = (ShieldMetadata) membership.getMembershipMetadata();
             ResponseWrapper response = new ResponseWrapper(index, membership.getStatus().name(), metadata, membership.getMember().toString(), membership.getBno().toString(),membership.getIssued().toString());
-            responses.add(response);
+            responses.add(response.toJson());
             index++;
         }
-
-        return new ResponseEntity<>(responses, HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("memberships", responses);
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping(value = "/request")
-    public ResponseEntity<String> requestMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> requestMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             // we parse the user object
@@ -94,7 +98,7 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/update")
-    public ResponseEntity<String> updateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> updateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             // we parse the user object
@@ -119,7 +123,7 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/activate")
-    public ResponseEntity<String> activateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> activateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         int index = 0;
         try {
@@ -150,7 +154,7 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/suspend")
-    public ResponseEntity<String> suspendMembership(@Valid @RequestBody User user, int index) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> suspendMembership(@Valid @RequestBody User user, int index) throws ExecutionException, InterruptedException {
         // we connect to the passed node
         generateConnection(user);
 

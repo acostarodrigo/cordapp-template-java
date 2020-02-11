@@ -1,5 +1,6 @@
 package org.shield.membership;
 
+import com.google.gson.JsonObject;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.CordaSerializable;
 
@@ -166,5 +167,16 @@ public class ShieldMetadata  {
     @Override
     public int hashCode() {
         return Objects.hash(getOrgName(), getOrgTypes(), getBondRoles(), getOrgContact(), getCustodians(), getTreasurers());
+    }
+
+    public JsonObject toJson(){
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("orgName",orgName);
+        jsonObject.addProperty("orgTypes",orgTypes.toString());
+        jsonObject.addProperty("bondRoles",bondRoles.toString());
+        jsonObject.addProperty("orgContact",orgContact);
+        jsonObject.addProperty("custodians",custodians.toString());
+        jsonObject.addProperty("treasurers",treasurers.toString());
+        return jsonObject;
     }
 }

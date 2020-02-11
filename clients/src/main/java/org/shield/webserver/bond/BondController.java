@@ -3,6 +3,7 @@ package org.shield.webserver.bond;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -14,6 +15,7 @@ import org.shield.flows.bond.BondFlow;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
+import org.shield.webserver.response.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -32,7 +34,7 @@ public class BondController {
     private CordaRPCOps proxy;
 
     @PostMapping
-    public ResponseEntity<String> issueBond (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, TimeoutException {
+    public ResponseEntity<Response> issueBond (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, TimeoutException {
         ObjectMapper objectMapper = new ObjectMapper();
         User user = null;
         BondState bond = null;
@@ -70,7 +72,7 @@ public class BondController {
     }
 
     @GetMapping
-    public ResponseEntity<String> getBonds(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<Response> getBonds(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
@@ -84,6 +86,8 @@ public class BondController {
             BondState bond = stateAndRef.getState().getData();
             response.add(bond.toJson());
         }
-        return getValidResponse(response);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("bonds", response);
+        return getValidResponse(jsonObject);
     }
 }

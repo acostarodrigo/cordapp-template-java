@@ -1,5 +1,6 @@
 package org.shield.webserver.membership;
 
+import com.google.gson.JsonObject;
 import org.shield.membership.ShieldMetadata;
 
 import java.util.List;
@@ -67,5 +68,17 @@ public class ResponseWrapper {
 
     public void setIndex(int index) {
         this.index = index;
+    }
+
+    public JsonObject toJson(){
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("index", index);
+        jsonObject.addProperty("status", status);
+        jsonObject.add("metadata", metadata.toJson());
+        jsonObject.addProperty("party", party);
+        jsonObject.addProperty("bno", bno);
+        jsonObject.addProperty("issued", issued);
+
+        return jsonObject;
     }
 }

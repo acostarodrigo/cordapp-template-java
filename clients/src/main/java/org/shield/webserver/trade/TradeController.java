@@ -16,6 +16,7 @@ import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
+import org.shield.webserver.response.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -44,7 +45,7 @@ public class TradeController {
     }
 
     @GetMapping
-    public ResponseEntity<String> getTrades(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<Response> getTrades(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
@@ -58,11 +59,13 @@ public class TradeController {
             TradeState trade = stateAndRef.getState().getData();
             trades.add(trade.toJson());
         }
-        return getValidResponse(trades);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("trades", trades);
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping("/issue")
-    public ResponseEntity<String> issueTrade(@NotNull @RequestBody JsonNode body) throws Exception {
+    public ResponseEntity<Response> issueTrade(@NotNull @RequestBody JsonNode body) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode tradeBody = null;
         try {
@@ -85,7 +88,7 @@ public class TradeController {
     }
 
     @PostMapping("/accept")
-    public ResponseEntity<String> acceptTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> acceptTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
         try {
@@ -104,7 +107,7 @@ public class TradeController {
     }
 
     @PostMapping("/cancel")
-    public ResponseEntity<String> cancelTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> cancelTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
         try {
@@ -123,7 +126,7 @@ public class TradeController {
     }
 
     @PostMapping("/settle")
-    public ResponseEntity<String> settleTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> settleTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
         try {
