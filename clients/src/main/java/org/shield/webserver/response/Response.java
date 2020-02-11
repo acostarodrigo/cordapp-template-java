@@ -11,10 +11,11 @@ import java.util.Arrays;
 
 public class Response implements Serializable {
     public static ResponseEntity<String> getValidResponse(JsonElement message){
-        JsonObject response = new JsonObject();
-        response.addProperty("success", true);
-        response.add("message", message);
-        return new ResponseEntity<>(response.toString(),HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("success", true);
+        jsonObject.add("message", message);
+
+        return new ResponseEntity<>(jsonObject.toString(),HttpStatus.OK);
     }
 
     public static String getErrorResponse(Object message){

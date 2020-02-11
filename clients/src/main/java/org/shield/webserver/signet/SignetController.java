@@ -2,6 +2,7 @@ package org.shield.webserver.signet;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.messaging.CordaRPCOps;
@@ -26,6 +27,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+
+import static org.shield.webserver.response.Response.getConnectionErrorResponse;
+import static org.shield.webserver.response.Response.getValidResponse;
 
 @RestController
 @RequestMapping("/treasurer")
@@ -53,13 +57,14 @@ public class SignetController {
             SignetTransactionBuilder builder = new SignetTransactionBuilder(body.get("signet"),proxy);
             signetIssueTransactionState = builder.build();
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         CordaFuture cordaFuture = proxy.startFlowDynamic(SignetFlow.DepositToEscrowAndIssue.class, signetIssueTransactionState).getReturnValue();
         UUID id = (UUID) cordaFuture.get();
 
-        return new ResponseEntity<>(id.toString(), HttpStatus.OK);
-
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("id", id.toString());
+        return getValidResponse(jsonObject);
     }
 }

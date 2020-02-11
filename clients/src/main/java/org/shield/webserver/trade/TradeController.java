@@ -2,6 +2,8 @@ package org.shield.webserver.trade;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
@@ -25,6 +27,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
+import static org.shield.webserver.response.Response.getConnectionErrorResponse;
+import static org.shield.webserver.response.Response.getValidResponse;
+
 @RestController
 @RequestMapping("/trade")
 public class TradeController {
@@ -39,20 +44,21 @@ public class TradeController {
     }
 
     @GetMapping
-    public ResponseEntity<List<String>> getTrades(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<String> getTrades(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(Arrays.asList("Unable to parse user to establish a connection."), HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
-        List<String> trades = new ArrayList<>();
+        JsonArray trades = new JsonArray();
         for (StateAndRef<TradeState> stateAndRef : proxy.vaultQuery(TradeState.class).getStates()){
-            trades.add(stateAndRef.getState().getData().toString());
+            TradeState trade = stateAndRef.getState().getData();
+            trades.add(trade.toJson());
         }
-        return new ResponseEntity<>(trades, HttpStatus.OK);
+        return getValidResponse(trades);
     }
 
     @PostMapping("/issue")
@@ -64,7 +70,7 @@ public class TradeController {
             tradeBody = body.get("trade");
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>("Unable to parse user or trade.", HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         // we will generate the trade
@@ -73,7 +79,9 @@ public class TradeController {
 
         CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(TradeFlow.Create.class, trade).getReturnValue();
         UniqueIdentifier id = cordaFuture.get();
-        return new ResponseEntity<>(id.toString(), HttpStatus.OK);
+        trade.setId(id);
+
+        return getValidResponse(trade.toJson());
     }
 
     @PostMapping("/accept")
@@ -85,12 +93,14 @@ public class TradeController {
             tradeId = UniqueIdentifier.Companion.fromString(body.get("tradeId").asText());
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>("Unable to parse user or tradeId.", HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.Accept.class, tradeId).getReturnValue();
         SignedTransaction signedTransaction = cordaFuture.get();
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping("/cancel")
@@ -102,12 +112,14 @@ public class TradeController {
             tradeId = objectMapper.readValue(body.get("tradeId").toString(),UniqueIdentifier.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>("Unable to parse user or tradeId.", HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         CordaFuture<Void> cordaFuture = proxy.startFlowDynamic(TradeFlow.Cancel.class, tradeId).getReturnValue();
         cordaFuture.get();
-        return new ResponseEntity<>(tradeId.toString(), HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("id", tradeId.getId().toString());
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping("/settle")
@@ -119,12 +131,15 @@ public class TradeController {
             tradeId = UniqueIdentifier.Companion.fromString(body.get("tradeId").asText());
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>("Unable to parse user or tradeId.", HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.Settle.class, tradeId).getReturnValue();
         SignedTransaction signedTransaction = cordaFuture.get();
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
     }
 
 }

@@ -1,5 +1,6 @@
 package org.shield.webserver.offer;
 
+import com.google.gson.JsonObject;
 import net.corda.core.contracts.UniqueIdentifier;
 import org.shield.bond.BondState;
 import org.shield.bond.DealType;
@@ -113,5 +114,24 @@ public class BondMonitor {
             ", dealType=" + dealType +
             ", currency=" + currency +
             '}';
+    }
+
+    public JsonObject toJson(){
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("offerId", offerId.getId().toString());
+        jsonObject.addProperty("bondId", bondId.getId().toString());
+        jsonObject.addProperty("ticker", ticker);
+        jsonObject.addProperty("currentPrice", currentPrice);
+        jsonObject.addProperty("currentYield", currentYield);
+        jsonObject.addProperty("bondMaturity", bondMaturity.toString());
+        jsonObject.addProperty("coupon", coupon);
+        jsonObject.addProperty("couponFrequency", couponFrequency);
+        jsonObject.addProperty("bondStructure", bondStructure);
+        jsonObject.addProperty("market", market);
+        jsonObject.addProperty("dealSize", dealSize);
+        jsonObject.addProperty("dealType", dealType.toString());
+        jsonObject.addProperty("currency", currency.getCurrencyCode());
+
+        return jsonObject;
     }
 }

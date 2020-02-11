@@ -2,6 +2,7 @@ package org.shield.webserver.membership;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonObject;
 import com.r3.businessnetworks.membership.flows.bno.ActivateMembershipFlow;
 import com.r3.businessnetworks.membership.flows.bno.SuspendMembershipFlow;
 import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataFlow;
@@ -32,6 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import static org.shield.webserver.response.Response.getConnectionErrorResponse;
+import static org.shield.webserver.response.Response.getValidResponse;
+
 @RestController
 @RequestMapping("/membership")
 public class MembershipController {
@@ -48,7 +52,7 @@ public class MembershipController {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         List<ResponseWrapper> responses = new ArrayList<>();
@@ -65,12 +69,16 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/request")
-    public ResponseEntity<String> requestMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException {
+    public ResponseEntity<String> requestMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
-        // we parse the user object
-        User user = objectMapper.readValue(body.get("user").toString(),User.class);
-        // and generate the connection
-        generateConnection(user);
+        try {
+            // we parse the user object
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            // and generate the connection
+            generateConnection(user);
+        } catch (IOException e){
+            return getConnectionErrorResponse(e);
+        }
 
         CordaX500Name bnoName = CordaX500Name.parse(bnoString);
         Party bno = proxy.wellKnownPartyFromX500Name(bnoName);
@@ -80,16 +88,22 @@ public class MembershipController {
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(RequestMembershipFlow.class,bno,metadata).getReturnValue().get();
 
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping(value = "/update")
-    public ResponseEntity<String> updateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException {
+    public ResponseEntity<String> updateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
-        // we parse the user object
-        User user = objectMapper.readValue(body.get("user").toString(),User.class);
-        // and generate the connection
-        generateConnection(user);
+        try {
+            // we parse the user object
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            // and generate the connection
+            generateConnection(user);
+        } catch (IOException e){
+            return getConnectionErrorResponse(e);
+        }
 
         CordaX500Name bnoName = CordaX500Name.parse(bnoString);
         Party bno = proxy.wellKnownPartyFromX500Name(bnoName);
@@ -99,19 +113,28 @@ public class MembershipController {
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(AmendMembershipMetadataFlow.class,bno,metadata).getReturnValue().get();
 
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
     }
 
     @PostMapping(value = "/activate")
-    public ResponseEntity<String> activateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, IOException {
+    public ResponseEntity<String> activateMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
-        // we parse the user object
-        User user = objectMapper.readValue(body.get("user").toString(),User.class);
-        // and we get the index
-        int index = body.get("index").asInt();
+        int index = 0;
+        try {
+            // we parse the user object
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
 
-        // and generate the connection
-        generateConnection(user);
+            // and we get the index
+            index = body.get("index").asInt();
+
+            // and generate the connection
+            generateConnection(user);
+        } catch (IOException e){
+            return getConnectionErrorResponse(e);
+        }
+
 
         StateAndRef<MembershipState> membership = proxy.vaultQuery(MembershipState.class).getStates().get(index);
         if (membership == null) throw new InterruptedException("No memberships available to activate");
@@ -120,7 +143,10 @@ public class MembershipController {
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(ActivateMembershipFlow.class, membership).getReturnValue().get();
 
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
+
     }
 
     @PostMapping(value = "/suspend")
@@ -135,7 +161,9 @@ public class MembershipController {
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(SuspendMembershipFlow.class, membership).getReturnValue().get();
 
-        return new ResponseEntity<>(signedTransaction.toString(), HttpStatus.OK);
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
     }
 
     private void generateConnection(User user){

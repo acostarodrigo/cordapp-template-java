@@ -2,6 +2,7 @@ package org.shield.webserver.offer;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.gson.JsonArray;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -51,6 +52,9 @@ import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Consumer;
 
+import static org.shield.webserver.response.Response.getConnectionErrorResponse;
+import static org.shield.webserver.response.Response.getValidResponse;
+
 @RestController
 @RequestMapping("/offer")
 @Component
@@ -68,23 +72,23 @@ public class OfferController {
     }
 
     @GetMapping
-    public ResponseEntity<List<OfferState>> getMyOffers(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<String> getMyOffers(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
-        List<OfferState> offers = new ArrayList<>();
+        JsonArray offers = new JsonArray();
         for (StateAndRef<OfferState> stateAndRef : proxy.vaultQuery(OfferState.class).getStates()){
             OfferState offer = stateAndRef.getState().getData();
             // if the node we are connected issued the offer, then we add it
             if (proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer()))
-                offers.add(offer);
+                offers.add(offer.toJson());
         }
-        return new ResponseEntity<>(offers, HttpStatus.OK);
+        return getValidResponse(offers);
 
     }
 
@@ -94,21 +98,22 @@ public class OfferController {
      * @return
      */
     @GetMapping("/bondMonitor")
-    public ResponseEntity<List<BondMonitor>> getBondMonitor(@NotNull @RequestBody JsonNode body){
+    public ResponseEntity<String> getBondMonitor(@NotNull @RequestBody JsonNode body){
         // we parse the user from the body and establish the connection to the node
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         // we query the vault for Offers.
-        List<BondMonitor> offers = new ArrayList<>();
+        JsonArray offers = new JsonArray();
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
 
         Party myNode = proxy.nodeInfo().getLegalIdentities().get(0);
+
         // we get the data feed from the vault.
         DataFeed<Vault.Page<OfferState>, Vault.Update<OfferState>> dataFeed = proxy.vaultTrackByCriteria(OfferState.class, criteria);
         for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria,OfferState.class).getStates()){
@@ -129,10 +134,10 @@ public class OfferController {
                     bond.getDealType(),
                     bond.getDenomination());
 
-                offers.add(bondMonitor);
+                offers.add(bondMonitor.toJson());
             }
         }
-        return new ResponseEntity<>(offers, HttpStatus.OK);
+        return getValidResponse(offers);
 
     }
 
@@ -168,19 +173,24 @@ public class OfferController {
 
 
     @PostMapping()
-    public ResponseEntity<UniqueIdentifier> createOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<String> createOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         try {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
-
-            OfferBuilder offerBuilder = new OfferBuilder(proxy, body.get("offer"));
-            OfferState offer = offerBuilder.getOffer();
-            CordaFuture cordaFuture = proxy.startFlowDynamic(OfferFlow.Create.class,offer).getReturnValue();
-            UniqueIdentifier uniqueIdentifier = (UniqueIdentifier) cordaFuture.get();
-            return new ResponseEntity<>(uniqueIdentifier, HttpStatus.OK);
         } catch (IOException e) {
-            return new ResponseEntity<>(null, HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
+
+        OfferBuilder offerBuilder = new OfferBuilder(proxy, body.get("offer"));
+        OfferState offer = offerBuilder.getOffer();
+        CordaFuture cordaFuture = proxy.startFlowDynamic(OfferFlow.Create.class,offer).getReturnValue();
+        UniqueIdentifier uniqueIdentifier = (UniqueIdentifier) cordaFuture.get();
+
+        // we get the issuer to return the offer as json
+        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
+        offer.setIssuer(issuer);
+
+        return getValidResponse(offer.toJson());
     }
 }
