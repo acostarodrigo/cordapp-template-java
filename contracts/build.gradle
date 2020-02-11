@@ -26,4 +26,6 @@ dependencies {
 
     // Token SDK dependencies.
     cordaCompile "$tokens_release_group:tokens-contracts:$tokens_release_version"
+
+    compile 'com.google.code.gson:gson:2.8.6'
 }
