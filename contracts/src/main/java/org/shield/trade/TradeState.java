@@ -1,5 +1,6 @@
 package org.shield.trade;
 
+import com.google.gson.JsonObject;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 
@@ -193,5 +194,22 @@ public class TradeState implements ContractState, Serializable {
             ", currency=" + currency +
             ", state=" + state +
             '}';
+    }
+
+    public JsonObject toJson(){
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("id", id.getId().toString());
+        jsonObject.add("offer", offer.toJson());
+        jsonObject.addProperty("tradeDate",tradeDate.toString());
+        jsonObject.addProperty("settleDate",settleDate.toString());
+        jsonObject.addProperty("buyer",buyer.getName().toString());
+        jsonObject.addProperty("seller",seller.getName().toString());
+        jsonObject.addProperty("price",price);
+        jsonObject.addProperty("yield",yield);
+        jsonObject.addProperty("size",size);
+        jsonObject.addProperty("proceeds",proceeds);
+        jsonObject.addProperty("currency",currency.getCurrencyCode());
+        jsonObject.addProperty("state",state.toString());
+        return jsonObject;
     }
 }
