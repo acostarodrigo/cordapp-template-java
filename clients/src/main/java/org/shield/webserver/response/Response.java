@@ -50,17 +50,25 @@ public class Response implements Serializable {
 
     }
 
-
-    public static ResponseEntity<Response> getErrorResponse(JsonObject message){
+    public static ResponseEntity<Response> getResponse(boolean success,JsonObject message){
         JSONParser parser = new JSONParser();
-        JSONObject jsonObject = null;
         try {
-            jsonObject = (JSONObject) parser.parse(message.toString());
-            Response response = new Response(true, jsonObject);
-            return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
+            JSONObject jsonObject = (JSONObject) parser.parse(message.toString());
+            Response response = new Response(success, jsonObject);
+            return new ResponseEntity<>(response,HttpStatus.OK);
         } catch (ParseException e) {
             return null;
         }
+
+    }
+
+
+    public static ResponseEntity<Response> getErrorResponse(String message, Exception exception){
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("message", message);
+        jsonObject.put("error", exception.toString());
+        Response response = new Response(false, jsonObject);
+        return new ResponseEntity<>(response,HttpStatus.BAD_REQUEST);
     }
 
     public static ResponseEntity<Response> getConnectionErrorResponse(Exception exception){
