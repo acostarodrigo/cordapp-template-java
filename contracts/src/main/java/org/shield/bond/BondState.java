@@ -16,7 +16,7 @@ import java.util.*;
 @BelongsToContract(BondTypeContract.class)
 @CordaSerializable
 public class BondState extends EvolvableTokenType implements Serializable{
-    private UniqueIdentifier id;
+    private String id;
 
     private Party issuer;
     private String issuerTicker;
@@ -44,8 +44,8 @@ public class BondState extends EvolvableTokenType implements Serializable{
     }
 
 
-    public BondState(String issuerTicker, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
-        this.id = new UniqueIdentifier();
+    public BondState(String id, String issuerTicker, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
+        this.id = id;
         this.issuerTicker = issuerTicker;
         this.denomination = denomination;
         this.startDate = startDate;
@@ -65,11 +65,11 @@ public class BondState extends EvolvableTokenType implements Serializable{
 
     // getters and setters
 
-    public UniqueIdentifier getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(UniqueIdentifier id) {
+    public void setId(String id) {
         this.id = id;
     }
 
@@ -259,7 +259,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
 
     public JsonObject toJson(){
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("id", id.getId().toString());
+        jsonObject.addProperty("id", id);
         jsonObject.addProperty("issuer", issuer.getName().toString());
         jsonObject.addProperty("issuerTicker", issuerTicker);
         jsonObject.addProperty("denomination", denomination.getCurrencyCode());

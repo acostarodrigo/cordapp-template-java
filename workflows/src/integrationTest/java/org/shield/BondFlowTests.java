@@ -28,6 +28,7 @@ import static org.shield.TestHelper.*;
 
 public class BondFlowTests {
     private BondState bond;
+    Date startDate;
 
     public BondState getBond() {
         return bond;
@@ -43,8 +44,8 @@ public class BondFlowTests {
         c.setTime(new Date());
         // manipulate date
         c.add(Calendar.YEAR, 1);
-        Date startDate = c.getTime();
-        bond = new BondState("Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
+        startDate = c.getTime();
+        bond = new BondState("nuevoId","Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
 
     }
 
@@ -61,10 +62,10 @@ public class BondFlowTests {
         membershipTests.configIssuerTest();
 
         // we issue the bond
-        CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));
+        CordaFuture<String> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));
 
         mockNet.runNetwork();
-        UniqueIdentifier id = issueFuture.get();
+        String id = issueFuture.get();
         assertNotNull(id);
 
         // we will get it from the vault
@@ -87,10 +88,10 @@ public class BondFlowTests {
     @Test(expected = ExecutionException.class)
     public void issueBondWithoutBeingMemberTest() throws ExecutionException, InterruptedException {
         // we issue the bond
-        CordaFuture<UniqueIdentifier> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));
+        CordaFuture<String> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));
 
         mockNet.runNetwork();
-        UniqueIdentifier id = issueFuture.get();
+        String id = issueFuture.get();
         // this should never be reached
         assertNotNull(null);
     }
@@ -100,10 +101,10 @@ public class BondFlowTests {
         MembershipTests membershipTests = new MembershipTests();
         membershipTests.configBuyerTest();
         // we issue the bond
-        CordaFuture<UniqueIdentifier> issueFuture = broker1Node.startFlow(new BondFlow.Issue(bond));
+        CordaFuture<String> issueFuture = broker1Node.startFlow(new BondFlow.Issue(bond));
 
         mockNet.runNetwork();
-        UniqueIdentifier id = issueFuture.get();
+        String id = issueFuture.get();
         // this should never be reached
         assertNotNull(null);
     }
@@ -143,7 +144,7 @@ public class BondFlowTests {
         issueFuture.get();
 
         //issue bond 2
-        BondState bond2 = new BondState("Rodrigo", Currency.getInstance("USD"), new Date(), 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
+        BondState bond2 = new BondState("id2","Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,startDate,99.8,0);
 
         // we issue the bond
         issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond2));

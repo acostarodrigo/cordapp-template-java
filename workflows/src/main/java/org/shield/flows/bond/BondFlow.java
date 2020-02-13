@@ -44,7 +44,7 @@ public class BondFlow {
 
     @StartableByRPC
     @InitiatingFlow
-    public static class Issue extends FlowLogic<UniqueIdentifier> {
+    public static class Issue extends FlowLogic<String> {
         private BondState bond;
 
         public Issue(BondState bond) {
@@ -53,7 +53,7 @@ public class BondFlow {
 
         @Override
         @Suspendable
-        public UniqueIdentifier call() throws FlowException {
+        public String call() throws FlowException {
             // we validate caller is an issuer
             if (!subFlow(new MembershipFlows.isIssuer())) throw new FlowException("Only active issuer organizations can issue a bond.");
 
@@ -85,10 +85,10 @@ public class BondFlow {
     @StartableByRPC
     @InitiatingFlow
     public static class setAFS extends FlowLogic<SignedTransaction>{
-        private UniqueIdentifier bondId;
+        private String bondId;
         private boolean afs;
 
-        public setAFS(UniqueIdentifier bondId, boolean afs) {
+        public setAFS(String bondId, boolean afs) {
             this.bondId = bondId;
             this.afs = afs;
         }

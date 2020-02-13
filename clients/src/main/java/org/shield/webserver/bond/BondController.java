@@ -60,12 +60,11 @@ public class BondController {
 
 
         // manually defined ids of bond.
-        bond.setId(new UniqueIdentifier());
         bond.setLinearId(new UniqueIdentifier());
 
         // make the call to the node
-        CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(BondFlow.Issue.class, bond).getReturnValue();
-        UniqueIdentifier uniqueIdentifier = cordaFuture.get();
+        CordaFuture<String> cordaFuture = proxy.startFlowDynamic(BondFlow.Issue.class, bond).getReturnValue();
+        String uniqueIdentifier = cordaFuture.get();
 
         // we set the issuer to provide the response
         Party caller = proxy.nodeInfo().getLegalIdentities().get(0);
@@ -107,6 +106,7 @@ public class BondController {
         List<BondState> bonds = new ArrayList<>();
         for (CSVRecord csvRecord : csvParser){
             try {
+                String id = csvRecord.get("bond_id");
                 String ticker = csvRecord.get("ticker");
                 Currency currency = Currency.getInstance(csvRecord.get("currency"));
                 Date startDate = new SimpleDateFormat("YYYY-mm-dd").parse(csvRecord.get("start_date"));
@@ -119,7 +119,7 @@ public class BondController {
                 int redemptionPrice = Integer.parseInt(csvRecord.get("price"));
                 double initialPrice = Double.parseDouble(csvRecord.get("price"));
                 double couponRate = Double.parseDouble(csvRecord.get("coupon"));
-                BondState bondState = new BondState(ticker, currency, startDate,couponFrequency,minDenomination,increment,dealType,redemptionPrice,size,initialPrice,maturityDate,couponRate,0);
+                BondState bondState = new BondState(id, ticker, currency, startDate,couponFrequency,minDenomination,increment,dealType,redemptionPrice,size,initialPrice,maturityDate,couponRate,0);
                 bonds.add(bondState);
             } catch (Exception e){
                 return getErrorResponse("Unable to parse bond from CSV file", e);
@@ -133,16 +133,15 @@ public class BondController {
         for (BondState bondState : bonds){
             try{
                 // manually defined ids of bond.
-                bondState.setId(new UniqueIdentifier());
                 bondState.setLinearId(new UniqueIdentifier());
 
-                CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(BondFlow.Issue.class, bondState).getReturnValue();
-                UniqueIdentifier uniqueIdentifier = cordaFuture.get();
+                CordaFuture<String> cordaFuture = proxy.startFlowDynamic(BondFlow.Issue.class, bondState).getReturnValue();
+                String id = cordaFuture.get();
 
                 // we prepare the response
                 JsonObject jsonObject = new JsonObject();
                 jsonObject.addProperty("success",true);
-                jsonObject.addProperty("id", uniqueIdentifier.getId().toString());
+                jsonObject.addProperty("id", id);
                 jsonElements.add(jsonObject);
             } catch (Exception e){
                 success = false;
