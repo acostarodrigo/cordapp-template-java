@@ -7,14 +7,12 @@ import com.google.gson.JsonObject;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.flows.FlowException;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
 import org.shield.bond.BondState;
 import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
@@ -25,8 +23,9 @@ import org.shield.webserver.response.Response;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.*;
-import java.text.ParseException;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Currency;
@@ -36,7 +35,6 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
 import static org.shield.webserver.response.Response.*;
-import static org.shield.webserver.response.Response.getValidResponse;
 
 @RestController
 @RequestMapping("/bond") // The paths for HTTP requests are relative to this base path.
