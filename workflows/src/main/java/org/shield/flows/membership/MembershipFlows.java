@@ -110,11 +110,21 @@ public class MembershipFlows {
      *  is a BondRole.SELLER
      */
     public static class isSeller extends FlowLogic<Boolean>{
+        private Party seller;
+
+        public isSeller(Party seller) {
+            this.seller = seller;
+        }
+
+        public isSeller() {
+            this.seller = null;
+        }
+
         @Override
         @Suspendable
         public Boolean call() throws FlowException {
 
-            MembershipState membershipState = subFlow(new getMembership());
+            MembershipState membershipState = subFlow(new getMembership(seller));
 
             // we will validate is an active member of the organization
             if (membershipState == null || !membershipState.isActive()) return false;
