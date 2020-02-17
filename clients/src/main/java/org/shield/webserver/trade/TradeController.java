@@ -99,7 +99,7 @@ public class TradeController {
             return getConnectionErrorResponse(e);
         }
 
-        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.Accept.class, tradeId).getReturnValue();
+        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.AcceptSeller.class, tradeId).getReturnValue();
         SignedTransaction signedTransaction = cordaFuture.get();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("transaction", signedTransaction.getId().toString());
@@ -118,7 +118,7 @@ public class TradeController {
             return getConnectionErrorResponse(e);
         }
 
-        CordaFuture<Void> cordaFuture = proxy.startFlowDynamic(TradeFlow.Cancel.class, tradeId).getReturnValue();
+        CordaFuture<Void> cordaFuture = proxy.startFlowDynamic(TradeFlow.CancelSeller.class, tradeId).getReturnValue();
         cordaFuture.get();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("id", tradeId.getId().toString());

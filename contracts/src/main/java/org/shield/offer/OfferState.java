@@ -148,8 +148,8 @@ public class OfferState implements ContractState, Serializable {
         OfferState that = (OfferState) o;
         return Float.compare(that.getOfferPrice(), getOfferPrice()) == 0 &&
             Float.compare(that.getOfferYield(), getOfferYield()) == 0 &&
-            getAggregatedTradeSize() == that.getAggregatedTradeSize() &&
-            getAfsSize() == that.getAfsSize() &&
+            // getAggregatedTradeSize() == that.getAggregatedTradeSize() &&
+            // getAfsSize() == that.getAfsSize() &&
             isAfs() == that.isAfs() &&
             Objects.equals(getOfferId(), that.getOfferId()) &&
             Objects.equals(getIssuer(), that.getIssuer()) &&

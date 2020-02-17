@@ -4,6 +4,7 @@ import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
+import net.corda.core.transactions.SignedTransaction;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.bond.BondState;
@@ -47,10 +48,10 @@ public class OfferFlowTests {
 
     @Test
     public void createOfferTest() throws ExecutionException, InterruptedException {
-        CordaFuture<UniqueIdentifier> cordaFuture = TestHelper.issuerNode.startFlow(new OfferFlow.Create(offer));
+        CordaFuture<SignedTransaction> cordaFuture = TestHelper.issuerNode.startFlow(new OfferFlow.Create(offer));
         TestHelper.mockNet.runNetwork();
-        UniqueIdentifier uniqueIdentifier = cordaFuture.get();
-        assertNotNull(uniqueIdentifier);
+        SignedTransaction signedTransaction = cordaFuture.get();
+        assertNotNull(signedTransaction);
 
         // issuer, broker1 and broker2 should have the offer.
         assertEquals(TestHelper.issuerNode.getServices().getVaultService().queryBy(OfferState.class).getStates().get(0).getState().getData(),offer);
