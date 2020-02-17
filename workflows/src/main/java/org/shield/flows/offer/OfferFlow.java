@@ -11,7 +11,9 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.node.StatesToRecord;
+import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;
+import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import net.corda.core.utilities.ProgressTracker;
@@ -44,7 +46,7 @@ public class OfferFlow {
      */
     @InitiatingFlow
     @StartableByRPC
-    public static class Create extends FlowLogic<UniqueIdentifier>{
+    public static class Create extends FlowLogic<SignedTransaction>{
         private static final Logger logger = LoggerFactory.getLogger(Create.class);
 
         private OfferState offer;
@@ -69,12 +71,12 @@ public class OfferFlow {
 
         @Override
         @Suspendable
-        public UniqueIdentifier call() throws FlowException {
+        public SignedTransaction call() throws FlowException {
             Party caller = getOurIdentity();
             logger.debug(String.format("Offer create started by %s", caller.getName().getCommonName()));
 
-            //must be buyer to create an offer.
-            if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Must be an active buyer organization to create an offer.");
+            //must be seller to create an offer.
+            if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Must be an active seller organization to create an offer.");
 
             // must have enought balance to create the offer
             progressTracker.setCurrentStep(VALIDATE_BALANCE);
@@ -112,7 +114,7 @@ public class OfferFlow {
                 subFlow(new NotifyBuyers(signedTx.getCoreTransaction().outRef(0),offer));
             }
 
-            return offer.getOfferId();
+            return signedTx;
         }
     }
 
@@ -135,7 +137,6 @@ public class OfferFlow {
     /**
      * Sets the Available For Sale property, and notify buyers if needed.
      */
-    @InitiatingFlow
     @StartableByRPC
     public static class setAFS extends FlowLogic<SignedTransaction> {
         private UniqueIdentifier id;
@@ -149,7 +150,26 @@ public class OfferFlow {
         @Override
         @Suspendable
         public SignedTransaction call() throws FlowException {
-            return null;
+            // must be seller
+            if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Only an active seller can modify an offer.");
+
+            // must exist
+            OfferState offer = null;
+            StateAndRef<OfferState> input = null;
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
+                if (stateAndRef.getState().getData().getOfferId().equals(id)){
+                    offer = stateAndRef.getState().getData();
+                    input = stateAndRef;
+                    break;
+                }
+            }
+
+            if (offer == null || input == null) throw new FlowException(String.format("Provided offer %s doesn't exists. Can't modify", id.toString()));
+
+            offer.setAfs(afs);
+            SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));
+            return signedTransaction;
         }
     }
 
@@ -259,6 +279,61 @@ public class OfferFlow {
         private FlowSession callerSession;
 
         public NotifyBuyersResponse(FlowSession callerSession) {
+            this.callerSession = callerSession;
+        }
+
+        @Override
+        @Suspendable
+        public Void call() throws FlowException {
+            // we are setting StatesToRecord to all visible to save the offer
+            subFlow(new ReceiveFinalityFlow(callerSession,null, StatesToRecord.ALL_VISIBLE));
+            return null;
+        }
+    }
+
+
+    @InitiatingFlow
+    public static class NotifySingleBuyer extends FlowLogic<SignedTransaction>{
+        private StateAndRef<OfferState> input;
+        private OfferState output;
+        private Party buyer;
+
+        public NotifySingleBuyer(StateAndRef<OfferState> input, OfferState output, Party buyer) {
+            this.input = input;
+            this.output = output;
+            this.buyer = buyer;
+        }
+
+        @Override
+        @Suspendable
+        public SignedTransaction call() throws FlowException {
+            Party caller = getOurIdentity();
+            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+
+
+            FlowSession flowSession = initiateFlow(buyer);
+
+            // and create the transaction
+            Command command = new Command<>(new OfferContract.Commands.notifyBuyers(), caller.getOwningKey());
+            TransactionBuilder txBuilder = new TransactionBuilder(notary)
+                .addInputState(input)
+                .addOutputState(output, OfferContract.ID)
+                .addCommand(command);
+
+            // we are ready to sign
+            SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
+
+            // all done
+            subFlow(new FinalityFlow(signedTx,flowSession));
+            return signedTx;
+        }
+    }
+
+    @InitiatedBy(OfferFlow.NotifySingleBuyer.class)
+    public static class NotifySingleBuyerResponse extends FlowLogic<Void>{
+        private FlowSession callerSession;
+
+        public NotifySingleBuyerResponse(FlowSession callerSession) {
             this.callerSession = callerSession;
         }
 
