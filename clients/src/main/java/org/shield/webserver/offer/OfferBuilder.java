@@ -30,8 +30,7 @@ public class OfferBuilder {
         Party issuer = proxy.wellKnownPartyFromX500Name(issuerIdentity);
 
         // we get the bond
-        String bondIdString = body.get("bondId").textValue();
-        UniqueIdentifier bondId = UniqueIdentifier.Companion.fromString(bondIdString);
+        String bondId = body.get("bondId").textValue();
         BondState bond = null;
         for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(bondId)){

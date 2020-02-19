@@ -27,8 +27,6 @@ import java.util.Date;
 public class OfflineTrade {
     private OfflineTrade(){}
 
-
-    @InitiatingFlow
     @StartableByRPC
     public static class IssuerCreate extends FlowLogic<UniqueIdentifier> {
         private String bondId;

@@ -12,6 +12,7 @@ import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.messaging.DataFeed;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
+import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.flows.offer.OfferFlow;
@@ -170,7 +171,7 @@ public class OfferController {
         OfferBuilder offerBuilder = new OfferBuilder(proxy, body.get("offer"));
         OfferState offer = offerBuilder.getOffer();
         CordaFuture cordaFuture = proxy.startFlowDynamic(OfferFlow.Create.class,offer).getReturnValue();
-        UniqueIdentifier uniqueIdentifier = (UniqueIdentifier) cordaFuture.get();
+        cordaFuture.get();
 
         // we get the issuer to return the offer as json
         Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
