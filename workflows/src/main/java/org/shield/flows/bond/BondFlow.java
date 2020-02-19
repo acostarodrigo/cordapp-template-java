@@ -61,8 +61,11 @@ public class BondFlow {
             Party issuer = getOurIdentity();
             bond.setIssuer(issuer);
 
-            // we make sure bond is verified before we move on
-            // todo validate contract
+            // validate that the bond with this is doesn't exists.
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<BondState> stateAndRef : getServiceHub().getVaultService().queryBy(BondState.class, criteria).getStates()){
+                if (stateAndRef.getState().getData().getId().equals(bond.getId())) throw new FlowException(String.format("Specified id %s already exists. Can't issue bond.", bond.getId()));
+            }
 
             // we create the bond type
             SignedTransaction signedTransaction = subFlow(new IssueType(this.bond));
