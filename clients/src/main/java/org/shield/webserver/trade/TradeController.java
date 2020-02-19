@@ -116,7 +116,7 @@ public class TradeController {
         long proceeds = tradeBody.get("proceeds").asLong();
         String arranger = tradeBody.get("arranger").textValue();
 
-        CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(OfflineTrade.IssuerCreate.class, bondId, buyer,settleDate, proceeds, arranger).getReturnValue();
+        CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(OfflineTrade.IssuerCreate.class, bondId, buyer, size, price, yield, settleDate, proceeds, arranger).getReturnValue();
         UniqueIdentifier id = cordaFuture.get();
 
         JsonObject jsonObject = new JsonObject();
