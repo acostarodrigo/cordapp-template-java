@@ -12,7 +12,7 @@ import java.util.Date;
 
 public class BondMonitor {
     private UniqueIdentifier offerId;
-    private UniqueIdentifier bondId;
+    private String bondId;
     private String ticker;
     private float currentPrice;
     private float currentYield;
@@ -25,7 +25,7 @@ public class BondMonitor {
     private DealType dealType;
     private Currency currency;
 
-    public BondMonitor(UniqueIdentifier offerId, UniqueIdentifier bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, String coupon, String couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
+    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, String coupon, String couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
         this.offerId = offerId;
         this.bondId = bondId;
         this.ticker = ticker;
@@ -49,7 +49,7 @@ public class BondMonitor {
         this.offerId = offerId;
     }
 
-    public UniqueIdentifier getBondId() {
+    public String getBondId() {
         return bondId;
     }
 
@@ -119,7 +119,7 @@ public class BondMonitor {
     public JsonObject toJson(){
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("offerId", offerId.getId().toString());
-        jsonObject.addProperty("bondId", bondId.getId().toString());
+        jsonObject.addProperty("bondId", bondId);
         jsonObject.addProperty("ticker", ticker);
         jsonObject.addProperty("currentPrice", currentPrice);
         jsonObject.addProperty("currentYield", currentYield);

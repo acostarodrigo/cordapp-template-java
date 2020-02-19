@@ -8,9 +8,12 @@ import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.identity.CordaX500Name;
+import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
+import org.shield.flows.trade.OfflineTrade;
 import org.shield.flows.trade.TradeFlow;
 import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
@@ -23,8 +26,10 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -64,8 +69,8 @@ public class TradeController {
         return getValidResponse(jsonObject);
     }
 
-    @PostMapping("/issue")
-    public ResponseEntity<Response> issueTrade(@NotNull @RequestBody JsonNode body) throws Exception {
+    @PostMapping("/buyerIssue")
+    public ResponseEntity<Response> buyerIssueTrade(@NotNull @RequestBody JsonNode body) throws Exception {
         ObjectMapper objectMapper = new ObjectMapper();
         JsonNode tradeBody = null;
         try {
@@ -87,8 +92,40 @@ public class TradeController {
         return getValidResponse(trade.toJson());
     }
 
-    @PostMapping("/accept")
-    public ResponseEntity<Response> acceptTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    @PostMapping("/sellerIssue")
+    public ResponseEntity<Response> sellerIssueTrade(@NotNull @RequestBody JsonNode body) throws Exception {
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode tradeBody = null;
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            tradeBody = body.get("trade");
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        // we get the parameters
+        String bondId = tradeBody.get("bondId").textValue();
+        String buyerStr = tradeBody.get("buyer").textValue();
+        CordaX500Name buyerName = CordaX500Name.parse(buyerStr);
+        Party buyer = proxy.wellKnownPartyFromX500Name(buyerName);
+        long size = tradeBody.get("size").asLong();
+        float price = tradeBody.get("price").floatValue();
+        float yield = tradeBody.get("yield").floatValue();
+        Date settleDate = new SimpleDateFormat("YYYY-mm-dd").parse(tradeBody.get("settleDate").textValue());
+        long proceeds = tradeBody.get("proceeds").asLong();
+        String arranger = tradeBody.get("arranger").textValue();
+
+        CordaFuture<UniqueIdentifier> cordaFuture = proxy.startFlowDynamic(OfflineTrade.IssuerCreate.class, bondId, buyer,settleDate, proceeds, arranger).getReturnValue();
+        UniqueIdentifier id = cordaFuture.get();
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", id.getId().toString());
+        return getValidResponse(jsonObject);
+    }
+
+    @PostMapping("/sellerAccept")
+    public ResponseEntity<Response> sellerAcceptTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
         try {
@@ -106,8 +143,8 @@ public class TradeController {
         return getValidResponse(jsonObject);
     }
 
-    @PostMapping("/cancel")
-    public ResponseEntity<Response> cancelTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    @PostMapping("/sellerCancel")
+    public ResponseEntity<Response> sellerCancelTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         UniqueIdentifier tradeId = null;
         try {
@@ -140,6 +177,44 @@ public class TradeController {
         CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.Settle.class, tradeId).getReturnValue();
         SignedTransaction signedTransaction = cordaFuture.get();
 
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
+    }
+
+    @PostMapping("/buyerAccept")
+    public ResponseEntity<Response> buyerAcceptTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        UniqueIdentifier tradeId = null;
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            tradeId = UniqueIdentifier.Companion.fromString(body.get("tradeId").asText());
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.AcceptBuyer.class, tradeId).getReturnValue();
+        SignedTransaction signedTransaction = cordaFuture.get();
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(jsonObject);
+    }
+
+    @PostMapping("/buyerCancel")
+    public ResponseEntity<Response> buyerCancelTrade(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        UniqueIdentifier tradeId = null;
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            tradeId = UniqueIdentifier.Companion.fromString(body.get("tradeId").asText());
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(TradeFlow.CancelBuyer.class, tradeId).getReturnValue();
+        SignedTransaction signedTransaction = cordaFuture.get();
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("transaction", signedTransaction.getId().toString());
         return getValidResponse(jsonObject);

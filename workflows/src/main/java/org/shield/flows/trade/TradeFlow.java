@@ -678,7 +678,7 @@ public class TradeFlow {
 
     @InitiatingFlow
     @StartableByRPC
-    public static class CancelBuyer extends FlowLogic<Void>{
+    public static class CancelBuyer extends FlowLogic<SignedTransaction>{
         private UniqueIdentifier tradeId;
 
         public CancelBuyer(UniqueIdentifier tradeId) {
@@ -687,7 +687,7 @@ public class TradeFlow {
 
         @Override
         @Suspendable
-        public Void call() throws FlowException {
+        public SignedTransaction call() throws FlowException {
             // caller must be a valid buyer
             if (!subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Only a valid buyer organization can cancel a trade.");
 
@@ -733,7 +733,7 @@ public class TradeFlow {
 
             subFlow(new FinalityFlow(signedTransaction,Arrays.asList(sellerSession)));
 
-            return null;
+            return signedTransaction;
         }
     }
 
@@ -868,9 +868,15 @@ public class TradeFlow {
             subFlow(new SignTransactionFlow(this.caller) {
                 @Override
                 protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                    // we validate the trade is ok
+                    OfferState offer = (OfferState) stx.getCoreTransaction().outRef(1).getState().getData();
+                    TradeState trade = (TradeState) stx.getCoreTransaction().outRef(0).getState().getData();
+
+                    // we must be issuers of the offer
+                    Party issuer = getOurIdentity();
+                    if (!offer.getIssuer().equals(issuer)) throw new FlowException(String.format("Provided offer %s was not issued by us. We won't sign.", offer.getOfferId().toString()));
 
                     // we validate we are the seller
+                    if (!trade.getSeller().equals(issuer)) throw new FlowException(String.format("We are not the sellers of  trade %s. We won't sign.", trade.getId().toString()));
                 }
             });
 

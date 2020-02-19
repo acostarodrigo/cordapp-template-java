@@ -8,6 +8,8 @@ import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;
@@ -26,6 +28,8 @@ public class OfflineTrade {
     private OfflineTrade(){}
 
 
+    @InitiatingFlow
+    @StartableByRPC
     public static class IssuerCreate extends FlowLogic<UniqueIdentifier> {
         private String bondId;
         private Party buyer;
