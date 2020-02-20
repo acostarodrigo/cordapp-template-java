@@ -179,4 +179,28 @@ public class OfferController {
 
         return getValidResponse(offer.toJson());
     }
+
+    @PostMapping("/afs")
+    public ResponseEntity<Response> setAFS(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        UniqueIdentifier offerId = UniqueIdentifier.Companion.fromString(body.get("offerId").asText());
+        boolean afs = body.get("afs").asBoolean();
+
+        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(OfferFlow.setAFS.class,offerId,afs).getReturnValue();
+        SignedTransaction signedTransaction = cordaFuture.get();
+
+        // prepare the response
+        JsonObject response = new JsonObject();
+        response.addProperty("transaction", signedTransaction.getId().toString());
+        return getValidResponse(response);
+    }
+
+
 }
