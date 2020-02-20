@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
+import io.swagger.v3.oas.annotations.Operation;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.CordaX500Name;
@@ -39,6 +40,7 @@ public class BalanceController {
     private CordaRPCOps proxy;
 
     @GetMapping
+    @Operation(summary = "Gets balances of all digital wallets.", description = "Use this method to get balances in Fiat Token and Bonds.")
     public ResponseEntity<Response> getBalances(@NotNull @RequestBody JsonNode body){
         ObjectMapper objectMapper = new ObjectMapper();
         try {

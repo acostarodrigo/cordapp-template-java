@@ -1,9 +1,16 @@
 package org.shield.webserver.connection;
 
+import io.swagger.v3.oas.annotations.media.Schema;
+
 import javax.persistence.Entity;
 import javax.validation.constraints.NotEmpty;
 
 @Entity
+@Schema(
+    name = "User",
+    description = "User credentials to connect to an specific Corda node",
+    oneOf = User.class
+)
 public class User {
     public User() {
     }

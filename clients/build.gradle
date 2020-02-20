@@ -8,6 +8,7 @@ sourceSets {
     }
 }
 
+
 dependencies {
     // Corda dependencies.
     compile "$corda_release_group:corda-rpc:4.3"
@@ -54,6 +55,11 @@ dependencies {
 
     // for CSV handling
     compile 'org.apache.commons:commons-csv:1.8'
+
+    // swagger
+    compile group: 'org.springdoc', name: 'springdoc-openapi-ui', version: '1.1.49'
+    //compile group: 'org.springdoc', name: 'springdoc-openapi-core', version: '1.1.49'
+
 }
 
 springBoot {
