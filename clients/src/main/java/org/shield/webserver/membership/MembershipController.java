@@ -7,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.r3.businessnetworks.membership.flows.bno.ActivateMembershipFlow;
 import com.r3.businessnetworks.membership.flows.bno.SuspendMembershipFlow;
 import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataFlow;
+import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataRequest;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
 import com.r3.businessnetworks.membership.flows.member.RequestMembershipFlow;
 import com.r3.businessnetworks.membership.states.MembershipState;
@@ -16,6 +17,7 @@ import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
+import org.shield.flows.membership.MembershipFlows;
 import org.shield.membership.ShieldMetadata;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
@@ -115,7 +117,7 @@ public class MembershipController {
         MetadataBuilder metadataBuilder = new MetadataBuilder(body.get("metadata"),proxy);
         ShieldMetadata metadata = metadataBuilder.getMetadata();
 
-        SignedTransaction signedTransaction = proxy.startFlowDynamic(AmendMembershipMetadataFlow.class,bno,metadata).getReturnValue().get();
+        SignedTransaction signedTransaction = proxy.startFlowDynamic(MembershipFlows.updateMetadata.class,bno,metadata).getReturnValue().get();
 
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("transaction", signedTransaction.getId().toString());

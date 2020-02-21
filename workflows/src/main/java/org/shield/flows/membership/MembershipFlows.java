@@ -1,6 +1,8 @@
 package org.shield.flows.membership;
 
 import co.paralleluniverse.fibers.Suspendable;
+import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataFlow;
+import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataRequest;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
 import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
 import com.r3.businessnetworks.membership.states.MembershipState;
@@ -10,8 +12,10 @@ import net.corda.core.cordapp.CordappConfig;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
+import net.corda.core.transactions.SignedTransaction;
 import org.shield.membership.ShieldMetadata;
 
 import java.util.ArrayList;
@@ -284,6 +288,28 @@ public class MembershipFlows {
             Party bno = getServiceHub().getNetworkMapCache().getPeerByLegalName(bnoName);
 
             return bno;
+        }
+    }
+
+    /**
+     * Updates metadata. We have our own flow because AmendMembershipMetadataFlow
+     * is not StartableByRPC
+     */
+    @StartableByRPC
+    public static class updateMetadata extends FlowLogic<SignedTransaction>{
+        private Party bno;
+        private ShieldMetadata metadata;
+
+        public updateMetadata(Party bno, ShieldMetadata metadata) {
+            this.bno = bno;
+            this.metadata = metadata;
+        }
+
+        @Override
+        @Suspendable
+        public SignedTransaction call() throws FlowException {
+            SignedTransaction signedTransaction = subFlow(new AmendMembershipMetadataFlow(bno, metadata));
+            return signedTransaction;
         }
     }
 }
