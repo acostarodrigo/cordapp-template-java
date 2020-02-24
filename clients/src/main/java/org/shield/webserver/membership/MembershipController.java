@@ -145,7 +145,7 @@ public class MembershipController {
         StateAndRef<MembershipState> membership = proxy.vaultQuery(MembershipState.class).getStates().get(index);
         if (membership == null) throw new InterruptedException("No memberships available to activate");
 
-        if (!membership.getState().getData().isPending()) throw new InterruptedException("Provided membership is not in pending state");
+        if (!membership.getState().getData().isPending() && !membership.getState().getData().isSuspended()) throw new InterruptedException("Provided membership is not in pending or suspended state. Can't activate.");
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(ActivateMembershipFlow.class, membership).getReturnValue().get();
 
@@ -156,14 +156,26 @@ public class MembershipController {
     }
 
     @PostMapping(value = "/suspend")
-    public ResponseEntity<Response> suspendMembership(@Valid @RequestBody User user, int index) throws ExecutionException, InterruptedException {
-        // we connect to the passed node
-        generateConnection(user);
+    public ResponseEntity<Response> suspendMembership(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        int index = 0;
+        try {
+            // we parse the user object
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+
+            // and we get the index
+            index = body.get("index").asInt();
+
+            // and generate the connection
+            generateConnection(user);
+        } catch (IOException e){
+            return getConnectionErrorResponse(e);
+        }
 
         StateAndRef<MembershipState> membership = proxy.vaultQuery(MembershipState.class).getStates().get(index);
         if (membership == null) throw new InterruptedException("No memberships available to suspend");
 
-        if (!membership.getState().getData().isSuspended()) throw new InterruptedException("Provided membership is already suspended");
+        if (membership.getState().getData().isSuspended()) throw new InterruptedException("Provided membership is already suspended");
 
         SignedTransaction signedTransaction = proxy.startFlowDynamic(SuspendMembershipFlow.class, membership).getReturnValue().get();
 

@@ -233,7 +233,7 @@ public class OfferFlow {
             SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
             subFlow(new FinalityFlow(signedTx));
 
-            // we notify of the changres
+            // we notify of the changes
             SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));
             return signedTransaction;
         }
