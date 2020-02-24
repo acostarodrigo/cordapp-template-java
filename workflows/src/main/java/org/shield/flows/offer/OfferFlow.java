@@ -21,6 +21,7 @@ import net.corda.core.utilities.ProgressTracker.Step;
 import org.jetbrains.annotations.Nullable;
 import org.shield.bond.BondState;
 import org.shield.flows.membership.MembershipFlows;
+import org.shield.flows.trade.OfflineTrade;
 import org.shield.membership.ShieldMetadata;
 import org.shield.offer.OfferContract;
 import org.shield.offer.OfferState;
@@ -138,6 +139,7 @@ public class OfferFlow {
      * Sets the Available For Sale property, and notify buyers if needed.
      */
     @StartableByRPC
+    @InitiatingFlow
     public static class setAFS extends FlowLogic<SignedTransaction> {
         private UniqueIdentifier id;
         private boolean afs;
@@ -168,6 +170,7 @@ public class OfferFlow {
             if (offer == null || input == null) throw new FlowException(String.format("Provided offer %s doesn't exists. Can't modify", id.toString()));
 
             offer.setAfs(afs);
+
             SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));
             return signedTransaction;
         }
@@ -178,17 +181,61 @@ public class OfferFlow {
      */
     @StartableByRPC
     @InitiatingFlow
-    public static class modify extends FlowLogic<SignedTransaction> {
+    public static class Modify extends FlowLogic<SignedTransaction> {
         private OfferState offer;
+        private OfferState oldOffer;
 
-        public modify(OfferState offer) {
+        public Modify(OfferState offer) {
             this.offer = offer;
         }
 
         @Override
         @Suspendable
         public SignedTransaction call() throws FlowException {
-            return null;
+            // must be seller
+            if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Only an active seller can modify an offer.");
+
+            // must exist
+            OfferState offer = null;
+            StateAndRef<OfferState> input = null;
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
+                if (stateAndRef.getState().getData().getOfferId().equals(offer.getOfferId())){
+                    oldOffer = stateAndRef.getState().getData();
+                    input = stateAndRef;
+                    break;
+                }
+            }
+
+            if (offer == null || input == null) throw new FlowException(String.format("Provided offer %s doesn't exists. Can't modify", offer.getOfferId().toString()));
+
+            // must have enought balance if we are changing the size.
+            if (offer.getAfsSize() != oldOffer.getAfsSize()){
+                VaultService vaultService = getServiceHub().getVaultService();
+                BondState bond = this.offer.getBond();
+                TokenPointer tokenPointer = bond.toPointer(bond.getClass());
+                Amount balance = QueryUtilitiesKt.tokenBalance(vaultService,tokenPointer);
+
+
+                if (balance.getQuantity() < offer.getAfsSize()) throw new FlowException(String.format("Not enought balance to submit offer. Current balance is %s", String.valueOf(balance.getQuantity())));
+            }
+
+            // generate the transaction
+            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            Party caller = getOurIdentity();
+            Command command = new Command<>(new OfferContract.Commands.modify(), caller.getOwningKey());
+            TransactionBuilder txBuilder = new TransactionBuilder(notary)
+                .addInputState(input)
+                .addOutputState(offer, OfferContract.ID)
+                .addCommand(command);
+
+            // we are ready to sign
+            SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
+            subFlow(new FinalityFlow(signedTx));
+
+            // we notify of the changres
+            SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));
+            return signedTransaction;
         }
     }
 

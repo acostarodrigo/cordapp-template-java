@@ -60,5 +60,6 @@ public class OfferContract implements Contract {
     public interface Commands extends CommandData {
         class notifyBuyers implements OfferContract.Commands {}
         class create implements OfferContract.Commands {}
+        class modify implements OfferContract.Commands {}
     }
 }

@@ -180,6 +180,30 @@ public class OfferController {
         return getValidResponse(offer.toJson());
     }
 
+    @PostMapping("/modify")
+    public ResponseEntity<Response> modifyOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        OfferBuilder offerBuilder = new OfferBuilder(proxy, body.get("offer"));
+        OfferState offer = offerBuilder.getOffer();
+        CordaFuture cordaFuture = proxy.startFlowDynamic(OfferFlow.Modify.class,offer).getReturnValue();
+        cordaFuture.get();
+
+        // we get the issuer to return the offer as json
+        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
+        offer.setIssuer(issuer);
+
+        return getValidResponse(offer.toJson());
+    }
+
+
+
     @PostMapping("/afs")
     public ResponseEntity<Response> setAFS(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
