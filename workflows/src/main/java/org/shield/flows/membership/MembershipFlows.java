@@ -312,4 +312,51 @@ public class MembershipFlows {
             return signedTransaction;
         }
     }
+
+    /**
+     * Caller must be treasurer and returns true if node passed has chosen caller as treasurer
+     */
+    @StartableByRPC
+    public static class imYourTreasurer extends FlowLogic<Boolean>{
+        private Party node;
+
+        public imYourTreasurer(Party node) {
+            this.node = node;
+        }
+
+        @Override
+        public Boolean call() throws FlowException {
+            if (!subFlow(new isTreasure())) throw new FlowException("Only a valid active Treasurer organization can call this method.");
+            Party treasurer = getOurIdentity();
+            ShieldMetadata metadata = (ShieldMetadata) subFlow(new getMembership(node)).getMembershipMetadata();
+            if (metadata.getTreasurers().contains(treasurer))
+                return true;
+            else
+                return false;
+        }
+    }
+
+    /**
+     * Caller must be custodian and returns true if node passed has chosen caller as custodian
+     */
+    @StartableByRPC
+    public static class imYourCustodian extends FlowLogic<Boolean>{
+        private Party node;
+
+        public imYourCustodian(Party node) {
+            this.node = node;
+        }
+
+        @Override
+        public Boolean call() throws FlowException {
+            if (!subFlow(new isCustodian())) throw new FlowException("Only a valid active Custodian organization can call this method.");
+            Party custodian = getOurIdentity();
+            ShieldMetadata metadata = (ShieldMetadata) subFlow(new getMembership(node)).getMembershipMetadata();
+            if (metadata.getCustodians().contains(custodian))
+                return true;
+            else
+                return false;
+        }
+    }
+
 }
