@@ -25,9 +25,7 @@ public class OfferBuilder {
         UniqueIdentifier id = new UniqueIdentifier();
 
         // we get the issuer
-        String issuerString = body.get("issuer").textValue();
-        CordaX500Name issuerIdentity = CordaX500Name.parse(issuerString);
-        Party issuer = proxy.wellKnownPartyFromX500Name(issuerIdentity);
+        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
 
         // we get the bond
         String bondId = body.get("bondId").textValue();
