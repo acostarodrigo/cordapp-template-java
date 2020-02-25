@@ -58,13 +58,12 @@ public class TradeBuilder {
         Party buyer = proxy.wellKnownPartyFromX500Name(buyerName);
 
         // we get the seller
-        CordaX500Name sellerName = CordaX500Name.parse(sellerString);
-        Party seller = proxy.wellKnownPartyFromX500Name(sellerName);
-
-
+        Party seller = offer.getIssuer();
+        // we get the issuer of the trade
+        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
 
         // we generate the trade
-        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,buyer,seller, price,yield,size,proceeds, currency,state);
+        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,issuer, issuer,seller, price,yield,size,proceeds, currency,state);
         return trade;
     }
 
