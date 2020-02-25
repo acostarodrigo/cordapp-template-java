@@ -38,7 +38,7 @@ public class USDFiatTokenFlow {
         @Override
         public SignedTransaction call() throws FlowException {
             // only treasurer organizations can issue fiat tokens
-            if (!subFlow(new MembershipFlows.isTreasure())) throw new FlowException("Only an active treasurer organization can issue fiat tokens");
+            if (!subFlow(new MembershipFlows.imYourTreasurer(owner))) throw new FlowException(String.format("We are not the treasurer of the node %s", owner.getName().toString()));
 
             Party treasurer = getOurIdentity();
 
