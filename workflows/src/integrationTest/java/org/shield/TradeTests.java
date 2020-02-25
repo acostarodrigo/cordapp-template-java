@@ -52,7 +52,7 @@ public class TradeTests {
     @Test
     public void generateTradeTest() throws ExecutionException, InterruptedException {
         // Issuer sends trade
-        trade = new TradeState(new UniqueIdentifier(), offer, new Date(), new Date(), broker1, issuer, 100, 1,100, 123, Currency.getInstance("USD"), State.PROPOSED);
+        trade = new TradeState(new UniqueIdentifier(), offer, new Date(), new Date(),broker1, broker1, issuer, 100, 1,100, 123, Currency.getInstance("USD"), State.PROPOSED);
         CordaFuture<UniqueIdentifier> signedTransactionCordaFuture = broker1Node.startFlow(new TradeFlow.Create(trade));
         mockNet.runNetwork();
         UniqueIdentifier id = signedTransactionCordaFuture.get();
@@ -286,7 +286,7 @@ public class TradeTests {
         assertNotNull(brokerTrade);
 
         // we cancell the trade from the buyer side
-        CordaFuture<Void> cordaFuture = broker1Node.startFlow(new TradeFlow.CancelBuyer(brokerTrade.getId()));
+        CordaFuture<SignedTransaction> cordaFuture = broker1Node.startFlow(new TradeFlow.CancelBuyer(brokerTrade.getId()));
         mockNet.runNetwork();
         cordaFuture.get();
 

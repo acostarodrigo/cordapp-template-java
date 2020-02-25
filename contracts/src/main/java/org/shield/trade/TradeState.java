@@ -22,6 +22,7 @@ public class TradeState implements ContractState, Serializable {
     private OfferState offer;
     private Date tradeDate;
     private Date settleDate;
+    private Party issuer;
     private Party buyer;
     private Party seller;
     private float price;
@@ -42,11 +43,12 @@ public class TradeState implements ContractState, Serializable {
         // construtor for deserialization
     }
 
-    public TradeState(UniqueIdentifier id, OfferState offer, Date tradeDate, Date settleDate, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
+    public TradeState(UniqueIdentifier id, OfferState offer, Date tradeDate, Date settleDate, Party issuer, Party buyer, Party seller, float price, float yield, long size, long proceeds, Currency currency, State state) {
         this.id = id;
         this.offer = offer;
         this.tradeDate = tradeDate;
         this.settleDate = settleDate;
+        this.issuer = issuer;
         this.buyer = buyer;
         this.seller = seller;
         this.price = price;
@@ -154,6 +156,14 @@ public class TradeState implements ContractState, Serializable {
         this.state = state;
     }
 
+    public Party getIssuer() {
+        return issuer;
+    }
+
+    public void setIssuer(Party issuer) {
+        this.issuer = issuer;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -165,6 +175,7 @@ public class TradeState implements ContractState, Serializable {
             getProceeds() == that.getProceeds() &&
             Objects.equals(getId(), that.getId()) &&
             Objects.equals(getOffer(), that.getOffer()) &&
+            Objects.equals(getIssuer(), that.getIssuer()) &&
             Objects.equals(getTradeDate(), that.getTradeDate()) &&
             Objects.equals(getSettleDate(), that.getSettleDate()) &&
             Objects.equals(getBuyer(), that.getBuyer()) &&
@@ -175,7 +186,7 @@ public class TradeState implements ContractState, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getOffer(), getTradeDate(), getSettleDate(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
+        return Objects.hash(getId(), getOffer(), getTradeDate(), getSettleDate(), getIssuer(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState());
     }
 
     @Override
@@ -185,6 +196,7 @@ public class TradeState implements ContractState, Serializable {
             ", offer=" + offer +
             ", tradeDate=" + tradeDate +
             ", settleDate=" + settleDate +
+            ", issuer=" + issuer +
             ", buyer=" + buyer +
             ", seller=" + seller +
             ", price=" + price +
@@ -202,6 +214,7 @@ public class TradeState implements ContractState, Serializable {
         jsonObject.add("offer", offer.toJson());
         jsonObject.addProperty("tradeDate",tradeDate.toString());
         jsonObject.addProperty("settleDate",settleDate.toString());
+        jsonObject.addProperty("issuer",issuer.getName().toString());
         jsonObject.addProperty("buyer",buyer.getName().toString());
         jsonObject.addProperty("seller",seller.getName().toString());
         jsonObject.addProperty("price",price);
