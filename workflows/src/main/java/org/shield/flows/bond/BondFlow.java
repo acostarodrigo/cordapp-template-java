@@ -27,6 +27,7 @@ import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import org.shield.bond.BondState;
 import org.shield.bond.BondTypeContract;
+import org.shield.flows.custodian.CustodianFlows;
 import org.shield.flows.membership.MembershipFlows;
 import org.shield.membership.ShieldMetadata;
 
@@ -75,8 +76,13 @@ public class BondFlow {
             IssuedTokenType issuedTokenType = new IssuedTokenType(bond.getIssuer(), tokenPointer);
             Amount<IssuedTokenType> amount = new Amount<>(bond.getDealSize(), BigDecimal.ONE, issuedTokenType);
             FungibleToken fungibleToken = new FungibleToken(amount,bond.getIssuer(), null);
+
             // bond is issued
             subFlow(new IssueTokens(Arrays.asList(fungibleToken)));
+
+            // we inform the custodian
+            subFlow(new CustodianFlows.SendBond(bond.getId()));
+
             return bond.getId();
         }
     }

@@ -5,59 +5,49 @@ import net.corda.core.contracts.ContractState;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
+import net.corda.core.serialization.CordaSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.offer.OfferState;
 import org.shield.trade.TradeState;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
+import java.io.Serializable;
+import java.sql.Timestamp;
+import java.util.*;
 
 @BelongsToContract(CustodianContract.class)
-public class CustodianState implements ContractState {
-    private Party custodian;
+@CordaSerializable
+public class CustodianState implements Serializable,ContractState {
+    private List<Party> custodians;
     private Party issuer;
     private List<BondState> bonds;
     private List<TradeState> trades;
     private List<OfferState> offers;
+    private Date lastUpdated;
 
     @ConstructorForDeserialization
-    public CustodianState(){
-        // initialize lists.
-        this.bonds = new ArrayList<>();
-        this.trades = new ArrayList<>();
-        this.offers = new ArrayList<>();
+    public CustodianState() {
     }
 
-    public CustodianState(Party issuer, Party custodian){
-        this();
+    public CustodianState(Party issuer, List<Party> custodians) {
+        this.custodians = custodians;
         this.issuer = issuer;
-        this.custodian = custodian;
     }
 
-    public void addBond(BondState bond){
-        if (bonds == null) bonds = new ArrayList<>();
-        if (!bonds.contains(bond)) bonds.add(bond);
+    @NotNull
+    @Override
+    public List<AbstractParty> getParticipants() {
+        List<AbstractParty> participants = new ArrayList<>(custodians);
+        participants.add(issuer);
+        return participants;
     }
 
-    public void addOffer(OfferState offer){
-        if (offers == null) offers = new ArrayList<>();
-        if (!offers.contains(offer)) offers.add(offer);
+    public List<Party> getCustodians() {
+        return custodians;
     }
 
-    public void addTrade(TradeState trade){
-        if (trades == null) trades = new ArrayList<>();
-        if (!trades.contains(trade)) trades.add(trade);
-    }
-
-    public Party getCustodian() {
-        return custodian;
-    }
-
-    public void setCustodian(Party custodian) {
-        this.custodian = custodian;
+    public void setCustodians(List<Party> custodians) {
+        this.custodians = custodians;
     }
 
     public Party getIssuer() {
@@ -92,37 +82,11 @@ public class CustodianState implements ContractState {
         this.offers = offers;
     }
 
-    @Override
-    public String toString() {
-        return "CustodianState{" +
-            "custodian=" + custodian +
-            ", issuer=" + issuer +
-            ", bonds=" + bonds +
-            ", trades=" + trades +
-            ", offers=" + offers +
-            '}';
+    public Date getLastUpdated() {
+        return lastUpdated;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        CustodianState that = (CustodianState) o;
-        return Objects.equals(getCustodian(), that.getCustodian()) &&
-            Objects.equals(getIssuer(), that.getIssuer()) &&
-            Objects.equals(getBonds(), that.getBonds()) &&
-            Objects.equals(getTrades(), that.getTrades()) &&
-            Objects.equals(getOffers(), that.getOffers());
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(getCustodian(), getIssuer(), getBonds(), getTrades(), getOffers());
-    }
-
-    @NotNull
-    @Override
-    public List<AbstractParty> getParticipants() {
-        return Arrays.asList(custodian, issuer);
+    public void setLastUpdated(Date lastUpdated) {
+        this.lastUpdated = lastUpdated;
     }
 }

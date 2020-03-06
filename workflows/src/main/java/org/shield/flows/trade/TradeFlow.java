@@ -28,6 +28,8 @@ import org.intellij.lang.annotations.Flow;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.shield.bond.BondState;
+import org.shield.custodian.CustodianState;
+import org.shield.flows.custodian.CustodianFlows;
 import org.shield.flows.membership.MembershipFlows;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.offer.OfferContract;
@@ -132,6 +134,9 @@ public class TradeFlow {
             // we complete it.
             progressTracker.setCurrentStep(FINISH);
             subFlow(new FinalityFlow(signedTransaction,Arrays.asList(otherSession)));
+
+            // we send to the custodian
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
             return trade.getId();
         }
     }
@@ -392,7 +397,6 @@ public class TradeFlow {
             FlowSession buyerSession = initiateFlow(trade.getBuyer());
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
             SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx, ImmutableList.of(buyerSession)));
-
 
             progressTracker.setCurrentStep(FINISH);
             subFlow(new FinalityFlow(fullySignedTx,buyerSession));

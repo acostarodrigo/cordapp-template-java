@@ -149,11 +149,25 @@ public class MembershipFlows {
      *
      */
     public static class isCustodian extends FlowLogic<Boolean>{
+        private Party custodian;
+
+        public isCustodian(Party custodian) {
+            this.custodian = custodian;
+        }
+
+        public isCustodian() {
+            this.custodian = null;
+        }
+
         @Override
         @Suspendable
         public Boolean call() throws FlowException {
+            MembershipState membershipState = null;
 
-            MembershipState membershipState = subFlow(new getMembership());
+            if (this.custodian == null)
+                membershipState = subFlow(new getMembership());
+            else
+                membershipState = subFlow(new getMembership(custodian));
 
             // we will validate is an active member of the organization
             if (membershipState == null || !membershipState.isActive()) return false;

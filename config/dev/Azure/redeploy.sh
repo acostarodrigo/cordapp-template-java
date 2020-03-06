@@ -16,6 +16,7 @@ cp ./build/resources/main/membership-service.conf ./build/nodes/issuer/cordapps/
 cp ./build/resources/main/membership-service.conf ./build/nodes/trader1/cordapps/config/
 cp ./build/resources/main/membership-service.conf ./build/nodes/trader2/cordapps/config/
 cp ./build/resources/main/membership-service.conf ./build/nodes/BNO/cordapps/config/
+cp ./build/resources/main/membership-service.conf ./build/nodes/custodian/cordapps/config/
 #start nodes
 sudo systemctl start cordaIssuer
 sudo systemctl start cordaTrader1

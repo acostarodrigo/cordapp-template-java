@@ -6,6 +6,7 @@ import net.corda.core.transactions.LedgerTransaction;
 import org.jetbrains.annotations.NotNull;
 
 public class CustodianContract implements Contract {
+    public static final String ID = "org.shield.custodian.CustodianContract";
     @Override
     public void verify(@NotNull LedgerTransaction tx) throws IllegalArgumentException {
 
