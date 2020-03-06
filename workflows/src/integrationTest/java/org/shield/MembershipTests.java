@@ -38,7 +38,7 @@ public class MembershipTests {
         Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT, ShieldMetadata.OrgType.NETWORK_TREASURER), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER, ShieldMetadata.BondRole.SELLER), null, null);
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT, ShieldMetadata.OrgType.NETWORK_TREASURER), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER, ShieldMetadata.BondRole.SELLER), Arrays.asList(custodian), null);
         Future<SignedTransaction> signedTransactionFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -64,7 +64,7 @@ public class MembershipTests {
         Party bno =  broker1Node.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Buyer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.BUYER), null, null);
+        ShieldMetadata metadata = new ShieldMetadata("Buyer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.BUYER), Arrays.asList(custodian), null);
         Future<SignedTransaction> signedTransactionFuture = broker1Node.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -87,10 +87,10 @@ public class MembershipTests {
     public void configTreasurerTest() throws ExecutionException, InterruptedException {
         // the mocked BNO
         CordaX500Name bnoName = CordaX500Name.parse("O=BNO,L=New York,C=US");
-        Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
+        Party bno = custodianNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.NETWORK_TREASURER, ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER), null, null);
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.NETWORK_TREASURER, ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER), Arrays.asList(custodian), null);
         Future<SignedTransaction> signedTransactionFuture = broker2Node.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -107,6 +107,40 @@ public class MembershipTests {
         MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(broker2).getState().getData();
         assertNotNull(membershipState);
         assertTrue(membershipState.isActive());
+    }
+
+    @Test
+    public void configCustodianTest() throws ExecutionException, InterruptedException {
+        // the mocked BNO
+        CordaX500Name bnoName = CordaX500Name.parse("O=BNO,L=New York,C=US");
+        Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
+
+        // we execute the request
+        ShieldMetadata metadata = new ShieldMetadata("Custodian", Arrays.asList(ShieldMetadata.OrgType.CUSTODIAN), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER), null, null);
+        Future<SignedTransaction> signedTransactionFuture = custodianNode.startFlow(new RequestMembershipFlow(bno,metadata));
+        mockNet.runNetwork();
+        SignedTransaction signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
+
+        // BNO approves
+        signedTransactionFuture = bnoNode.startFlow(new ActivateMembershipFlow(signedTransaction.getCoreTransaction().outRef(0)));
+        mockNet.runNetwork();
+        signedTransaction = signedTransactionFuture.get();
+        assertNotNull(signedTransaction);
+
+        CordaFuture<Map<Party, ? extends StateAndRef<? extends MembershipState<? extends Object>>>> membershipsFuture = custodianNode.startFlow(new GetMembershipsFlow(bno,false,false));
+        mockNet.runNetwork();
+        MembershipState<ShieldMetadata> membershipState = (MembershipState) membershipsFuture.get().get(custodian).getState().getData();
+        assertNotNull(membershipState);
+        assertTrue(membershipState.isActive());
+    }
+
+    @Test
+    public void configAllRolesTest() throws ExecutionException, InterruptedException {
+        configCustodianTest();
+        configIssuerTest();
+        configBuyerTest();
+        configTreasurerTest();
     }
 
 }

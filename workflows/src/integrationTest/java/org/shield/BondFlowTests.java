@@ -35,9 +35,13 @@ public class BondFlowTests {
     }
 
     @Before
-    public void setUp() {
+    public void setUp() throws ExecutionException, InterruptedException {
         // we set up the network
         TestHelper.setupNetwork();
+
+
+        MembershipTests membershipTests = new MembershipTests();
+        membershipTests.configCustodianTest();
 
         // we create the bond
         Calendar c = Calendar.getInstance();
@@ -58,8 +62,12 @@ public class BondFlowTests {
     @Test
     public void issueBondTest() throws ExecutionException, InterruptedException {
         // we add the issuer as an Issuer
-        MembershipTests membershipTests = new MembershipTests();
-        membershipTests.configIssuerTest();
+        try {
+            MembershipTests membershipTests = new MembershipTests();
+            membershipTests.configIssuerTest();
+        } catch (Exception e){
+            // ignore, because may have been already configured from another test.
+        }
 
         // we issue the bond
         CordaFuture<String> issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond));

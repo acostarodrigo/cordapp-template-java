@@ -19,23 +19,26 @@ public class CustodianTests {
     public void configNetwork() throws ExecutionException, InterruptedException {
         bondFlowTests = new BondFlowTests();
         tradeTests = new TradeTests();
-        tradeTests.setNetwork();
+
     }
 
     @Test
     public void sendBondTest() throws ExecutionException, InterruptedException {
         CustodianState custodianState = null;
+        // we issue the bond
+        bondFlowTests.setUp();
         bondFlowTests.issueBondTest();
 
         custodianState = issuerNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
         assertNotNull(custodianState);
-
-        custodianState = broker2Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        // and validate custodian has it
+        custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
         assertNotNull(custodianState);
     }
 
     @Test
     public void sendTradeTest() throws ExecutionException, InterruptedException {
+        tradeTests.setNetwork();
         tradeTests.generateTradeTest();
 
         CustodianState custodianState = null;

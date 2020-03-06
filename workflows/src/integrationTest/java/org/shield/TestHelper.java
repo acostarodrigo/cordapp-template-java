@@ -22,10 +22,12 @@ public class TestHelper {
     public static StartedMockNode broker1Node;
     public static StartedMockNode broker2Node;
     public static StartedMockNode bnoNode;
+    public static StartedMockNode custodianNode;
     public static Party issuer;
     public static Party broker1;
     public static Party broker2;
     public static Party bno;
+    public static Party custodian;
 
 
     /**
@@ -57,7 +59,7 @@ public class TestHelper {
 
 
 
-        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade", "org.shield.offer", "org.shield.treasurer", "org.shield.treasurer.signet");
+        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade", "org.shield.offer", "org.shield.treasurer", "org.shield.treasurer.signet", "org.shield.custodian");
 
         DriverParameters driverParameters = new DriverParameters().withIsDebug(true).withCordappsForAllNodes(cordapps);
         NetworkParameters networkParameters = driverParameters.getNetworkParameters();
@@ -73,13 +75,14 @@ public class TestHelper {
         broker1Node = mockNet.createNode(new CordaX500Name("Broker1", "London", "GB"));
         broker2Node = mockNet.createNode(new CordaX500Name("Broker2", "London", "GB"));
         bnoNode = mockNet.createNode(new CordaX500Name("BNO", "New York", "US"));
-
+        custodianNode = mockNet.createNode(new CordaX500Name("Custodian", "New York", "US"));
 
 
         issuer = issuerNode.getInfo().getLegalIdentities().get(0);
         broker1 = broker1Node.getInfo().getLegalIdentities().get(0);
         broker2 = broker2Node.getInfo().getLegalIdentities().get(0);
         bno = bnoNode.getInfo().getLegalIdentities().get(0);
+        custodian = custodianNode.getInfo().getLegalIdentities().get(0);
     }
 
     /**

@@ -36,7 +36,6 @@ import static org.shield.TestHelper.*;
 
 public class TradeTests {
     private BondState bond;
-    private BondFlowTests bondFlowTests = new BondFlowTests();
     private TradeState trade;
     private OfferState offer;
 
