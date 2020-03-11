@@ -8,6 +8,7 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.VaultService;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
@@ -291,6 +292,107 @@ public class CustodianFlows {
             }
 
             return custodians;
+        }
+    }
+
+    @InitiatingFlow
+    public static class UpdateTrade extends FlowLogic<SignedTransaction>{
+        private TradeState trade;
+
+        public UpdateTrade(TradeState trade) {
+            this.trade = trade;
+        }
+
+        @Override
+        @Suspendable
+        public SignedTransaction call() throws FlowException {
+            // trade we are modifying must exists locally
+            QueryCriteria.VaultQueryCriteria queryCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            VaultService vaultService = getServiceHub().getVaultService();
+            boolean exists = false;
+            for (StateAndRef<TradeState> stateAndRef : vaultService.queryBy(TradeState.class, queryCriteria).getStates()){
+                if (stateAndRef.getState().getData().getId().equals(trade.getId())){
+                    exists = true;
+                    break;
+                }
+            }
+
+            if (!exists) throw new FlowException(String.format("Trade with ID %s does not exists.", trade.getId().getId().toString()));
+
+            // we get the custodian state
+            List<Object> result = subFlow(new GetCustodianState());
+            StateAndRef<CustodianState> input = (StateAndRef<CustodianState>) result.get(0);
+            CustodianState custodianState = (CustodianState) result.get(1);
+
+
+            // if the custodian state already has this trade we replace it with new trade.
+            if (!custodianState.getTrades().isEmpty()){
+                ArrayList<TradeState> tradeList = new ArrayList(custodianState.getTrades());
+                for (TradeState custodianTrade : tradeList){
+                    if (custodianTrade.getId().equals(trade.getId())){
+                        tradeList.remove(custodianTrade);
+                        tradeList.add(trade);
+                        custodianState.setTrades(tradeList);
+                        break;
+                    }
+                }
+            } else custodianState.setTrades(Arrays.asList(trade));
+
+            custodianState.setLastUpdated(new Timestamp(System.currentTimeMillis()));
+
+            // we are ready to generate the transaction and send the custodian Trade
+            List<PublicKey> signers = new ArrayList<>();
+            List<FlowSession> sessions = new ArrayList<>();
+            for (Party party : custodianState.getCustodians()){
+                signers.add(party.getOwningKey());
+                FlowSession flowSession = initiateFlow(party);
+                sessions.add(flowSession);
+            }
+            Party caller = getOurIdentity();
+            signers.add(caller.getOwningKey());
+            Command command = new Command<>(new CustodianContract.Commands.notifyTrade(), signers);
+
+            // we will generate the transaction
+            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            TransactionBuilder txBuilder = new TransactionBuilder(notary)
+                .addOutputState(custodianState,CustodianContract.ID)
+                .addCommand(command);
+
+            // if we have an input, we will include it
+            if (input != null) txBuilder.addInputState(input);
+
+            // we are ready to sign
+            SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
+
+            // we get custodians signature
+            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx,sessions));
+
+            // all done
+            subFlow(new FinalityFlow(fullySignedTx, sessions));
+            return fullySignedTx;
+        }
+    }
+
+    @InitiatedBy(UpdateTrade.class)
+    public static class UpdateTradeResponder extends FlowLogic<Void>{
+        private FlowSession caller;
+
+        public UpdateTradeResponder(FlowSession caller) {
+            this.caller = caller;
+        }
+
+        @Override
+        @Suspendable
+        public Void call() throws FlowException {
+            subFlow(new SignTransactionFlow(caller) {
+                @Override
+                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
+                    // no validations yet
+                }
+            });
+
+            subFlow(new ReceiveFinalityFlow(caller));
+            return null;
         }
     }
 }
