@@ -128,7 +128,7 @@ public class CustodianFlows {
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addOutputState(custodianState,CustodianContract.ID)
-                .addReferenceState(new ReferencedStateAndRef<>(bondStateStateAndRef))
+                //.addReferenceState(new ReferencedStateAndRef<>(bondStateStateAndRef))
                 .addCommand(command);
 
             // if we have an input, we will include it
@@ -234,7 +234,7 @@ public class CustodianFlows {
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addOutputState(custodianState,CustodianContract.ID)
-                .addReferenceState(new ReferencedStateAndRef<>(tradeStateStateAndRef))
+                //.addReferenceState(new ReferencedStateAndRef<>(tradeStateStateAndRef))
                 .addCommand(command);
 
             // if we have an input, we will include it

@@ -263,6 +263,9 @@ public class TradeFlow {
             progressTracker.setCurrentStep(FINISH);
             subFlow(new FinalityFlow(signedTransaction,Arrays.asList(buyerSession)));
 
+            // we update the custodian.
+            subFlow(new CustodianFlows.UpdateTrade(trade));
+
             return null;
         }
     }
@@ -288,7 +291,11 @@ public class TradeFlow {
                     if (!callerSession.getCounterparty().equals(trade.getSeller())) throw new FlowException(String.format("Cancellation of trade is not from the correct Seller. %s", callerSession.getCounterparty().toString()));
                 }
             });
-            subFlow(new ReceiveFinalityFlow(callerSession));
+            // we update the custodian.
+            SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callerSession));
+            TradeState trade = (TradeState) signedTransaction.getCoreTransaction().getOutput(0);
+            subFlow(new CustodianFlows.UpdateTrade(trade));
+
             return null;
         }
     }
@@ -407,6 +414,9 @@ public class TradeFlow {
             progressTracker.setCurrentStep(NOTIFY_BUYERS);
             subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
 
+            // we update the custodiian
+            subFlow(new CustodianFlows.UpdateTrade(trade));
+
             return fullySignedTx;
         }
     }
@@ -444,6 +454,9 @@ public class TradeFlow {
             if (fiatBalance.getQuantity() >= trade.getSize()){
                 subFlow(new Settle(trade.getId()));
             }
+
+            // we update the custodian
+            subFlow(new CustodianFlows.UpdateTrade(trade));
             return null;
         }
     }
@@ -737,6 +750,9 @@ public class TradeFlow {
 
             subFlow(new FinalityFlow(signedTransaction,Arrays.asList(sellerSession)));
 
+            // we update the custodian
+            subFlow(new CustodianFlows.UpdateTrade(trade));
+
             return signedTransaction;
         }
     }
@@ -890,6 +906,11 @@ public class TradeFlow {
             if (offer.isAfs()) {
                 subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
             }
+
+            // we update the custodian
+            TradeState trade = (TradeState) fullySignedTx.getCoreTransaction().getOutput(0);
+            subFlow(new CustodianFlows.UpdateTrade(trade));
+
             return null;
         }
     }

@@ -3,12 +3,14 @@ package org.shield;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.shield.bond.BondState;
 import org.shield.custodian.CustodianState;
+import org.shield.trade.State;
 import org.shield.trade.TradeState;
 
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.shield.TestHelper.*;
 
 public class CustodianTests {
@@ -57,6 +59,23 @@ public class CustodianTests {
         assertNotNull(custodianState);
         custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(1).getState().getData();
         assertNotNull(custodianState);
+    }
+
+    @Test
+    public void acceptOfflineTradeTest() throws ExecutionException, InterruptedException {
+        tradeTests.setNetwork();
+        tradeTests.acceptOfflineTradeTest();
+
+        CustodianState custodianState = null;
+        custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        assertNotNull(custodianState);
+        TradeState trade = custodianState.getTrades().get(0);
+        assertNotNull(trade);
+        assertEquals(State.PENDING, trade.getState());
+
+        // custodian doesn't have any state
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(TradeState.class).getStates().size() == 0);
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(BondState.class).getStates().size() == 0);
     }
 
     @After
