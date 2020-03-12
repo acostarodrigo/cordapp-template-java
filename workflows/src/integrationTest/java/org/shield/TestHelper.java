@@ -41,12 +41,12 @@ public class TestHelper {
         config.put("notaryName","O=Notary,L=London,C=GB");
         config.put("bno","O=BNO,L=New York,C=US");
         // Treasurer signet configuration
-        config.put("SourceID","MyFirmAPI01");
-        config.put("user_token","signetapidev+00@tassat.com");
-        config.put("client_id","QUiee6QNGBzdOI7Lhl3XMk1v0OzSNw05");
-        config.put("client_secret","gv3MdMSN2WhFrSo86nXHVzDjCJqk-a2nmvdI_7fKehVAaPg2ClP2SzbU3PS5W1Zb");
-        config.put("audience","myfirmapi01");
-        config.put("URL","https://api-dev.app.signet.com");
+        config.put("SourceID","SecuritizeToSignetAPI-UAT");
+        config.put("user_token","rodrigo.acosta@invectoriq.com");
+        config.put("client_id","CKrDoGoYHf7JjGTPmXT9JHRcW3Oielt5");
+        config.put("client_secret","hcGGv0PrmEtB78Xy5aX1CTfQfHPatbxmIMphNhp636yHMdoJIa5IrvxBDzs1Ggo2");
+        config.put("audience","SecuritizeToSignetAPI-UAT");
+        config.put("URL","https://uat02-api.app.signet.com");
         config.put("PORT","443");
 
         HashSet<TestCordapp> cordapps = new HashSet<>(asList(

@@ -38,7 +38,8 @@ public class SignetTransactionBuilder {
         SignetAccountState source = new SignetAccountState(sourceParty,"NA","NA");
 
         Party treasurerParty = proxy.nodeInfo().getLegalIdentities().get(0);
-        SignetAccountState escrow = new SignetAccountState(treasurerParty, escrowWallet,"signetapidev+00@tassat.com");
+        // todo this needs to be fixed. UserToken should come from a configuration file in the corda node.
+        SignetAccountState escrow = new SignetAccountState(treasurerParty, escrowWallet,"ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKSVV6STFOaUo5LmV5SnpkV0lpT2lJeU1ESXdNRE13T1RBM01EQXdORFU0TWlJc0luSnZiR1VpT2pBc0ltbHpjeUk2SWxObFkzVnlhWFJwZW1WVWIxTnBaMjVsZEVGUVNTMVZRVlFpTENKdVlXMWxJam9pVW05a2NtbG5ieUJCWTI5emRHRWlMQ0pwWVhRaU9qRTFPRE01TmpnNU5UQjkuUG1ZSEdpM2ZNc0o1VXU0WnowUmRORUltNGpndFR6RGdFR1N4dUJfTmJyTQ==");
 
         SignetIssueTransactionState signetIssueTransactionState = new SignetIssueTransactionState(UUID.randomUUID(),timestamp,tokenAmount,source,escrow,"", IssueState.CREATED);
         return signetIssueTransactionState;
