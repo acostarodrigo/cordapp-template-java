@@ -32,8 +32,6 @@ public class TradeBuilder {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         Date tradeDate = dateFormat.parse(body.get("tradeDate").asText());
         Date settleDate = dateFormat.parse(body.get("settleDate").asText());
-        String buyerString = body.get("buyer").textValue();
-        String sellerString = body.get("seller").textValue();
         float price = body.get("price").floatValue();
         float yield = body.get("yield").floatValue();
         long size = body.get("size").asLong();
@@ -53,9 +51,6 @@ public class TradeBuilder {
 
         if (offer == null) throw new Exception(String.format("Provided offerId %s does not exists.", offerId.toString()));
 
-        // we get the buyer
-        CordaX500Name buyerName = CordaX500Name.parse(buyerString);
-        Party buyer = proxy.wellKnownPartyFromX500Name(buyerName);
 
         // we get the seller
         Party seller = offer.getIssuer();
