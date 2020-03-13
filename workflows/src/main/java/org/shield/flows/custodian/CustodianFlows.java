@@ -246,9 +246,17 @@ public class CustodianFlows {
             // we get custodians signature
             SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx,sessions));
 
-            // all done
-            subFlow(new FinalityFlow(fullySignedTx, sessions));
+            // if we are also a custodian, running finality with our own will cause an exception.
+            FlowSession ownSession = initiateFlow(caller);
+            if (sessions.contains(ownSession)){
+                sessions.remove(ownSession);
+            }
+            if (sessions.isEmpty())
+                subFlow(new FinalityFlow(fullySignedTx));
+            else
+                subFlow(new FinalityFlow(fullySignedTx, sessions));
             return fullySignedTx;
+
         }
     }
 
@@ -326,7 +334,7 @@ public class CustodianFlows {
 
 
             // if the custodian state already has this trade we replace it with new trade.
-            if (!custodianState.getTrades().isEmpty()){
+            if (custodianState.getTrades() != null && !custodianState.getTrades().isEmpty()){
                 ArrayList<TradeState> tradeList = new ArrayList(custodianState.getTrades());
                 for (TradeState custodianTrade : tradeList){
                     if (custodianTrade.getId().equals(trade.getId())){
