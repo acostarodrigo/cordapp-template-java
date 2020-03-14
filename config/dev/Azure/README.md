@@ -32,4 +32,6 @@ sudo systemctl enable --now cordaTrader1
 sudo systemctl enable --now cordaTrader2
 sudo systemctl enable --now cordaBNO
 sudo systemctl enable --now cordaNotary
+sudo systemctl enable --now cordaTreasurer
+sudo systemctl enable --now cordaCustodian
 ```

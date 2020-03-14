@@ -164,9 +164,6 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         }
         cordapps = ["com.r3.businessnetworks:membership-service:2.0", "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
-        cordapp (project(':workflows')) {
-            config project.file("./config/uat/config.conf")
-        }
     }
     node {
         name "O=trader1,L=New York,C=US"
@@ -208,17 +205,20 @@ bnoWhitelist = ["O=BNO,L=New York,C=US"]'''
     }
     node {
         name "O=treasurer,L=New York,C=US"
-        p2pPort 10008
+        p2pPort 10017
         rpcSettings {
             address("localhost:10018")
             adminAddress("localhost:10055")
         }
         cordapps = ["com.r3.businessnetworks:membership-service:2.0", "com.r3.businessnetworks:membership-service-contracts-and-states:2.0"]
         rpcUsers = [[ user: "user1", "password": "test", "permissions": ["ALL"]]]
+        cordapp (project(':workflows')) {
+            config project.file("./config/uat/config.conf")
+        }
     }
     node {
         name "O=custodian,L=New York,C=US"
-        p2pPort 10008
+        p2pPort 10020
         rpcSettings {
             address("localhost:10021")
             adminAddress("localhost:10057")

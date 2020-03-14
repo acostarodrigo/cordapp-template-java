@@ -1,0 +1,13 @@
+Description=Corda Node - Custodian
+Requires=network.target
+
+[Service]
+Type=simple
+User=acostarodrigo
+WorkingDirectory=/home/acostarodrigo/ShieldCorda/build/nodes/custodian
+ExecStart=/usr/bin/java -jar /home/acostarodrigo/ShieldCorda/build/nodes/custodian/corda.jar
+Restart=on-failure
+Environment="CAPSULE_CACHE_DIR=./capsule"
+
+[Install]
+WantedBy=multi-user.target

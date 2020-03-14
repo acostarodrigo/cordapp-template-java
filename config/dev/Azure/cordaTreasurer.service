@@ -1,0 +1,13 @@
+Description=Corda Node - Treasurer
+Requires=network.target
+
+[Service]
+Type=simple
+User=acostarodrigo
+WorkingDirectory=/home/acostarodrigo/ShieldCorda/build/nodes/treasurer
+ExecStart=/usr/bin/java -jar /home/acostarodrigo/ShieldCorda/build/nodes/treasurer/corda.jar
+Restart=on-failure
+Environment="CAPSULE_CACHE_DIR=./capsule"
+
+[Install]
+WantedBy=multi-user.target
