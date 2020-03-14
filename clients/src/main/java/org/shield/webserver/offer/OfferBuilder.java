@@ -21,8 +21,13 @@ public class OfferBuilder {
     }
 
     public OfferState getOffer(){
-        // we create the id
-        UniqueIdentifier id = new UniqueIdentifier();
+        // we create the id, or get it if provided
+        String offerId = body.get("offerId").asText("");
+        UniqueIdentifier id = null;
+        if (offerId == null || offerId == "")
+             id = new UniqueIdentifier();
+        else
+             id = UniqueIdentifier.Companion.fromString(offerId);
 
         // we get the issuer
         Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
