@@ -22,7 +22,7 @@ public class OfferBuilder {
 
     public OfferState getOffer(){
         // we create the id, or get it if provided
-        String offerId = body.get("offerId").asText("");
+        String offerId = body.get("offerId").textValue();
         UniqueIdentifier id = null;
         if (offerId == null || offerId == "")
              id = new UniqueIdentifier();
