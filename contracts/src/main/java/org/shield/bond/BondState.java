@@ -254,6 +254,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
             ", maturityDate=" + maturityDate +
             ", couponRate=" + couponRate +
             ", fractionDigits=" + fractionDigits +
+            ", linearId=" + linearId +
             '}';
     }
 
@@ -274,6 +275,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
         jsonObject.addProperty("maturityDate", maturityDate.toString());
         jsonObject.addProperty("couponRate", couponRate);
         jsonObject.addProperty("fractionDigits", fractionDigits);
+        jsonObject.addProperty("linearId", linearId.getId().toString());
         return jsonObject;
     }
 }
