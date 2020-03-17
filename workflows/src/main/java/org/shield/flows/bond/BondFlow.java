@@ -29,11 +29,14 @@ import org.shield.bond.BondState;
 import org.shield.bond.BondTypeContract;
 import org.shield.flows.custodian.CustodianFlows;
 import org.shield.flows.membership.MembershipFlows;
+import org.shield.flows.offer.OfferFlow;
 import org.shield.membership.ShieldMetadata;
+import org.shield.offer.OfferState;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 public class BondFlow {
@@ -79,6 +82,10 @@ public class BondFlow {
 
             // bond is issued
             subFlow(new IssueTokens(Arrays.asList(fungibleToken)));
+
+            // we create the offer.
+            OfferState offer = new OfferState(new UniqueIdentifier(),issuer,bond,bond.getIssuerTicker(),100,100, bond.getDealSize(), bond.getDealSize(),false, new Date());
+            subFlow(new OfferFlow.Create(offer));
 
             // we inform the custodian
             subFlow(new CustodianFlows.SendBond(bond.getId()));

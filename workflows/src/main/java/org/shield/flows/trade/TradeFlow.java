@@ -41,6 +41,7 @@ import org.shield.trade.TradeState;
 import java.security.PublicKey;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 
 import static com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt.tokenBalance;
@@ -642,6 +643,12 @@ public class TradeFlow {
 
             // we are done.
             subFlow(new FinalityFlow(signedTransaction,sellerSession));
+
+            // bond is our. We will issue a new offer
+            BondState bond = trade.getOffer().getBond();
+            OfferState offer = new OfferState(new UniqueIdentifier(),caller, bond,trade.getOffer().getTicker(),100,100,bond.getDealSize(),bond.getDealSize(),false, new Date());
+            subFlow(new OfferFlow.Create(offer));
+
             return signedTransaction;
         }
     }
