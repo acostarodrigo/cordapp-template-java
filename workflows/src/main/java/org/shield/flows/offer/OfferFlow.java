@@ -79,6 +79,15 @@ public class OfferFlow {
             //must be seller to create an offer.
             if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Must be an active seller organization to create an offer.");
 
+            // We can't create an offer for the same bond
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
+                OfferState storedOffer = stateAndRef.getState().getData();
+                if (storedOffer.getBond().getId().equals(offer.getBond().getId())){
+                    throw new FlowException(String.format("Bond %s is already included in offer %s. Can't create a new offer.", offer.getBond().getId(),storedOffer.getOfferId().getId().toString() ));
+                }
+            }
+
             // must have enought balance to create the offer
             progressTracker.setCurrentStep(VALIDATE_BALANCE);
             VaultService vaultService = getServiceHub().getVaultService();
@@ -183,7 +192,7 @@ public class OfferFlow {
     @InitiatingFlow
     public static class Modify extends FlowLogic<SignedTransaction> {
         private OfferState offer;
-        private OfferState oldOffer;
+        private OfferState oldOffer = null;
 
         public Modify(OfferState offer) {
             this.offer = offer;
@@ -196,7 +205,6 @@ public class OfferFlow {
             if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Only an active seller can modify an offer.");
 
             // must exist
-            OfferState offer = null;
             StateAndRef<OfferState> input = null;
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
@@ -207,7 +215,7 @@ public class OfferFlow {
                 }
             }
 
-            if (offer == null || input == null) throw new FlowException(String.format("Provided offer %s doesn't exists. Can't modify", offer.getOfferId().toString()));
+            if (oldOffer == null || input == null) throw new FlowException(String.format("Provided offer %s doesn't exists. Can't modify", offer.getOfferId().toString()));
 
             // must have enought balance if we are changing the size.
             if (offer.getAfsSize() != oldOffer.getAfsSize()){
