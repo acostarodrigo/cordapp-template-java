@@ -31,13 +31,13 @@ public class USDFiatTokenTests {
 
     @Test
     public void issueUSDTokenTest() throws ExecutionException, InterruptedException {
-        CordaFuture<SignedTransaction> cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
+        CordaFuture<SignedTransaction> cordaFuture = issuerNode.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
 
         // we re issue more tokens
-        cordaFuture = broker2Node.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
+        cordaFuture = issuerNode.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000000));
         mockNet.runNetwork();
         signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);

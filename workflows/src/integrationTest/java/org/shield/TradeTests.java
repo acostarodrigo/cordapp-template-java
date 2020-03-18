@@ -42,8 +42,7 @@ public class TradeTests {
     @Before
     public void setNetwork() throws ExecutionException, InterruptedException {
         OfferFlowTests offerFlowTests = new OfferFlowTests();
-        offerFlowTests.setUp();
-        offerFlowTests.createOfferTest();
+        offerFlowTests.setOfferAFSTest();
         offer = offerFlowTests.getOffer();
         bond = offer.getBond();
     }

@@ -38,7 +38,7 @@ public class MembershipTests {
         Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT, ShieldMetadata.OrgType.NETWORK_TREASURER), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER, ShieldMetadata.BondRole.SELLER), Arrays.asList(custodian), null);
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT, ShieldMetadata.OrgType.NETWORK_TREASURER), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER, ShieldMetadata.BondRole.SELLER), Arrays.asList(custodian), Arrays.asList(issuer));
         Future<SignedTransaction> signedTransactionFuture = issuerNode.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -64,7 +64,7 @@ public class MembershipTests {
         Party bno =  broker1Node.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Buyer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.BUYER), Arrays.asList(custodian), null);
+        ShieldMetadata metadata = new ShieldMetadata("Buyer", Arrays.asList(ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigo@contact.com", Arrays.asList(ShieldMetadata.BondRole.BUYER,ShieldMetadata.BondRole.SELLER), Arrays.asList(custodian), Arrays.asList(issuer));
         Future<SignedTransaction> signedTransactionFuture = broker1Node.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -90,7 +90,7 @@ public class MembershipTests {
         Party bno = custodianNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.NETWORK_TREASURER, ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER), Arrays.asList(custodian), null);
+        ShieldMetadata metadata = new ShieldMetadata("Issuer", Arrays.asList(ShieldMetadata.OrgType.NETWORK_TREASURER, ShieldMetadata.OrgType.BOND_PARTICIPANT), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER, ShieldMetadata.BondRole.SELLER), Arrays.asList(custodian), Arrays.asList(issuer));
         Future<SignedTransaction> signedTransactionFuture = broker2Node.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
@@ -116,7 +116,7 @@ public class MembershipTests {
         Party bno = issuerNode.getServices().getNetworkMapCache().getPeerByLegalName(bnoName);
 
         // we execute the request
-        ShieldMetadata metadata = new ShieldMetadata("Custodian", Arrays.asList(ShieldMetadata.OrgType.CUSTODIAN), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER), null, null);
+        ShieldMetadata metadata = new ShieldMetadata("Custodian", Arrays.asList(ShieldMetadata.OrgType.CUSTODIAN), "rodrigocontact.com", Arrays.asList(ShieldMetadata.BondRole.ISSUER, ShieldMetadata.BondRole.BUYER), null, Arrays.asList(issuer));
         Future<SignedTransaction> signedTransactionFuture = custodianNode.startFlow(new RequestMembershipFlow(bno,metadata));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = signedTransactionFuture.get();
