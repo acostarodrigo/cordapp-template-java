@@ -42,7 +42,7 @@ public class TestHelper {
         config.put("bno","O=BNO,L=New York,C=US");
         // Treasurer signet configuration
         config.put("SourceID","SecuritizeToSignetAPI-UAT");
-        config.put("user_token","rodrigo.acosta@invectoriq.com");
+        config.put("user_token","ZXlKMGVYQWlPaUpLVjFRaUxDSmhiR2NpT2lKSVV6STFOaUo5LmV5SnpkV0lpT2lJeU1ESXdNRE13T1RBM01EQXdORFU0TWlJc0luSnZiR1VpT2pBc0ltbHpjeUk2SWxObFkzVnlhWFJwZW1WVWIxTnBaMjVsZEVGUVNTMVZRVlFpTENKdVlXMWxJam9pVW05a2NtbG5ieUJCWTI5emRHRWlMQ0pwWVhRaU9qRTFPRE01TmpnNU5UQjkuUG1ZSEdpM2ZNc0o1VXU0WnowUmRORUltNGpndFR6RGdFR1N4dUJfTmJyTQ==");
         config.put("client_id","CKrDoGoYHf7JjGTPmXT9JHRcW3Oielt5");
         config.put("client_secret","hcGGv0PrmEtB78Xy5aX1CTfQfHPatbxmIMphNhp636yHMdoJIa5IrvxBDzs1Ggo2");
         config.put("audience","SecuritizeToSignetAPI-UAT");
