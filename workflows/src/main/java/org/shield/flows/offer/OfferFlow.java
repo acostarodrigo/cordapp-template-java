@@ -4,10 +4,7 @@ import co.paralleluniverse.fibers.Suspendable;
 import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
-import net.corda.core.contracts.Amount;
-import net.corda.core.contracts.Command;
-import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.contracts.*;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.node.StatesToRecord;
@@ -227,19 +224,6 @@ public class OfferFlow {
 
                 if (balance.getQuantity() < offer.getAfsSize()) throw new FlowException(String.format("Not enought balance to submit offer. Current balance is %s", String.valueOf(balance.getQuantity())));
             }
-
-            // generate the transaction
-            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            Party caller = getOurIdentity();
-            Command command = new Command<>(new OfferContract.Commands.modify(), caller.getOwningKey());
-            TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addInputState(input)
-                .addOutputState(offer, OfferContract.ID)
-                .addCommand(command);
-
-            // we are ready to sign
-            SignedTransaction signedTx = getServiceHub().signInitialTransaction(txBuilder);
-            subFlow(new FinalityFlow(signedTx));
 
             // we notify of the changes
             SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));
