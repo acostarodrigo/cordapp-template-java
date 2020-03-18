@@ -63,8 +63,8 @@ public class TradeTests {
         if (trade == null) throw new InterruptedException("Trade not generated");
 
         // we send the buyer some fiat tokens US 2000000
-        SignetTests signetTests = new SignetTests();
-        signetTests.depositToEscrowAndIssueTest();
+        USDFiatTokenTests usdFiatTokenTests = new USDFiatTokenTests();
+        usdFiatTokenTests.issueUSDTokenTest();
 
 
         // lets get current balances of bond and fiat
@@ -109,6 +109,12 @@ public class TradeTests {
         assertTrue(buyerState.getState().equals(State.SETTLED));
         TradeState issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
         assertEquals(buyerState.getState(), issuerState.getState());
+
+        // buyer should have a new offer
+        OfferState buyerOffer = broker1Node.getServices().getVaultService().queryBy(OfferState.class).getStates().get(1).getState().getData();
+        assertNotNull(buyerOffer);
+        assertTrue(buyerOffer.getBond().equals(bond));
+        assertTrue(buyerOffer.getAfsSize() == trade.getSize());
     }
 
     @Test
