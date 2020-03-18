@@ -249,7 +249,7 @@ public class OfferController {
                 for (StateAndRef<FungibleToken> tokenStateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()) {
                     FungibleToken token = tokenStateAndRef.getState().getData();
                     String tokenIdentifier = token.getTokenType().getTokenIdentifier();
-                    if (tokenIdentifier.equals(offer.getBond().getLinearId().getExternalId())) {
+                    if (tokenIdentifier.equals(offer.getBond().getLinearId().getId().toString())) {
                         aggregatedTradeSize = aggregatedTradeSize + token.getAmount().getQuantity();
                     }
                 }
