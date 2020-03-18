@@ -80,7 +80,7 @@ public class OfferFlow {
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
             for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class, criteria).getStates()){
                 OfferState storedOffer = stateAndRef.getState().getData();
-                if (storedOffer.getBond().getId().equals(offer.getBond().getId())){
+                if (storedOffer.getBond().getId().equals(offer.getBond().getId()) && storedOffer.getIssuer().equals(caller)){
                     throw new FlowException(String.format("Bond %s is already included in offer %s. Can't create a new offer.", offer.getBond().getId(),storedOffer.getOfferId().getId().toString() ));
                 }
             }
