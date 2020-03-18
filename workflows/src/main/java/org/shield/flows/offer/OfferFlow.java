@@ -74,7 +74,7 @@ public class OfferFlow {
             logger.debug(String.format("Offer create started by %s", caller.getName().getCommonName()));
 
             //must be seller to create an offer.
-            if (!subFlow(new MembershipFlows.isSeller())) throw new FlowException("Must be an active seller organization to create an offer.");
+            if (!subFlow(new MembershipFlows.isSeller()) || !subFlow(new MembershipFlows.isBuyer())) throw new FlowException("Must be an active seller orr buyer organization to create an offer.");
 
             // We can't create an offer for the same bond
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
