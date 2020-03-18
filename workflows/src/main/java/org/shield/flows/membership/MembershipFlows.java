@@ -343,10 +343,10 @@ public class MembershipFlows {
             if (!subFlow(new isTreasure())) throw new FlowException("Only a valid active Treasurer organization can call this method.");
             Party treasurer = getOurIdentity();
             ShieldMetadata metadata = (ShieldMetadata) subFlow(new getMembership(node)).getMembershipMetadata();
-            if (metadata.getTreasurers().contains(treasurer))
-                return true;
-            else
+            if (metadata.getTreasurers() == null || !metadata.getTreasurers().contains(treasurer))
                 return false;
+            else
+                return true;
         }
     }
 
