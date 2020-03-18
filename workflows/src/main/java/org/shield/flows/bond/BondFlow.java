@@ -84,7 +84,7 @@ public class BondFlow {
             subFlow(new IssueTokens(Arrays.asList(fungibleToken)));
 
             // we create the offer.
-            OfferState offer = new OfferState(new UniqueIdentifier(),issuer,bond,bond.getIssuerTicker(),100,100, bond.getDealSize(), bond.getDealSize(),false, new Date());
+            OfferState offer = new OfferState(new UniqueIdentifier(),issuer,bond,bond.getIssuerTicker(),100,100, bond.getDealSize(),false, new Date());
             subFlow(new OfferFlow.Create(offer));
 
             // we inform the custodian

@@ -26,7 +26,6 @@ public class OfferState implements ContractState, Serializable {
     private String ticker;
     private float offerPrice;
     private float offerYield;
-    private long aggregatedTradeSize;
     private long afsSize;
     private boolean afs;
     private Date creationDate;
@@ -38,14 +37,13 @@ public class OfferState implements ContractState, Serializable {
         // for deserialization only
     }
 
-    public OfferState(UniqueIdentifier offerId, Party issuer, BondState bond, String ticker, float offerPrice, float offerYield, long aggregatedTradeSize, long afsSize, boolean afs, Date creationDate) {
+    public OfferState(UniqueIdentifier offerId, Party issuer, BondState bond, String ticker, float offerPrice, float offerYield, long afsSize, boolean afs, Date creationDate) {
         this.offerId = offerId;
         this.issuer = issuer;
         this.bond = bond;
         this.ticker = ticker;
         this.offerPrice = offerPrice;
         this.offerYield = offerYield;
-        this.aggregatedTradeSize = aggregatedTradeSize;
         this.afsSize = afsSize;
         this.afs = afs;
         this.creationDate = creationDate;
@@ -89,14 +87,6 @@ public class OfferState implements ContractState, Serializable {
 
     public void setOfferYield(float offerYield) {
         this.offerYield = offerYield;
-    }
-
-    public long getAggregatedTradeSize() {
-        return aggregatedTradeSize;
-    }
-
-    public void setAggregatedTradeSize(long aggregatedTradeSize) {
-        this.aggregatedTradeSize = aggregatedTradeSize;
     }
 
     public long getAfsSize() {
@@ -161,7 +151,7 @@ public class OfferState implements ContractState, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(getOfferId(), getIssuer(), getBond(), getTicker(), getOfferPrice(), getOfferYield(), getAggregatedTradeSize(), getAfsSize(), isAfs(), getCreationDate(), getParticipants());
+        return Objects.hash(getOfferId(), getIssuer(), getBond(), getTicker(), getOfferPrice(), getOfferYield(), getAfsSize(), isAfs(), getCreationDate(), getParticipants());
     }
 
     @Override
@@ -173,7 +163,6 @@ public class OfferState implements ContractState, Serializable {
             ", ticker='" + ticker + '\'' +
             ", offerPrice=" + offerPrice +
             ", offerYield=" + offerYield +
-            ", aggregatedTradeSize=" + aggregatedTradeSize +
             ", afsSize=" + afsSize +
             ", afs=" + afs +
             ", creationDate=" + creationDate +
@@ -189,7 +178,6 @@ public class OfferState implements ContractState, Serializable {
         jsonObject.addProperty("ticker", ticker);
         jsonObject.addProperty("offerPrice", offerPrice);
         jsonObject.addProperty("offerYield", offerYield);
-        jsonObject.addProperty("aggregatedTradeSize", aggregatedTradeSize);
         jsonObject.addProperty("afsSize", afsSize);
         jsonObject.addProperty("afs", afs);
         jsonObject.addProperty("creationDate", creationDate.toString());
