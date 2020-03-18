@@ -646,7 +646,7 @@ public class TradeFlow {
 
             // bond is our. We will issue a new offer
             BondState bond = trade.getOffer().getBond();
-            OfferState offer = new OfferState(new UniqueIdentifier(),caller, bond,trade.getOffer().getTicker(),100,100,bond.getDealSize(),bond.getDealSize(),false, new Date());
+            OfferState offer = new OfferState(new UniqueIdentifier(),caller, bond,trade.getOffer().getTicker(),100,100,trade.getSize(),trade.getSize(),false, new Date());
             subFlow(new OfferFlow.Create(offer));
 
             return signedTransaction;
