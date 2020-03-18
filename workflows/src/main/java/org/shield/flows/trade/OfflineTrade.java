@@ -90,7 +90,7 @@ public class OfflineTrade {
             // no offer, so we will create a new one with the total amount of bonds available. We are creating the offer not AFS.
             if (offer == null){
                 // created offer is for the full balance amount.
-                offer = new OfferState(new UniqueIdentifier(),caller,bond,bond.getIssuerTicker(),tradedPrice,tradedYield,balance.getQuantity(),balance.getQuantity(),false, new Date());
+                offer = new OfferState(new UniqueIdentifier(),caller,bond,bond.getIssuerTicker(),tradedPrice,tradedYield,balance.getQuantity(),false, new Date());
                 SignedTransaction offerTransaction = subFlow(new OfferFlow.Create(offer));
                 offerInput = offerTransaction.getCoreTransaction().outRef(0);
             }
