@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
@@ -226,5 +227,56 @@ public class OfferController {
         return getValidResponse(response);
     }
 
+    @GetMapping("/myInventory")
+    public ResponseEntity<Response> myInventory(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(), User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray inventory = new JsonArray();
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()) {
+            OfferState offer = stateAndRef.getState().getData();
+            long aggregatedTradeSize = 0L;
+            // if the node we are connected issued the offer, then we create the inventory
+            if (proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer())) {
+                // all data of My inventory comes from the offer, except the aggregated trade size,
+                // which we obtain from the balance.
+                for (StateAndRef<FungibleToken> tokenStateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()) {
+                    FungibleToken token = tokenStateAndRef.getState().getData();
+                    String tokenIdentifier = token.getTokenType().getTokenIdentifier();
+                    if (tokenIdentifier.equals(offer.getBond().getLinearId().getExternalId())) {
+                        aggregatedTradeSize = +token.getAmount().getQuantity();
+                    }
+                }
+                MyInventory myInventory = new MyInventory(
+                    offer.getBond().getId(),
+                    offer.getTicker(),
+                    offer.getOfferPrice(),
+                    offer.getOfferYield(),
+                    aggregatedTradeSize,
+                    offer.getAfsSize(),
+                    offer.getBond().getMaturityDate(),
+                    offer.getBond().getCouponRate(),
+                    offer.getBond().getCouponFrequency(),
+                    offer.getBond().getDealSize(),
+                    offer.getBond().getDealType(),
+                    offer.getBond().getDenomination(),
+                    offer.isAfs(),
+                    offer.getOfferId(),
+                    offer.getBond().getLinearId(),
+                    offer.getIssuer()
+                );
+                inventory.add(myInventory.toJson());
+            }
+        }
+            JsonObject jsonObject = new JsonObject();
+            jsonObject.add("myInventory", inventory);
+            return getValidResponse(jsonObject);
+    }
 
 }

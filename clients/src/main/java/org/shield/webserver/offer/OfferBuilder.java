@@ -47,10 +47,9 @@ public class OfferBuilder {
         String ticker = bond.getIssuerTicker();
         float offerPrice = body.get("offerPrice").floatValue();
         float offerYield = body.get("offerYield").floatValue();
-        long aggregatedTradeSize = body.get("aggregatedTradeSize").asLong();
         long afsSize = body.get("afsSize").asLong();
         boolean afs = body.get("afs").asBoolean();
-        OfferState offer = new OfferState(id,issuer,bond,ticker,offerPrice,offerYield,aggregatedTradeSize,afsSize,afs,new Date());
+        OfferState offer = new OfferState(id,issuer,bond,ticker,offerPrice,offerYield,afsSize,afs,new Date());
 
         return offer;
     }
