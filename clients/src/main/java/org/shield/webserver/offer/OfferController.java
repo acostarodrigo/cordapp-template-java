@@ -250,7 +250,7 @@ public class OfferController {
                     FungibleToken token = tokenStateAndRef.getState().getData();
                     String tokenIdentifier = token.getTokenType().getTokenIdentifier();
                     if (tokenIdentifier.equals(offer.getBond().getLinearId().getExternalId())) {
-                        aggregatedTradeSize = +token.getAmount().getQuantity();
+                        aggregatedTradeSize = aggregatedTradeSize + token.getAmount().getQuantity();
                     }
                 }
                 MyInventory myInventory = new MyInventory(
