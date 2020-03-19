@@ -30,10 +30,25 @@ public class OfferBuilder {
             id = new UniqueIdentifier();
 
         // we get the issuer
-        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
+        Party issuer = null;
+        if (body.has("issuer")){
+            String issuerString = body.get("issuer").asText();
+            CordaX500Name issuerName = CordaX500Name.parse(issuerString);
+            issuer = proxy.wellKnownPartyFromX500Name(issuerName);
+        } else
+            issuer = proxy.nodeInfo().getLegalIdentities().get(0);
 
         // we get the bond
-        String bondId = body.get("bondId").textValue();
+        String bondId = "";
+        if (body.has("bondId")){
+            bondId = body.get("bondId").textValue();
+        }
+        if (body.has("bond")){
+            JsonNode bondNode = body.get("bond");
+            bondId = bondNode.get("id").textValue();
+        }
+
+        // we get the bond from the vault.
         BondState bond = null;
         for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
             if (stateAndRef.getState().getData().getId().equals(bondId)){
