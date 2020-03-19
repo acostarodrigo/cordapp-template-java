@@ -186,6 +186,7 @@ public class MyInventory {
         jsonObject.addProperty("coupon", coupon);
         jsonObject.addProperty("couponFrequency", couponFrequency);
         jsonObject.addProperty("dealSize", dealSize);
+        jsonObject.addProperty("dealType", dealType.toString());
         jsonObject.addProperty("currency", currency.toString());
         jsonObject.addProperty("afs", afs);
         jsonObject.addProperty("offerId", offerId.getId().toString());
