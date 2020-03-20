@@ -111,8 +111,8 @@ public class OfferController {
                     offer.getOfferPrice(),
                     offer.getOfferYield(),
                     bond.getMaturityDate(),
-                    "Zero", // hardcoding for now
-                    "Zero", // hardcoding for now
+                    bond.getCouponRate(),
+                    bond.getCouponFrequency(),
                     "Vanila", // hardcoding for now
                     "Primary", // hardcoding for now
                     offer.getAfsSize(),

@@ -17,15 +17,15 @@ public class BondMonitor {
     private float currentPrice;
     private float currentYield;
     private Date bondMaturity;
-    private String coupon;
-    private String couponFrequency;
+    private double coupon;
+    private int couponFrequency;
     private String bondStructure;
     private String market;
     private long dealSize;
     private DealType dealType;
     private Currency currency;
 
-    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, String coupon, String couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
+    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, double coupon, int couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
         this.offerId = offerId;
         this.bondId = bondId;
         this.ticker = ticker;
@@ -69,11 +69,11 @@ public class BondMonitor {
         return bondMaturity;
     }
 
-    public String getCoupon() {
+    public double getCoupon() {
         return coupon;
     }
 
-    public String getCouponFrequency() {
+    public int getCouponFrequency() {
         return couponFrequency;
     }
 
