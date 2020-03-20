@@ -2,6 +2,7 @@ package org.shield.webserver.offer;
 
 import com.google.gson.JsonObject;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.identity.Party;
 import org.shield.bond.BondState;
 import org.shield.bond.DealType;
 import org.springframework.stereotype.Component;
@@ -24,8 +25,10 @@ public class BondMonitor {
     private long dealSize;
     private DealType dealType;
     private Currency currency;
+    private Party issuer;
+    private String issuerName;
 
-    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, double coupon, int couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency) {
+    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, double coupon, int couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency, Party issuer, String issuerName) {
         this.offerId = offerId;
         this.bondId = bondId;
         this.ticker = ticker;
@@ -39,6 +42,8 @@ public class BondMonitor {
         this.dealSize = dealSize;
         this.dealType = dealType;
         this.currency = currency;
+        this.issuer = issuer;
+        this.issuerName = issuerName;
     }
 
     public UniqueIdentifier getOfferId() {
@@ -97,6 +102,14 @@ public class BondMonitor {
         return currency;
     }
 
+    public Party getIssuer() {
+        return issuer;
+    }
+
+    public String getIssuerName() {
+        return issuerName;
+    }
+
     @Override
     public String toString() {
         return "BondMonitor{" +
@@ -113,6 +126,8 @@ public class BondMonitor {
             ", dealSize=" + dealSize +
             ", dealType=" + dealType +
             ", currency=" + currency +
+            ", issuer=" + issuer.getName().toString() +
+            ", issuerName=" + issuerName +
             '}';
     }
 
@@ -131,6 +146,8 @@ public class BondMonitor {
         jsonObject.addProperty("dealSize", dealSize);
         jsonObject.addProperty("dealType", dealType.toString());
         jsonObject.addProperty("currency", currency.getCurrencyCode());
+        jsonObject.addProperty("issuer", issuer.getName().toString());
+        jsonObject.addProperty("issuerName", issuerName);
 
         return jsonObject;
     }

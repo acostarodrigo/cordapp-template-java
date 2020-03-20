@@ -117,7 +117,10 @@ public class OfferController {
                     "Primary", // hardcoding for now
                     offer.getAfsSize(),
                     bond.getDealType(),
-                    bond.getDenomination());
+                    bond.getDenomination(),
+                    offer.getIssuer(),
+                    offer.getIssuer().getName().getOrganisation()
+                );
 
                 offers.add(bondMonitor.toJson());
             }
