@@ -17,6 +17,7 @@ public class MyInventory {
     private long aggregatedTradeSize;
     private long afsSize;
     private Date bondMaturity;
+    private String bondStructure;
     private double coupon;
     private int couponFrequency;
     private long dealSize;
@@ -27,7 +28,7 @@ public class MyInventory {
     private UniqueIdentifier bondTraceId;
     private Party issuer;
 
-    public MyInventory(String bondId, String ticker, float offerPrice, float offerYield, long aggregatedTradeSize, long afsSize, Date bondMaturity, double coupon, int couponFrequency, long dealSize, DealType dealType, Currency currency, boolean afs, UniqueIdentifier offerId, UniqueIdentifier bondTraceId, Party issuer) {
+    public MyInventory(String bondId, String ticker, float offerPrice, float offerYield, long aggregatedTradeSize, long afsSize, Date bondMaturity, String bondStructure, double coupon, int couponFrequency, long dealSize, DealType dealType, Currency currency, boolean afs, UniqueIdentifier offerId, UniqueIdentifier bondTraceId, Party issuer) {
         this.bondId = bondId;
         this.ticker = ticker;
         this.offerPrice = offerPrice;
@@ -35,6 +36,7 @@ public class MyInventory {
         this.aggregatedTradeSize = aggregatedTradeSize;
         this.afsSize = afsSize;
         this.bondMaturity = bondMaturity;
+        this.bondStructure = bondStructure;
         this.coupon = coupon;
         this.couponFrequency = couponFrequency;
         this.dealSize = dealSize;
@@ -174,6 +176,14 @@ public class MyInventory {
         this.issuer = issuer;
     }
 
+    public String getBondStructure() {
+        return bondStructure;
+    }
+
+    public void setBondStructure(String bondStructure) {
+        this.bondStructure = bondStructure;
+    }
+
     public JsonObject toJson(){
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("bondId", bondId);
@@ -183,6 +193,7 @@ public class MyInventory {
         jsonObject.addProperty("aggregatedTradeSize", aggregatedTradeSize);
         jsonObject.addProperty("afsSize", afsSize);
         jsonObject.addProperty("bondMaturity", bondMaturity.toString());
+        jsonObject.addProperty("bondStructure", bondStructure);
         jsonObject.addProperty("coupon", coupon);
         jsonObject.addProperty("couponFrequency", couponFrequency);
         jsonObject.addProperty("dealSize", dealSize);
