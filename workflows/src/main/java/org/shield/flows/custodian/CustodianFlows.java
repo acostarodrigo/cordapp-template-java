@@ -251,10 +251,9 @@ public class CustodianFlows {
             if (sessions.contains(ownSession)){
                 sessions.remove(ownSession);
             }
-            if (sessions.isEmpty())
-                subFlow(new FinalityFlow(fullySignedTx));
-            else
+            if (!sessions.isEmpty())
                 subFlow(new FinalityFlow(fullySignedTx, sessions));
+
             return fullySignedTx;
 
         }
