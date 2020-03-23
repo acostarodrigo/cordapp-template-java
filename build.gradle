@@ -149,6 +149,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         name "O=Notary,L=London,C=GB"
         notary = [validating : false]
         p2pPort 10002
+        p2pAddress "13.89.226.189"
         rpcSettings {
             address("13.89.226.189:10003")
             adminAddress("13.89.226.189:10043")
@@ -158,6 +159,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=issuer,L=London,C=GB"
         p2pPort 10005
+        p2pAddress "13.89.226.189"
         rpcSettings {
             address("13.89.226.189:10006")
             adminAddress("13.89.226.189:10046")
@@ -171,6 +173,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=trader1,L=New York,C=US"
         p2pPort 10008
+        p2pAddress "13.89.226.189"
         rpcSettings {
             address("13.89.226.189:10009")
             adminAddress("13.89.226.189:10049")
@@ -181,6 +184,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=trader2,L=New York,C=US"
         p2pPort 10011
+        p2pAddress "13.89.226.189"
         rpcSettings {
             address("13.89.226.189:10012")
             adminAddress("13.89.226.189:10051")
@@ -192,6 +196,7 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=BNO,L=New York,C=US"
         p2pPort 10014
+        p2pAddress "13.89.226.189"
         rpcSettings {
             address("13.89.226.189:10015")
             adminAddress("13.89.226.189:10053")
@@ -209,6 +214,7 @@ bnoWhitelist = ["O=BNO,L=New York,C=US"]'''
     node {
         name "O=treasurer,L=New York,C=US"
         p2pPort 10017
+        p2pAddress "23.99.231.7"
         rpcSettings {
             address("23.99.231.7:10018")
             adminAddress("23.99.231.7:10055")
@@ -222,6 +228,7 @@ bnoWhitelist = ["O=BNO,L=New York,C=US"]'''
     node {
         name "O=custodian,L=New York,C=US"
         p2pPort 10020
+        p2pAddress "23.99.231.7"
         rpcSettings {
             address("23.99.231.7:10021")
             adminAddress("23.99.231.7:10057")
