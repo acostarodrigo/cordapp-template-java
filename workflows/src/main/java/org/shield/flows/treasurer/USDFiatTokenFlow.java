@@ -25,6 +25,11 @@ public class USDFiatTokenFlow {
     }
 
     @InitiatingFlow
+    @StartableByRPC
+    /**
+     * issues USD token. (Startable by RPC to avoid using signature Bank for every test.
+     * TODO remove @StartableByRPC in production.)
+     */
     public static class Issue extends FlowLogic<SignedTransaction>{
         private Party owner;
         private long amount;
