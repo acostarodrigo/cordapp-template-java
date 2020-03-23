@@ -26,6 +26,18 @@ verify
 gradle -v
 ```
 
+## repository configuration
+
+```shell script
+git clone https://github.com/acostarodrigo/ShieldCorda.git
+cd ShieldCorda
+```
+store git credentials
+```shell script
+git config --global credential.helper store
+git pull
+```
+
 ## compile nodes
 
 ```shell script
