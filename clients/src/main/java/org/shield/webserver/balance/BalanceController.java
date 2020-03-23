@@ -9,6 +9,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.CordaX500Name;
+import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
@@ -29,8 +30,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.shield.webserver.response.Response.getConnectionErrorResponse;
-import static org.shield.webserver.response.Response.getValidResponse;
+import static org.shield.webserver.response.Response.*;
 
 @RestController
 @RequestMapping("/balance")
@@ -72,7 +72,7 @@ public class BalanceController {
     }
 
     @PostMapping
-    public ResponseEntity<String> issueUSD(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Response> issueUSD(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
         String owner;
         long amount;
@@ -82,13 +82,17 @@ public class BalanceController {
             amount = body.get("amount").asLong();
             generateConnection(user);
         } catch (IOException e) {
-            return new ResponseEntity<>("Unable to parse user to establish a connection.", HttpStatus.BAD_REQUEST);
+            return getConnectionErrorResponse(e);
         }
 
         CordaX500Name ownerName = CordaX500Name.parse(owner);
-        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(USDFiatTokenFlow.Issue.class, proxy.wellKnownPartyFromX500Name(ownerName), amount).getReturnValue();
+        Party ownerNode = proxy.wellKnownPartyFromX500Name(ownerName);
+        CordaFuture<SignedTransaction> cordaFuture = proxy.startFlowDynamic(USDFiatTokenFlow.Issue.class, ownerNode, amount).getReturnValue();
         SignedTransaction signedTransaction = cordaFuture.get();
-        return new ResponseEntity<>("Issued " + amount + " at tx " + signedTransaction.toString(), HttpStatus.OK);
+
+        JsonObject response = new JsonObject();
+        response.addProperty("tx", signedTransaction.getId().toString());
+        return getResponse(true, response);
     }
 
     private void generateConnection(User user){
