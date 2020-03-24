@@ -412,9 +412,12 @@ public class TradeFlow {
             // we will let know all current participants of the offer
             for (AbstractParty abstractParty : offer.getParticipants()){
                 Party participant = new Party(abstractParty.nameOrNull(),abstractParty.getOwningKey());
-                if (!participant.equals(caller))
+                // we are only adding participants that are not the caller and the current buyer
+                if (!participant.equals(caller) && !participant.equals(buyerSession))
                     participants.add(initiateFlow(participant));
             }
+            // we add the existing buyer session, we don't want to start a new one.
+            participants.add(buyerSession);
             subFlow(new FinalityFlow(fullySignedTx,participants));
 
             // now we will notify all buyers about the new offer status, in case someone new is there.
@@ -451,6 +454,7 @@ public class TradeFlow {
                 }
             });
 
+            Party me = getOurIdentity();
             SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callingSession));
             TradeState trade = (TradeState) signedTransaction.getCoreTransaction().getOutput(0);
             // now we will try to pay for it. Lets see if we have the money
