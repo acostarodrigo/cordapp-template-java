@@ -5,6 +5,7 @@ import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.AbstractParty;
+import net.corda.core.identity.AnonymousParty;
 import net.corda.core.identity.Party;
 import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
@@ -12,10 +13,7 @@ import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 
 import java.io.Serializable;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @BelongsToContract(OfferContract.class)
 @CordaSerializable
@@ -29,7 +27,7 @@ public class OfferState implements ContractState, Serializable {
     private long afsSize;
     private boolean afs;
     private Date creationDate;
-    private List<AbstractParty> participants;
+    private List<Party> participants;
 
 
     @ConstructorForDeserialization
@@ -105,9 +103,10 @@ public class OfferState implements ContractState, Serializable {
         this.afs = afs;
     }
 
-    public void setParticipants(List<AbstractParty> participants) {
+    public void setParticipants(List<Party> participants) {
         this.participants = participants;
     }
+
 
     public Party getIssuer() {
         return issuer;
@@ -128,7 +127,15 @@ public class OfferState implements ContractState, Serializable {
     @NotNull
     @Override
     public List<AbstractParty> getParticipants() {
-        return Arrays.asList(this.issuer);
+        List<AbstractParty> abstractPartyList = new ArrayList<>();
+        abstractPartyList.add(issuer);
+        if (this.participants != null) {
+            for (Party participant : this.participants) {
+                AbstractParty abstractParty = (AbstractParty) participant;
+                abstractPartyList.add(abstractParty);
+            }
+        }
+        return abstractPartyList;
     }
 
     @Override
@@ -138,15 +145,14 @@ public class OfferState implements ContractState, Serializable {
         OfferState that = (OfferState) o;
         return Float.compare(that.getOfferPrice(), getOfferPrice()) == 0 &&
             Float.compare(that.getOfferYield(), getOfferYield()) == 0 &&
-            // getAggregatedTradeSize() == that.getAggregatedTradeSize() &&
             // getAfsSize() == that.getAfsSize() &&
             isAfs() == that.isAfs() &&
             Objects.equals(getOfferId(), that.getOfferId()) &&
             Objects.equals(getIssuer(), that.getIssuer()) &&
             Objects.equals(getBond(), that.getBond()) &&
             Objects.equals(getTicker(), that.getTicker()) &&
-            Objects.equals(getCreationDate(), that.getCreationDate()) &&
-            Objects.equals(getParticipants(), that.getParticipants());
+            Objects.equals(getCreationDate(), that.getCreationDate());
+            //Objects.equals(getParticipants(), that.getParticipants());
     }
 
     @Override

@@ -6,6 +6,8 @@ import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
 import net.corda.core.contracts.*;
 import net.corda.core.flows.*;
+import net.corda.core.identity.AbstractParty;
+import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.node.StatesToRecord;
 import net.corda.core.node.services.Vault;
@@ -13,8 +15,10 @@ import net.corda.core.node.services.VaultService;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
+import net.corda.core.utilities.OpaqueBytes;
 import net.corda.core.utilities.ProgressTracker;
 import net.corda.core.utilities.ProgressTracker.Step;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.shield.bond.BondState;
 import org.shield.flows.membership.MembershipFlows;
@@ -25,7 +29,9 @@ import org.shield.offer.OfferState;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.security.PublicKey;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
@@ -271,6 +277,9 @@ public class OfferFlow {
             // we will remove ourselves from the list.
             if (observers.contains(caller)) observers.remove(caller);
 
+            // we set the list of participants. To all this parties, we are sending the offer.
+            output.setParticipants(observers);
+
             // we will initiate sessions with all buyers
             progressTracker.setCurrentStep(INIT_SESSIONS);
             Collection<FlowSession> flowSessions = new ArrayList<>();
@@ -325,7 +334,7 @@ public class OfferFlow {
         @Suspendable
         public Void call() throws FlowException {
             // we are setting StatesToRecord to all visible to save the offer
-            subFlow(new ReceiveFinalityFlow(callerSession,null, StatesToRecord.ALL_VISIBLE));
+            subFlow(new ReceiveFinalityFlow(callerSession)); //,null, StatesToRecord.ALL_VISIBLE));
             return null;
         }
     }

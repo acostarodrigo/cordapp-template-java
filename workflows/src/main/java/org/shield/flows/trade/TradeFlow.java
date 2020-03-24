@@ -17,6 +17,7 @@ import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
 import kotlin.Pair;
 import net.corda.core.contracts.*;
 import net.corda.core.flows.*;
+import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;
@@ -407,11 +408,16 @@ public class TradeFlow {
             SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx, ImmutableList.of(buyerSession)));
 
             progressTracker.setCurrentStep(FINISH);
-            subFlow(new FinalityFlow(fullySignedTx,buyerSession));
+            List<FlowSession> participants = new ArrayList<>();
+            // we will let know all current participants of the offer
+            for (AbstractParty abstractParty : offer.getParticipants()){
+                Party participant = new Party(abstractParty.nameOrNull(),abstractParty.getOwningKey());
+                if (!participant.equals(caller))
+                    participants.add(initiateFlow(participant));
+            }
+            subFlow(new FinalityFlow(fullySignedTx,participants));
 
-
-
-            // now we will notify all buyers about the new offer status
+            // now we will notify all buyers about the new offer status, in case someone new is there.
             progressTracker.setCurrentStep(NOTIFY_BUYERS);
             subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
 

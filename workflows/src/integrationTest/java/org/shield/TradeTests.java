@@ -141,29 +141,25 @@ public class TradeTests {
         Amount currentFiatBalanceBuyer = QueryUtilitiesKt.tokenBalance(broker1Node.getServices().getVaultService(), usd);
         assertEquals(currentFiatBalanceBuyer.getQuantity(), 0);
 
+        // Trade is in state pending in both nodes
+        TradeState buyerState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        assertTrue(buyerState.getState().equals(State.PROPOSED));
+        TradeState issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        assertEquals(buyerState.getState(), issuerState.getState());
 
-        // buyer accepts trade and since it has enought balance, operation is completed.
+        // buyer accepts trade
         CordaFuture<SignedTransaction> cordaFuture = issuerNode.startFlow(new TradeFlow.AcceptSeller(trade.getId()));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
         assertNotNull(signedTransaction);
 
-        // lets validate balances in each node wallets are correct.
-        // issuer bond balance is reduced
-        assertEquals(currentBondBalanceIssuer.getQuantity(),QueryUtilitiesKt.tokenBalance(issuerNode.getServices().getVaultService(), tokenPointer).getQuantity());
-        // while token balance is increased
-        assertEquals(QueryUtilitiesKt.tokenBalance(issuerNode.getServices().getVaultService(), usd).getQuantity(), 0);
-
-        // buyer bond balance is increased
-        assertEquals(QueryUtilitiesKt.tokenBalance(broker1Node.getServices().getVaultService(), tokenPointer).getQuantity(),0);
-        // while fiat balance is reduced.
-        assertEquals(QueryUtilitiesKt.tokenBalance(broker1Node.getServices().getVaultService(), usd).getQuantity(),currentFiatBalanceBuyer.getQuantity());
-
-        // Trade is in state payed in both nodes
-        TradeState buyerState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        // Trade is in state pending in both nodes
+        buyerState = broker1Node.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
         assertTrue(buyerState.getState().equals(State.PENDING));
-        TradeState issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
+        issuerState = issuerNode.getServices().getVaultService().queryBy(TradeState.class).getStates().get(0).getState().getData();
         assertEquals(buyerState.getState(), issuerState.getState());
+
+        assertTrue(broker2Node.getServices().getVaultService().queryBy(TradeState.class).getStates().size() == 0);
     }
 
     @Test
