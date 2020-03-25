@@ -14,6 +14,7 @@ import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
+import org.shield.bond.BondType;
 import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
 import org.shield.webserver.connection.Connection;
@@ -119,7 +120,7 @@ public class BondController {
                 int redemptionPrice = Integer.parseInt(csvRecord.get("price"));
                 double initialPrice = Double.parseDouble(csvRecord.get("price"));
                 double couponRate = Double.parseDouble(csvRecord.get("coupon"));
-                BondState bondState = new BondState(id, ticker, currency, startDate,couponFrequency,minDenomination,increment,dealType,redemptionPrice,size,initialPrice,maturityDate,couponRate,0);
+                BondState bondState = new BondState(id, ticker, currency, startDate,couponFrequency,minDenomination,increment,dealType,redemptionPrice,size,initialPrice,maturityDate,couponRate,0, BondType.VANILA);
                 bonds.add(bondState);
             } catch (Exception e){
                 return getErrorResponse("Unable to parse bond from CSV file", e);

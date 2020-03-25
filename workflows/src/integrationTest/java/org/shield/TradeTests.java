@@ -16,6 +16,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.bond.BondState;
+import org.shield.bond.BondType;
 import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
 import org.shield.flows.offer.OfferFlow;
@@ -247,7 +248,7 @@ public class TradeTests {
         // manipulate date
         c.add(Calendar.YEAR, 1);
         Date startDate = c.getTime();
-        BondState newBond = new BondState("ro", "rod",Currency.getInstance("USD"),startDate,1,1,1,DealType.REG_S,1,10000,99.1d,startDate,99.4d,0);
+        BondState newBond = new BondState("ro", "rod",Currency.getInstance("USD"),startDate,1,1,1,DealType.REG_S,1,10000,99.1d,startDate,99.4d,0, BondType.VANILA);
         CordaFuture<String> cordaFuture = issuerNode.startFlow(new BondFlow.Issue(newBond));
         mockNet.runNetwork();
         String bondId = cordaFuture.get();

@@ -14,6 +14,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.bond.BondState;
+import org.shield.bond.BondType;
 import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
 
@@ -49,7 +50,7 @@ public class BondFlowTests {
         // manipulate date
         c.add(Calendar.YEAR, 1);
         startDate = c.getTime();
-        bond = new BondState("nuevoId","Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0);
+        bond = new BondState("nuevoId","Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,new Date(),99.8,0, BondType.VANILA);
 
     }
 
@@ -152,7 +153,7 @@ public class BondFlowTests {
         issueFuture.get();
 
         //issue bond 2
-        BondState bond2 = new BondState("id2","Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,startDate,99.8,0);
+        BondState bond2 = new BondState("id2","Rodrigo", Currency.getInstance("USD"), startDate, 0,500000,1, DealType.REG_S, 100,10000000,99,startDate,99.8,0, BondType.VANILA);
 
         // we issue the bond
         issueFuture = issuerNode.startFlow(new BondFlow.Issue(bond2));

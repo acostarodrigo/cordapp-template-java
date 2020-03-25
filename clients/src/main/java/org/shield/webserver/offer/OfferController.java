@@ -264,7 +264,7 @@ public class OfferController {
                     aggregatedTradeSize,
                     offer.getAfsSize(),
                     offer.getBond().getMaturityDate(),
-                    "Vanila",
+                    offer.getBond().getBondType().toString(),
                     offer.getBond().getCouponRate(),
                     offer.getBond().getCouponFrequency(),
                     offer.getBond().getDealSize(),

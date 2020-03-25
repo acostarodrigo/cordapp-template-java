@@ -31,6 +31,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
     private double initialPrice;
     private Date maturityDate;
     private double couponRate;
+    private BondType bondType;
 
     // Evolvable Token type
     private int fractionDigits;
@@ -44,7 +45,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
     }
 
 
-    public BondState(String id, String issuerTicker, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits) {
+    public BondState(String id, String issuerTicker, Currency denomination, Date startDate, int couponFrequency, long minDenomination, long increment, DealType dealType, int redemptionPrice, long dealSize, double initialPrice, Date maturityDate, double couponRate, int fractionDigits, BondType bondType) {
         this.id = id;
         this.issuerTicker = issuerTicker;
         this.denomination = denomination;
@@ -61,6 +62,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
         this.fractionDigits = fractionDigits;
         this.linearId = new UniqueIdentifier();
         this.maintainers = new ArrayList<>();
+        this.bondType = bondType;
     }
 
     // getters and setters
@@ -189,6 +191,13 @@ public class BondState extends EvolvableTokenType implements Serializable{
         this.linearId = linearId;
     }
 
+    public BondType getBondType() {
+        return bondType;
+    }
+
+    public void setBondType(BondType bondType) {
+        this.bondType = bondType;
+    }
 
     @Override
     public int getFractionDigits() {
@@ -228,12 +237,13 @@ public class BondState extends EvolvableTokenType implements Serializable{
             getDealType() == bondState.getDealType() &&
             Objects.equals(getMaturityDate(), bondState.getMaturityDate()) &&
             Objects.equals(getMaintainers(), bondState.getMaintainers()) &&
+            Objects.equals(getBondType(), bondState.getBondType()) &&
             Objects.equals(getLinearId(), bondState.getLinearId());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getIssuer(), getIssuerTicker(), getDenomination(), getStartDate(), getCouponFrequency(), getMinDenomination(), getIncrement(), getDealType(), getRedemptionPrice(), getDealSize(), getInitialPrice(), getMaturityDate(), getCouponRate(), getFractionDigits(), getMaintainers(), getLinearId());
+        return Objects.hash(getId(), getIssuer(), getIssuerTicker(), getDenomination(), getStartDate(), getCouponFrequency(), getMinDenomination(), getIncrement(), getDealType(), getRedemptionPrice(), getDealSize(), getInitialPrice(), getMaturityDate(), getCouponRate(), getFractionDigits(), getMaintainers(), getLinearId(), getBondType());
     }
 
     @Override
@@ -255,6 +265,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
             ", couponRate=" + couponRate +
             ", fractionDigits=" + fractionDigits +
             ", linearId=" + linearId +
+            ", bondType=" + bondType.toString() +
             '}';
     }
 
@@ -276,6 +287,7 @@ public class BondState extends EvolvableTokenType implements Serializable{
         jsonObject.addProperty("couponRate", couponRate);
         jsonObject.addProperty("fractionDigits", fractionDigits);
         jsonObject.addProperty("linearId", linearId.getId().toString());
+        jsonObject.addProperty("bondType", bondType.toString());
         return jsonObject;
     }
 }
