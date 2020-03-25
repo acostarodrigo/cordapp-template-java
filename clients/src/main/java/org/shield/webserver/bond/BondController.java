@@ -52,7 +52,7 @@ public class BondController {
         try {
             user = objectMapper.readValue(body.get("user").toString(),User.class);
             bond = objectMapper.readValue(body.get("bond").toString(),BondState.class);
-
+            bond.setBondType(BondType.VANILA);
             // we initiaite the connection
             generateConnection(user);
         } catch (IOException e) {
