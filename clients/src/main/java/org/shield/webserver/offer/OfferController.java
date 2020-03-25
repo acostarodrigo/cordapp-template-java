@@ -35,8 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
-import static org.shield.webserver.response.Response.getConnectionErrorResponse;
-import static org.shield.webserver.response.Response.getValidResponse;
+import static org.shield.webserver.response.Response.*;
 
 @RestController
 @RequestMapping("/offer")
@@ -160,30 +159,6 @@ public class OfferController {
         return offerUpdates;
     }
 
-
-
-    @PostMapping()
-    public ResponseEntity<Response> createOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
-        ObjectMapper objectMapper = new ObjectMapper();
-        try {
-            User user = objectMapper.readValue(body.get("user").toString(),User.class);
-            generateConnection(user);
-        } catch (IOException e) {
-            return getConnectionErrorResponse(e);
-        }
-
-        OfferBuilder offerBuilder = new OfferBuilder(proxy, body.get("offer"));
-        OfferState offer = offerBuilder.getOffer();
-        CordaFuture cordaFuture = proxy.startFlowDynamic(OfferFlow.Create.class,offer).getReturnValue();
-        cordaFuture.get();
-
-        // we get the issuer to return the offer as json
-        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
-        offer.setIssuer(issuer);
-
-        return getValidResponse(offer.toJson());
-    }
-
     @PostMapping("/modify")
     public ResponseEntity<Response> modifyOffer(@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException {
         ObjectMapper objectMapper = new ObjectMapper();
@@ -194,14 +169,36 @@ public class OfferController {
             return getConnectionErrorResponse(e);
         }
 
-        OfferBuilder offerBuilder = new OfferBuilder(proxy, body.get("offer"));
-        OfferState offer = offerBuilder.getOffer();
+        String offerId = body.get("offerId").textValue();
+        // lets search for the offer
+        OfferState offer = null;
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()){
+            if (stateAndRef.getState().getData().getOfferId().getId().toString().equals(offerId)){
+                offer = stateAndRef.getState().getData();
+                break;
+            }
+        }
+
+        // can't find it. won't go on
+        if (offer == null){
+            getErrorResponse(String.format("Offer %s doesn't exists.", offerId), new Exception("Offer doesn't exists on this node."));
+        }
+
+        if (body.has("offerPrice"))
+            offer.setOfferPrice(body.get("offerPrice").floatValue());
+
+        if (body.has("offerYield"))
+            offer.setOfferYield(body.get("offerYield").floatValue());
+
+        if (body.has("afsSize"))
+            offer.setAfsSize(body.get("afsSize").asInt());
+
+        if (body.has("afs"))
+            offer.setAfs(body.get("afs").asBoolean());
+
         CordaFuture cordaFuture = proxy.startFlowDynamic(OfferFlow.Modify.class,offer).getReturnValue();
         cordaFuture.get();
-
-        // we get the issuer to return the offer as json
-        Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
-        offer.setIssuer(issuer);
 
         return getValidResponse(offer.toJson());
     }
