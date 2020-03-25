@@ -102,7 +102,7 @@ public class OfflineTrade {
             }
 
             // we will create a trade based on the offer.
-            TradeState trade = new TradeState(new UniqueIdentifier(), offer, new Date(),settleDate, caller, buyer,caller,tradedPrice, tradedYield,size,proceeds,bond.getDenomination(), State.PROPOSED);
+            TradeState trade = new TradeState(new UniqueIdentifier(), offer, new Date(),settleDate, caller, buyer,caller,"arranger", tradedPrice, tradedYield,size,proceeds,bond.getDenomination(), State.PROPOSED);
             UniqueIdentifier tradeId = subFlow(new TradeFlow.Create(trade));
             return tradeId;
         }
