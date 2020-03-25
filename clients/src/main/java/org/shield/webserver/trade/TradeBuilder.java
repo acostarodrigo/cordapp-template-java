@@ -32,6 +32,7 @@ public class TradeBuilder {
         SimpleDateFormat dateFormat = new SimpleDateFormat("dd-MM-yyyy");
         Date tradeDate = dateFormat.parse(body.get("tradeDate").asText());
         Date settleDate = dateFormat.parse(body.get("settleDate").asText());
+        String arranger = body.get("arranger").textValue();
         float price = body.get("price").floatValue();
         float yield = body.get("yield").floatValue();
         long size = body.get("size").asLong();
@@ -58,7 +59,7 @@ public class TradeBuilder {
         Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
 
         // we generate the trade
-        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,issuer, issuer,seller, price,yield,size,proceeds, currency,state);
+        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,issuer, issuer,seller, arranger, price,yield,size,proceeds, currency,state);
         return trade;
     }
 
