@@ -1,16 +1,13 @@
 package org.shield.trade;
 
-import org.shield.offer.OfferContract;
-import org.shield.trade.TradeState;
-
-import net.corda.core.contracts.*;
+import net.corda.core.contracts.CommandData;
+import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
 
 import java.security.PublicKey;
 import java.util.Date;
 import java.util.List;
 
-import static net.corda.core.contracts.ContractsDSL.requireSingleCommand;
 import static net.corda.core.contracts.ContractsDSL.requireThat;
 
 
