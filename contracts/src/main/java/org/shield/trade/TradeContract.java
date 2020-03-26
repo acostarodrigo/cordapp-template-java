@@ -38,7 +38,7 @@ public class TradeContract implements Contract {
                 // Offer size must greater than zero
                 require.using("Offer size must be greater than zero", output.getOffer().getAfsSize() > 0);
                 // Trade size must be greater or equal than offer size.
-                require.using("Trade size can't be greater than offer size", output.getSize() >= output.getOffer().getAfsSize());
+                require.using("Trade size can't be greater than offer size", output.getSize() <= output.getOffer().getAfsSize());
                 // buyer and seller can't be the same
                 require.using("Can't buy your own bond.", !output.getBuyer().equals(output.getSeller()));
                 return null;
