@@ -878,7 +878,18 @@ public class TradeFlow {
             FlowSession sellerSession = initiateFlow(trade.getSeller());
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
             SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx, ImmutableList.of(sellerSession)));
-            subFlow(new FinalityFlow(fullySignedTx,sellerSession));
+
+            // we are sending the offer to all participants
+            List<FlowSession> participants = new ArrayList<>();
+            for (AbstractParty abstractParty : offer.getParticipants()){
+                Party participant = new Party(abstractParty.nameOrNull(),abstractParty.getOwningKey());
+                // we are only adding participants that are not the caller and the current buyer
+                if (!participant.equals(trade.getSeller()) && !participant.equals(trade.getBuyer()))
+                    participants.add(initiateFlow(participant));
+            }
+            // we add the existing seller session, we don't want to start a new one.
+            participants.add(sellerSession);
+            subFlow(new FinalityFlow(fullySignedTx,participants));
 
             // now we will pay if we have the money
             TokenType fiat = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());

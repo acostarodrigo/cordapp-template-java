@@ -3,6 +3,7 @@ package org.shield.trade;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
+import org.shield.offer.OfferState;
 
 import java.security.PublicKey;
 import java.util.Date;
@@ -64,21 +65,21 @@ public class TradeContract implements Contract {
 
         // trade has been cancelled.
         if (command instanceof TradeContract.Commands.Cancelled){
-            TradeState input = (TradeState) tx.inputsOfType(TradeState.class).get(0);
+            // this is the structure of the transaction
+            TradeState tradeInput = (TradeState) tx.inputsOfType(TradeState.class).get(0);
             requireThat(require -> {
                 // state must be cancelled
                 require.using("State of the trade must be cancelled.", output.getState().equals(State.CANCELLED));
-                // we don't allow any change in the trade other than state.
-                // So changing input state to pending should be equal to output
-                input.setState(State.CANCELLED);
-                require.using("Trade modified from original before cancelling.", output.equals(input));
                 // must have issuer and seller / buyer signature
                 require.using("Only 2 signatures are required", signers.size() == 2);
                 return null;
             });
         }
 
+        // trade has been settled.
+        if (command instanceof TradeContract.Commands.Settled){
 
+        }
 
     }
 
