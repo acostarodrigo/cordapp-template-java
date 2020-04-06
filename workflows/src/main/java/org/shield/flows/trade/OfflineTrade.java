@@ -93,16 +93,15 @@ public class OfflineTrade {
                 offer = new OfferState(new UniqueIdentifier(),caller,bond,bond.getIssuerTicker(),tradedPrice,tradedYield,balance.getQuantity(),false, new Date());
                 SignedTransaction offerTransaction = subFlow(new OfferFlow.Create(offer));
                 offerInput = offerTransaction.getCoreTransaction().outRef(0);
+            } else {
+                // lets make sure we have money available
+                if (offer.getAfsSize() < tradedPrice) throw new FlowException("Not enought AFS on the current offer.");
+
+
+                subFlow(new OfferFlow.NotifyBuyers(offerInput,offer));
             }
 
-            // lets make sure we have money available
-            if (offer.getAfsSize() < tradedPrice) throw new FlowException("Not enought AFS on the current offer.");
 
-            // if offer is not available for sale, we need to notify the buyer about the offer
-            // or trade creation will fail.
-            if (!offer.isAfs()){
-                subFlow(new OfferFlow.NotifySingleBuyer(offerInput,offer,buyer));
-            }
 
             // we will create a trade based on the offer.
             TradeState trade = new TradeState(new UniqueIdentifier(), offer, new Date(),settleDate, caller, buyer,caller,"arranger", tradedPrice, tradedYield,size,proceeds,bond.getDenomination(), State.PROPOSED);
