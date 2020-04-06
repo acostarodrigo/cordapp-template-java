@@ -95,6 +95,9 @@ public class OfflineTrade {
                 offerInput = offerTransaction.getCoreTransaction().outRef(0);
             }
 
+            // lets make sure we have money available
+            if (offer.getAfsSize() < tradedPrice) throw new FlowException("Not enought AFS on the current offer.");
+
             // if offer is not available for sale, we need to notify the buyer about the offer
             // or trade creation will fail.
             if (!offer.isAfs()){
