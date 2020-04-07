@@ -19,6 +19,7 @@ import net.corda.core.contracts.*;
 import net.corda.core.flows.*;
 import net.corda.core.identity.AbstractParty;
 import net.corda.core.identity.Party;
+import net.corda.core.node.StatesToRecord;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;
 import net.corda.core.node.services.vault.QueryCriteria;
@@ -928,12 +929,12 @@ public class TradeFlow {
                 }
             });
 
-            SignedTransaction fullySignedTx = subFlow(new ReceiveFinalityFlow(caller));
+            SignedTransaction fullySignedTx = subFlow(new ReceiveFinalityFlow(caller,null));
+
             // now we will notify all buyers about the new offer change
             OfferState offer = (OfferState) fullySignedTx.getCoreTransaction().outRef(1).getState().getData();
-            if (offer.isAfs()) {
-                subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
-            }
+            subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
+
 
             // we update the custodian
             TradeState trade = (TradeState) fullySignedTx.getCoreTransaction().getOutput(0);

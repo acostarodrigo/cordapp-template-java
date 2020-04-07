@@ -260,6 +260,11 @@ public class TradeTests {
         UniqueIdentifier tradeId = tradeCordaFuture.get();
         assertNotNull(tradeId);
 
+        tradeCordaFuture = issuerNode.startFlow(new OfflineTrade.IssuerCreate(newBond.getId(),broker2,1000, 99,99,new Date(),1000,"Rodrigo"));
+        mockNet.runNetwork();
+        tradeId = tradeCordaFuture.get();
+        assertNotNull(tradeId);
+
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
         TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
         assertNotNull(issuerTrade);
@@ -269,6 +274,10 @@ public class TradeTests {
         assertNotNull(brokerTrade);
         assertTrue(brokerTrade.getSize() == 1000);
         assertTrue(issuerTrade.equals(brokerTrade));
+
+        brokerTrade = broker2Node.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        assertNotNull(brokerTrade);
+        assertTrue(brokerTrade.getSize() == 1000);
 
         OfferState issuerOffer = issuerNode.getServices().getVaultService().queryBy(OfferState.class,criteria).getStates().get(1).getState().getData();
         assertNotNull(issuerOffer);
@@ -296,7 +305,7 @@ public class TradeTests {
         assertNotNull(brokerTrade);
         assertTrue(brokerTrade.getState().equals(State.CANCELLED));
 
-        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(1).getState().getData();
         assertTrue(issuerTrade.getState().equals(State.CANCELLED));
     }
 
@@ -310,7 +319,7 @@ public class TradeTests {
         OfferState offer = issuerNode.getServices().getVaultService().queryBy(OfferState.class, criteria).getStates().get(1).getState().getData();
         assertTrue(offer.getAfsSize() == 10000);
 
-        // we cancell the trade from the buyer side
+        // we accept the trade from the buyer side
         CordaFuture<SignedTransaction> cordaFuture = broker1Node.startFlow(new TradeFlow.AcceptBuyer(brokerTrade.getId()));
         mockNet.runNetwork();
         SignedTransaction signedTransaction = cordaFuture.get();
@@ -321,11 +330,39 @@ public class TradeTests {
         assertNotNull(brokerTrade);
         assertTrue(brokerTrade.getState().equals(State.PENDING));
 
-        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(1).getState().getData();
         assertTrue(issuerTrade.getState().equals(State.PENDING));
 
         offer = issuerNode.getServices().getVaultService().queryBy(OfferState.class, criteria).getStates().get(1).getState().getData();
         assertTrue(offer.getAfsSize() == 9000);
+
+
+        // we do the same with trader2
+        brokerTrade = broker2Node.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        assertNotNull(brokerTrade);
+
+        offer = issuerNode.getServices().getVaultService().queryBy(OfferState.class, criteria).getStates().get(1).getState().getData();
+        assertTrue(offer.getAfsSize() == 9000);
+
+        // we accept the trade from the buyer side
+        cordaFuture = broker2Node.startFlow(new TradeFlow.AcceptBuyer(brokerTrade.getId()));
+        mockNet.runNetwork();
+        signedTransaction = cordaFuture.get();
+        assertNotNull(signedTransaction);
+
+        // both trades must be accepted
+        brokerTrade = broker2Node.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        assertNotNull(brokerTrade);
+        assertTrue(brokerTrade.getState().equals(State.PENDING));
+
+        issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        assertTrue(issuerTrade.getState().equals(State.PENDING));
+
+        offer = issuerNode.getServices().getVaultService().queryBy(OfferState.class, criteria).getStates().get(1).getState().getData();
+        assertTrue(offer.getAfsSize() == 8000);
+
+        assertEquals(1,broker1Node.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().size());
+        assertEquals(1,broker2Node.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().size());
     }
 
     @Test
@@ -345,7 +382,7 @@ public class TradeTests {
         assertNotNull(brokerTrade);
         assertTrue(brokerTrade.getState().equals(State.SETTLED));
 
-        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(1).getState().getData();
         assertTrue(issuerTrade.getState().equals(State.SETTLED));
     }
 
@@ -355,17 +392,13 @@ public class TradeTests {
 
         QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
 
-        // broker 2 doesn't have the offer.
-        //assertTrue(broker2Node.getServices().getVaultService().queryBy(OfferState.class,criteria).getStates().size() == 1);
-
-
-            OfferState offer = issuerNode.getServices().getVaultService().queryBy(OfferState.class, criteria).getStates().get(1).getState().getData();
+        OfferState offer = issuerNode.getServices().getVaultService().queryBy(OfferState.class, criteria).getStates().get(1).getState().getData();
         CordaFuture cordaFuture = issuerNode.startFlow(new OfferFlow.setAFS(offer.getOfferId(), true));
         mockNet.runNetwork();
         cordaFuture.get();
 
         OfferState broker2Offer = broker2Node.getServices().getVaultService().queryBy(OfferState.class,criteria).getStates().get(1).getState().getData();
-        assertTrue(broker2Offer.getAfsSize() == 9000);
+        assertTrue(broker2Offer.getAfsSize() == 8000);
     }
 
     @Test
@@ -396,7 +429,7 @@ public class TradeTests {
         assertNotNull(brokerTrade);
         assertTrue(brokerTrade.getState().equals(State.SETTLED));
 
-        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(0).getState().getData();
+        TradeState issuerTrade = issuerNode.getServices().getVaultService().queryBy(TradeState.class, criteria).getStates().get(1).getState().getData();
         assertTrue(issuerTrade.getState().equals(State.SETTLED));
 
         balance = QueryUtilitiesKt.tokenBalance(broker1Node.getServices().getVaultService(), fiat);
