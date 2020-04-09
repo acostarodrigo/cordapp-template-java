@@ -1,3 +1,6 @@
+# connect to azure node
+ssh -i cordaAzure acostarodrigo@13.89.226.189
+
 cd ~/ShieldCorda
 # brind latest changes
 git pull origin master
