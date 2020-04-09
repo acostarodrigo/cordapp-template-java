@@ -9,6 +9,8 @@ import net.corda.core.transactions.SignedTransaction;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.shield.fiat.FiatState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.flows.treasurer.StellarService;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
 import org.stellar.sdk.*;
@@ -19,14 +21,17 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.*;
 import static org.shield.TestHelper.*;
 
 public class USDFiatTokenTests {
     @Before
-    public void setUp(){
+    public void setUp() throws ExecutionException, InterruptedException {
         TestHelper.setupNetwork();
+        MembershipTests membershipTests = new MembershipTests();
+        membershipTests.configIssuerTest();
+        membershipTests.configTreasurerTest();
+        membershipTests.configBuyerTest();
     }
 
     @Test
@@ -48,6 +53,11 @@ public class USDFiatTokenTests {
 
         // balance check
         assertEquals(tokenBalance.getQuantity(), 200000000);
+
+        // Fiat transaction validation
+        FiatState fiatState = broker1Node.getServices().getVaultService().queryBy(FiatState.class).getStates().get(0).getState().getData();
+        assertNotNull(fiatState);
+        assertEquals(tokenBalance.getQuantity(), fiatState.getFiatTransactionList().get(1).getBalance());
     }
 
     @Test (expected = ExecutionException.class)

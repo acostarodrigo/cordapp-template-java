@@ -7,7 +7,6 @@ import net.corda.core.identity.Party;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
 @BelongsToContract(FiatContract.class)

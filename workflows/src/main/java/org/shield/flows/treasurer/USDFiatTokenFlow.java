@@ -8,14 +8,20 @@ import com.r3.corda.lib.tokens.contracts.utilities.TransactionUtilitiesKt;
 import com.r3.corda.lib.tokens.money.FiatCurrency;
 import com.r3.corda.lib.tokens.workflows.flows.issue.IssueTokensFlow;
 import com.r3.corda.lib.tokens.workflows.flows.issue.IssueTokensFlowHandler;
+import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
 import net.corda.core.contracts.Amount;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
+import org.shield.fiat.FiatTransaction;
+import org.shield.flows.fiat.FiatFlow;
 import org.shield.flows.membership.MembershipFlows;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 
 public class USDFiatTokenFlow {
@@ -73,7 +79,25 @@ public class USDFiatTokenFlow {
         @Suspendable
         public Void call() throws FlowException {
             subFlow(new IssueTokensFlowHandler(flowSession));
-            subFlow(new ReceiveFinalityFlow(flowSession));
+            SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(flowSession));
+
+            // we will store this transaction into the FiatState
+            Party me = getOurIdentity();
+            for (FungibleToken fungibleToken : signedTransaction.getCoreTransaction().outputsOfType(FungibleToken.class)){
+                if (fungibleToken.getHolder().equals(me)){
+                    // for every output that is sending me money, we generate a new transaction
+                    Amount currentBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(),fungibleToken.getTokenType());
+                    StringBuilder stringBuilder = new StringBuilder();
+                    stringBuilder.append("Fiat token issued at ");
+                    stringBuilder.append(Instant.now().toString());
+                    stringBuilder.append(" by ");
+                    stringBuilder.append(flowSession.getCounterparty().getName().getOrganisation());
+                    FiatTransaction fiatTransaction = new FiatTransaction(Instant.now().getEpochSecond(),stringBuilder.toString(), FiatTransaction.Type.DEPOSIT, fungibleToken.getAmount(),currentBalance.getQuantity(), FiatTransaction.Action.IN);
+
+                    subFlow(new FiatFlow.NewTransaction(fiatTransaction));
+                }
+            }
+
             return null;
         }
     }

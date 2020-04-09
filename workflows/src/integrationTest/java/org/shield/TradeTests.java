@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.shield.bond.BondState;
 import org.shield.bond.BondType;
 import org.shield.bond.DealType;
+import org.shield.fiat.FiatState;
 import org.shield.flows.bond.BondFlow;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.flows.trade.OfflineTrade;
@@ -116,6 +117,13 @@ public class TradeTests {
         assertNotNull(buyerOffer);
         assertTrue(buyerOffer.getBond().equals(bond));
         assertTrue(buyerOffer.getAfsSize() == trade.getSize());
+
+
+        // Fiat States validatin
+        FiatState issuerFiatState = issuerNode.getServices().getVaultService().queryBy(FiatState.class).getStates().get(0).getState().getData();
+        assertNotNull(issuerFiatState);
+        FiatState broker1FiatState = broker1Node.getServices().getVaultService().queryBy(FiatState.class).getStates().get(0).getState().getData();
+        assertNotNull(issuerFiatState);
     }
 
     @Test

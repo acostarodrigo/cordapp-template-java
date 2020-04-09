@@ -31,7 +31,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.shield.bond.BondState;
 import org.shield.custodian.CustodianState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.flows.custodian.CustodianFlows;
+import org.shield.flows.fiat.FiatFlow;
 import org.shield.flows.membership.MembershipFlows;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.offer.OfferContract;
@@ -41,6 +43,7 @@ import org.shield.trade.TradeContract;
 import org.shield.trade.TradeState;
 
 import java.security.PublicKey;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
@@ -660,6 +663,21 @@ public class TradeFlow {
             OfferState offer = new OfferState(new UniqueIdentifier(),caller, bond,trade.getOffer().getTicker(),100,100,trade.getSize(),false, new Date());
             subFlow(new OfferFlow.Create(offer));
 
+
+            // we are generating the new Fiat Transaction
+            TokenType fiatToken = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
+            Amount fiatAmount = new Amount(trade.getSize(), fiatToken);
+            Amount currentBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(),fiatToken);
+            StringBuilder description = new StringBuilder("Settlement of bond ");
+            description.append(trade.getOffer().getBond().getId());
+            description.append(" for ");
+            description.append(trade.getSize());
+            description.append(" bonds issued by ");
+            description.append(trade.getOffer().getBond().getIssuer().getName().getOrganisation());
+            FiatTransaction fiatTransaction = new FiatTransaction(Instant.now().getEpochSecond(), description.toString(), FiatTransaction.Type.SETTLEMENT,fiatAmount,currentBalance.getQuantity(), FiatTransaction.Action.OUT);
+            subFlow(new FiatFlow.NewTransaction(fiatTransaction));
+
+
             return signedTransaction;
         }
     }
@@ -706,7 +724,22 @@ public class TradeFlow {
                 }
             });
 
-            subFlow(new ReceiveFinalityFlow(callerSession));
+            SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callerSession));
+
+            // we are generating the new Fiat Transaction
+            TradeState trade = signedTransaction.getCoreTransaction().outputsOfType(TradeState.class).get(0);
+            TokenType fiatToken = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
+            Amount fiatAmount = new Amount(trade.getSize(), fiatToken);
+            Amount currentBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(),fiatToken);
+            StringBuilder description = new StringBuilder("Settlement of bond ");
+            description.append(trade.getOffer().getBond().getId());
+            description.append(" for ");
+            description.append(trade.getSize());
+            description.append(" purchased by ");
+            description.append(callerSession.getCounterparty().getName().getOrganisation());
+            FiatTransaction fiatTransaction = new FiatTransaction(Instant.now().getEpochSecond(), description.toString(), FiatTransaction.Type.SETTLEMENT,fiatAmount,currentBalance.getQuantity(), FiatTransaction.Action.IN);
+            subFlow(new FiatFlow.NewTransaction(fiatTransaction));
+
             return null;
         }
     }

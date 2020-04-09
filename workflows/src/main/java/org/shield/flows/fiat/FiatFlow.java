@@ -1,7 +1,9 @@
 package org.shield.flows.fiat;
 
+import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
+import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
 import net.corda.core.flows.UnexpectedFlowEndException;
@@ -9,6 +11,7 @@ import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;
 import net.corda.core.node.services.vault.QueryCriteria;
+import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import org.shield.fiat.FiatContract;
 import org.shield.fiat.FiatState;
@@ -31,6 +34,7 @@ public class FiatFlow {
         }
 
         @Override
+        @Suspendable
         public Void call() throws FlowException {
             // we will validate if this node already has a FiatState
             VaultService vaultService = getServiceHub().getVaultService();
@@ -62,11 +66,14 @@ public class FiatFlow {
             Command newTransactionCommand = new Command(new FiatContract.Commands.newTransaction(),caller.getOwningKey());
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             TransactionBuilder transactionBuilder = new TransactionBuilder(notary);
+
             if (input != null) transactionBuilder.addInputState(input);
+            transactionBuilder.addOutputState(fiatState, FiatContract.ID);
             transactionBuilder.addCommand(newTransactionCommand);
 
             // we sign it and store it only locally.
-            getServiceHub().signInitialTransaction(transactionBuilder);
+            SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
+            subFlow(new FinalityFlow(signedTransaction));
             return null;
         }
     }

@@ -4,30 +4,38 @@ import com.google.gson.JsonObject;
 import net.corda.core.contracts.Amount;
 import net.corda.core.serialization.CordaSerializable;
 
-import java.util.Date;
+import java.time.Instant;
 
 @CordaSerializable
 public class FiatTransaction {
-    private Date date;
+    private long timestamp;
     private String description;
-    private String type;
+    private Type type;
     private Amount amount;
     private long balance;
+    private Action action;
 
-    public FiatTransaction(Date date, String description, String type, Amount amount, long balance) {
-        this.date = date;
+    @CordaSerializable
+    public enum Action {IN,OUT}
+
+    @CordaSerializable
+    public enum Type {DEPOSIT, SETTLEMENT}
+
+    public FiatTransaction(long timestamp, String description, Type type, Amount amount, long balance, Action action) {
+        this.timestamp = timestamp;
         this.description = description;
         this.type = type;
         this.amount = amount;
         this.balance = balance;
+        this.action = action;
     }
 
-    public Date getDate() {
-        return date;
+    public long getTimestamp() {
+        return timestamp;
     }
 
-    public void setDate(Date date) {
-        this.date = date;
+    public void setTimestamp(long timestamp) {
+        this.timestamp = timestamp;
     }
 
     public String getDescription() {
@@ -38,11 +46,11 @@ public class FiatTransaction {
         this.description = description;
     }
 
-    public String getType() {
+    public Type getType() {
         return type;
     }
 
-    public void setType(String type) {
+    public void setType(Type type) {
         this.type = type;
     }
 
@@ -62,25 +70,23 @@ public class FiatTransaction {
         this.balance = balance;
     }
 
-    @Override
-    public String toString() {
-        return "FiatTransaction{" +
-            "date=" + date +
-            ", description='" + description + '\'' +
-            ", type='" + type + '\'' +
-            ", amount=" + amount +
-            ", balance=" + balance +
-            '}';
+    public Action getAction() {
+        return action;
+    }
+
+    public void setAction(Action action) {
+        this.action = action;
     }
 
     public JsonObject toJson() {
         JsonObject jsonObject = new JsonObject();
-        jsonObject.addProperty("date", date.toString());
+        jsonObject.addProperty("timestamp", Instant.ofEpochSecond(timestamp).toString());
         jsonObject.addProperty("description", description);
-        jsonObject.addProperty("type", type);
+        jsonObject.addProperty("type", type.toString());
         jsonObject.addProperty("amount", amount.getQuantity());
         jsonObject.addProperty("currency", amount.getToken().toString());
         jsonObject.addProperty("balance", String.valueOf(balance));
+        jsonObject.addProperty("action", action.toString());
 
         return jsonObject;
     }

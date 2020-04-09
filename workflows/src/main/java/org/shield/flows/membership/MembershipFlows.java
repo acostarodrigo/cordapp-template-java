@@ -339,6 +339,7 @@ public class MembershipFlows {
         }
 
         @Override
+        @Suspendable
         public Boolean call() throws FlowException {
             if (!subFlow(new isTreasure())) throw new FlowException("Only a valid active Treasurer organization can call this method.");
             Party treasurer = getOurIdentity();
@@ -362,6 +363,7 @@ public class MembershipFlows {
         }
 
         @Override
+        @Suspendable
         public Boolean call() throws FlowException {
             if (!subFlow(new isCustodian())) throw new FlowException("Only a valid active Custodian organization can call this method.");
             Party custodian = getOurIdentity();

@@ -59,7 +59,7 @@ public class TestHelper {
 
 
 
-        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade", "org.shield.offer", "org.shield.treasurer", "org.shield.treasurer.signet", "org.shield.custodian");
+        List<String> packages = Arrays.asList(GetMembershipsFlowResponder.class.getCanonicalName(), "org.shield.bond", "org.shield.membership", "org.shield.trade", "org.shield.offer", "org.shield.treasurer", "org.shield.treasurer.signet", "org.shield.custodian", "org.shield.fiat");
 
         DriverParameters driverParameters = new DriverParameters().withIsDebug(true).withCordappsForAllNodes(cordapps);
         NetworkParameters networkParameters = driverParameters.getNetworkParameters();
