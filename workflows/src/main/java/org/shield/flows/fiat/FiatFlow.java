@@ -56,6 +56,9 @@ public class FiatFlow {
                 List<FiatTransaction> fiatTransactions = new ArrayList<>(fiatState.getFiatTransactionList());
                 fiatTransactions.add(fiatTransaction);
                 fiatState.setFiatTransactionList(fiatTransactions);
+
+                // and modify update timestamp
+                fiatState.setLastUpdate(Instant.now().getEpochSecond());
             }
 
 
