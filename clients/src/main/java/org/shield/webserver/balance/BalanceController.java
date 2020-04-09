@@ -16,6 +16,8 @@ import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
 import org.json.simple.JSONObject;
+import org.shield.fiat.FiatState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
@@ -93,6 +95,35 @@ public class BalanceController {
         JsonObject response = new JsonObject();
         response.addProperty("tx", signedTransaction.getId().toString());
         return getResponse(true, response);
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<Response> getTransactions(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        // we get unconsumed tokens from vault
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+
+
+        JsonArray transactions = new JsonArray();
+        try {
+            FiatState fiatState = proxy.vaultQueryByCriteria(criteria, FiatState.class).getStates().get(0).getState().getData();
+            for (FiatTransaction fiatTransaction : fiatState.getFiatTransactionList()){
+                transactions.add(fiatTransaction.toJson());
+            }
+        } catch (Exception e){
+            // ignoring, will return an empty result
+        }
+
+        JsonObject response = new JsonObject();
+        response.add("transactions", transactions);
+        return getValidResponse(response);
     }
 
     private void generateConnection(User user){
