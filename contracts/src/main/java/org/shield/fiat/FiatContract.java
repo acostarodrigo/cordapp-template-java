@@ -4,8 +4,6 @@ import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
 import org.jetbrains.annotations.NotNull;
-import org.shield.trade.State;
-import org.shield.trade.TradeContract;
 
 import java.security.PublicKey;
 import java.util.List;
