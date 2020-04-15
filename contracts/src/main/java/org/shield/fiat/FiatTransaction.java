@@ -1,6 +1,7 @@
 package org.shield.fiat;
 
 import com.google.gson.JsonObject;
+import jdk.nashorn.internal.parser.TokenType;
 import net.corda.core.contracts.Amount;
 import net.corda.core.serialization.CordaSerializable;
 
@@ -84,7 +85,7 @@ public class FiatTransaction {
         jsonObject.addProperty("description", description);
         jsonObject.addProperty("type", type.toString());
         jsonObject.addProperty("amount", amount.getQuantity());
-        jsonObject.addProperty("currency", amount.getToken().toString());
+        jsonObject.addProperty("currency",amount.getToken().toString());
         jsonObject.addProperty("balance", String.valueOf(balance));
         jsonObject.addProperty("action", action.toString());
 
