@@ -149,10 +149,10 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
         name "O=Notary,L=London,C=GB"
         notary = [validating : false]
         p2pPort 10002
-        p2pAddress "10.0.0.9:10002"
+        p2pAddress "10.0.0.10:10002"
         rpcSettings {
-            address("10.0.0.9:10003")
-            adminAddress("10.0.0.9:10043")
+            address("10.0.0.10:10003")
+            adminAddress("10.0.0.10:10043")
         }
         cordapps = []
     }
@@ -196,10 +196,10 @@ task deployNodes(type: net.corda.plugins.Cordform, dependsOn: ['jar']) {
     node {
         name "O=BNO,L=New York,C=US"
         p2pPort 10014
-        p2pAddress "10.0.0.9:10014"
+        p2pAddress "10.0.0.6:10014"
         rpcSettings {
-            address("10.0.0.9:10015")
-            adminAddress("10.0.0.9:10053")
+            address("10.0.0.6:10015")
+            adminAddress("10.0.0.6:10053")
         }
         cordapp ("com.r3.businessnetworks:membership-service:2.0"){
             config '''
