@@ -3,9 +3,9 @@ Requires=network.target
 
 [Service]
 Type=simple
-User=acostarodrigo
-WorkingDirectory=/home/acostarodrigo/ShieldCorda/build/nodes/Notary
-ExecStart=/usr/bin/java -jar /home/acostarodrigo/ShieldCorda/build/nodes/Notary/corda.jar
+User=rodrigo
+WorkingDirectory=/home/rodrigo/ShieldCorda/build/nodes/Notary
+ExecStart=/usr/bin/java -jar /home/rodrigo/ShieldCorda/build/nodes/Notary/corda.jar
 Restart=on-failure
 Environment="CAPSULE_CACHE_DIR=./capsule"
 
