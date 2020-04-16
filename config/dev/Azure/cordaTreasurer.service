@@ -3,7 +3,7 @@ Requires=network.target
 
 [Service]
 Type=simple
-User=rodriigo
+User=rodrigo
 WorkingDirectory=/home/rodrigo/ShieldCorda/build/nodes/treasurer
 ExecStart=/usr/bin/java -jar /home/rodrigo/ShieldCorda/build/nodes/treasurer/corda.jar
 Restart=on-failure
