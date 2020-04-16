@@ -97,25 +97,33 @@ public class CustodianState implements Serializable,ContractState {
         result.addProperty("issuer", issuer.getName().toString());
 
         // we are adding the bonds
-        JsonArray bonds = new JsonArray();
-        for (BondState bond : getBonds()){
-            bonds.add(bond.toJson());
+        if (getBonds() != null) {
+            JsonArray bonds = new JsonArray();
+            for (BondState bond : getBonds()){
+                bonds.add(bond.toJson());
+            }
+            result.add("bonds", bonds);
         }
-        result.add("bonds", bonds);
+
 
         // we are adding the trades
-        JsonArray trades = new JsonArray();
-        for (TradeState trade : getTrades()){
-            trades.add(trade.toJson());
+        if (getTrades() != null) {
+            JsonArray trades = new JsonArray();
+            for (TradeState trade : getTrades()){
+                trades.add(trade.toJson());
+            }
+            result.add("trades", trades);
         }
-        result.add("trades", trades);
 
-        // we are adding the offers
-        JsonArray offers = new JsonArray();
-        for (OfferState offer : getOffers()){
-            offers.add(offer.toJson());
+
+        if (getOffers() != null){
+            // we are adding the offers
+            JsonArray offers = new JsonArray();
+            for (OfferState offer : getOffers()){
+                offers.add(offer.toJson());
+            }
+            result.add("offers", offers);
         }
-        result.add("offers", offers);
 
         // all ready to return JSON
         return result;

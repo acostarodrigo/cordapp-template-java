@@ -1,5 +1,6 @@
 package org.shield;
 
+import com.google.gson.JsonObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -36,6 +37,9 @@ public class CustodianTests {
         // and validate custodian has it
         custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
         assertNotNull(custodianState);
+
+        JsonObject custodianResult = custodianState.toJson();
+        assertNotNull(custodianResult);
     }
 
     @Test
