@@ -33,3 +33,19 @@ sudo systemctl start cordaNotary
 #sudo systemctl start cordaCustodian
 #Start rest
 sudo systemctl start cordaREST
+
+
+## For Distributed nodes:
+# Node 1
+sudo systemctl start cordaREST
+sudo systemctl start cordaBNO
+
+# Node 2
+sudo systemctl start cordaNotary
+sudo systemctl start cordaTreasurer
+sudo systemctl start cordaCustodian
+
+# Node 3
+sudo systemctl start cordaIssuer
+sudo systemctl start cordaTrader1
+sudo systemctl start cordaTrader2

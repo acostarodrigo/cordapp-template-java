@@ -16,7 +16,9 @@ git clone https://github.com/acostarodrigo/ShieldCorda.git
 
 * copy service files to enable automatic start of nodes
 All .service files must be copied to /etc/systemd/system
-
+```shell script
+sudo cp *.service /etc/systemd/system 
+```
 
 Grant sudo access to files 
 
