@@ -1,5 +1,7 @@
 package org.shield.custodian;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import net.corda.core.contracts.BelongsToContract;
 import net.corda.core.contracts.ContractState;
 import net.corda.core.identity.AbstractParty;
@@ -88,5 +90,34 @@ public class CustodianState implements Serializable,ContractState {
 
     public void setLastUpdated(Date lastUpdated) {
         this.lastUpdated = lastUpdated;
+    }
+
+    public JsonObject toJson(){
+        JsonObject result = new JsonObject();
+        result.addProperty("issuer", issuer.getName().toString());
+
+        // we are adding the bonds
+        JsonArray bonds = new JsonArray();
+        for (BondState bond : getBonds()){
+            bonds.add(bond.toJson());
+        }
+        result.add("bonds", bonds);
+
+        // we are adding the trades
+        JsonArray trades = new JsonArray();
+        for (TradeState trade : getTrades()){
+            trades.add(trade.toJson());
+        }
+        result.add("trades", trades);
+
+        // we are adding the offers
+        JsonArray offers = new JsonArray();
+        for (OfferState offer : getOffers()){
+            offers.add(offer.toJson());
+        }
+        result.add("offers", offers);
+
+        // all ready to return JSON
+        return result;
     }
 }
