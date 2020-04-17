@@ -185,7 +185,12 @@ public class TradeFlow {
                 }
             });
 
-            subFlow(new ReceiveFinalityFlow(callerSession));
+            SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callerSession));
+            TradeState trade = signedTransaction.getCoreTransaction().outputsOfType(TradeState.class).get(0);
+
+            // we inform the custodian
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
+
             return null;
         }
     }
@@ -428,7 +433,7 @@ public class TradeFlow {
             progressTracker.setCurrentStep(NOTIFY_BUYERS);
             subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
 
-            // we update the custodiian
+            // we update the custodian
             subFlow(new CustodianFlows.SendTrade(trade.getId()));
 
             return fullySignedTx;
@@ -460,7 +465,12 @@ public class TradeFlow {
 
             Party me = getOurIdentity();
             SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callingSession));
+
             TradeState trade = (TradeState) signedTransaction.getCoreTransaction().getOutput(0);
+
+            // we update the custodian
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
+
             // now we will try to pay for it. Lets see if we have the money
             TokenType fiatCurrency = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
             Amount fiatBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(), fiatCurrency);
@@ -469,9 +479,6 @@ public class TradeFlow {
             if (fiatBalance.getQuantity() >= trade.getSize()){
                 subFlow(new Settle(trade.getId()));
             }
-
-            // we update the custodian
-            subFlow(new CustodianFlows.SendTrade(trade.getId()));
             return null;
         }
     }

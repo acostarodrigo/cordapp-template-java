@@ -125,6 +125,12 @@ public class CustodianTests {
         assertNotNull(trade);
         assertEquals(State.SETTLED, trade.getState());
 
+        custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        assertNotNull(custodianState);
+        trade = custodianState.getTrades().get(0);
+        assertNotNull(trade);
+        assertEquals(State.SETTLED, trade.getState());
+
         // custodian doesn't have any state
         assertTrue(custodianNode.getServices().getVaultService().queryBy(TradeState.class).getStates().size() == 0);
         assertTrue(custodianNode.getServices().getVaultService().queryBy(BondState.class).getStates().size() == 0);
