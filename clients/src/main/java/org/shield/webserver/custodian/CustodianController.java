@@ -49,16 +49,13 @@ public class CustodianController {
             return getConnectionErrorResponse(e);
         }
 
-        CustodianState custodianState = null;
-        try {
-            custodianState = proxy.vaultQuery(CustodianState.class).getStates().get(0).getState().getData();
-        } catch (Exception e){
-            // failed because this node doesn't have a custodianState object
+        JsonArray jsonArray = new JsonArray();
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            jsonArray.add(custodianState.toJson());
         }
-
-        if (custodianState == null)
-            return getValidResponse(new JsonObject()); // we return an empty object
-        else
-            return getValidResponse(custodianState.toJson());
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("custodian", jsonArray);
+        return getValidResponse(jsonObject);
     }
 }
