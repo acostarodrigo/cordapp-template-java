@@ -80,6 +80,58 @@ public class CustodianTests {
         // custodian doesn't have any state
         assertTrue(custodianNode.getServices().getVaultService().queryBy(TradeState.class).getStates().size() == 0);
         assertTrue(custodianNode.getServices().getVaultService().queryBy(BondState.class).getStates().size() == 0);
+
+        CustodianState traderCustodianState = null;
+        traderCustodianState = broker1Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        assertEquals(traderCustodianState.getTrades().get(0), custodianState.getTrades().get(0));
+    }
+
+    @Test
+    public void SettleTradeCustodianTest() throws ExecutionException, InterruptedException {
+        tradeTests.setNetwork();
+        tradeTests.settleTradeTest();
+
+        // we must have to custodianStates, from issuer and trader
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().size() == 2);
+
+        CustodianState custodianState = null;
+        custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(1).getState().getData();
+        assertNotNull(custodianState);
+        TradeState trade = custodianState.getTrades().get(0);
+        assertNotNull(trade);
+        assertEquals(State.SETTLED, trade.getState());
+
+        // custodian doesn't have any state
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(TradeState.class).getStates().size() == 0);
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(BondState.class).getStates().size() == 0);
+
+        CustodianState traderCustodianState = null;
+        traderCustodianState = broker1Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        assertEquals(traderCustodianState.getTrades().get(0), custodianState.getTrades().get(0));
+    }
+
+    @Test
+    public void settleTradeWithCustodianTest() throws ExecutionException, InterruptedException {
+        tradeTests.setNetwork();
+        tradeTests.acceptTradeWithBalance();
+
+        // we must have to custodianStates, from issuer and trader
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().size() == 2);
+
+        CustodianState custodianState = null;
+        custodianState = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(1).getState().getData();
+        assertNotNull(custodianState);
+        TradeState trade = custodianState.getTrades().get(0);
+        assertNotNull(trade);
+        assertEquals(State.SETTLED, trade.getState());
+
+        // custodian doesn't have any state
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(TradeState.class).getStates().size() == 0);
+        assertTrue(custodianNode.getServices().getVaultService().queryBy(BondState.class).getStates().size() == 0);
+
+        CustodianState traderCustodianState = null;
+        traderCustodianState = broker1Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        assertEquals(traderCustodianState.getTrades().get(0), custodianState.getTrades().get(0));
     }
 
     @After

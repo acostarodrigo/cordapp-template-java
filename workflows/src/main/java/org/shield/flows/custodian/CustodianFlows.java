@@ -26,6 +26,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 
 public class CustodianFlows {
     private CustodianFlows(){
@@ -190,17 +191,19 @@ public class CustodianFlows {
 
             // we get the trade from the vault
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-            TradeState trade = null;
+            TradeState storedTrade = null;
             StateAndRef<TradeState> tradeStateStateAndRef = null;
             for (StateAndRef<TradeState> stateAndRef : getServiceHub().getVaultService().queryBy(TradeState.class, criteria).getStates()){
                 if (stateAndRef.getState().getData().getId().equals(tradeId)){
                     tradeStateStateAndRef = stateAndRef;
-                    trade = stateAndRef.getState().getData();
+                    storedTrade = stateAndRef.getState().getData();
                     break;
                 }
             }
 
-            if (trade == null || tradeStateStateAndRef == null) throw new FlowException(String.format("Trade with id %s does not exists.", tradeId));
+            if (storedTrade == null || tradeStateStateAndRef == null) throw new FlowException(String.format("Trade with id %s does not exists.", tradeId));
+
+            final TradeState trade = storedTrade;
 
             // lets generate the custodian data
             List<Object> result = subFlow(new GetCustodianState());
@@ -212,7 +215,15 @@ public class CustodianFlows {
             if (trades == null)
                 custodianState.setTrades(Arrays.asList(trade));
             else {
-                ArrayList tradeList = new ArrayList(trades);
+                ArrayList<TradeState> tradeList = new ArrayList(trades);
+
+                // if the trade already exists, we will remove it
+                tradeList.removeIf(new Predicate<TradeState>() {
+                                       @Override
+                                       public boolean test(TradeState tradeState) {
+                                           return tradeState.getId().equals(trade.getId());
+                                       }
+                                   });
                 tradeList.add(trade);
                 custodianState.setTrades(tradeList);
             }
@@ -234,7 +245,6 @@ public class CustodianFlows {
             Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addOutputState(custodianState,CustodianContract.ID)
-                //.addReferenceState(new ReferencedStateAndRef<>(tradeStateStateAndRef))
                 .addCommand(command);
 
             // if we have an input, we will include it
@@ -299,107 +309,6 @@ public class CustodianFlows {
             }
 
             return custodians;
-        }
-    }
-
-    @InitiatingFlow
-    public static class UpdateTrade extends FlowLogic<SignedTransaction>{
-        private TradeState trade;
-
-        public UpdateTrade(TradeState trade) {
-            this.trade = trade;
-        }
-
-        @Override
-        @Suspendable
-        public SignedTransaction call() throws FlowException {
-            // trade we are modifying must exists locally
-            QueryCriteria.VaultQueryCriteria queryCriteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-            VaultService vaultService = getServiceHub().getVaultService();
-            boolean exists = false;
-            for (StateAndRef<TradeState> stateAndRef : vaultService.queryBy(TradeState.class, queryCriteria).getStates()){
-                if (stateAndRef.getState().getData().getId().equals(trade.getId())){
-                    exists = true;
-                    break;
-                }
-            }
-
-            if (!exists) throw new FlowException(String.format("Trade with ID %s does not exists.", trade.getId().getId().toString()));
-
-            // we get the custodian state
-            List<Object> result = subFlow(new GetCustodianState());
-            StateAndRef<CustodianState> input = (StateAndRef<CustodianState>) result.get(0);
-            CustodianState custodianState = (CustodianState) result.get(1);
-
-
-            // if the custodian state already has this trade we replace it with new trade.
-            if (custodianState.getTrades() != null && !custodianState.getTrades().isEmpty()){
-                ArrayList<TradeState> tradeList = new ArrayList(custodianState.getTrades());
-                for (TradeState custodianTrade : tradeList){
-                    if (custodianTrade.getId().equals(trade.getId())){
-                        tradeList.remove(custodianTrade);
-                        tradeList.add(trade);
-                        custodianState.setTrades(tradeList);
-                        break;
-                    }
-                }
-            } else custodianState.setTrades(Arrays.asList(trade));
-
-            custodianState.setLastUpdated(new Timestamp(System.currentTimeMillis()));
-
-            // we are ready to generate the transaction and send the custodian Trade
-            List<PublicKey> signers = new ArrayList<>();
-            List<FlowSession> sessions = new ArrayList<>();
-            for (Party party : custodianState.getCustodians()){
-                signers.add(party.getOwningKey());
-                FlowSession flowSession = initiateFlow(party);
-                sessions.add(flowSession);
-            }
-            Party caller = getOurIdentity();
-            signers.add(caller.getOwningKey());
-            Command command = new Command<>(new CustodianContract.Commands.notifyTrade(), signers);
-
-            // we will generate the transaction
-            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
-            TransactionBuilder txBuilder = new TransactionBuilder(notary)
-                .addOutputState(custodianState,CustodianContract.ID)
-                .addCommand(command);
-
-            // if we have an input, we will include it
-            if (input != null) txBuilder.addInputState(input);
-
-            // we are ready to sign
-            SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
-
-            // we get custodians signature
-            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx,sessions));
-
-            // all done
-            subFlow(new FinalityFlow(fullySignedTx, sessions));
-            return fullySignedTx;
-        }
-    }
-
-    @InitiatedBy(UpdateTrade.class)
-    public static class UpdateTradeResponder extends FlowLogic<Void>{
-        private FlowSession caller;
-
-        public UpdateTradeResponder(FlowSession caller) {
-            this.caller = caller;
-        }
-
-        @Override
-        @Suspendable
-        public Void call() throws FlowException {
-            subFlow(new SignTransactionFlow(caller) {
-                @Override
-                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
-                    // no validations yet
-                }
-            });
-
-            subFlow(new ReceiveFinalityFlow(caller));
-            return null;
         }
     }
 }

@@ -270,7 +270,7 @@ public class TradeFlow {
             subFlow(new FinalityFlow(signedTransaction,Arrays.asList(buyerSession)));
 
             // we update the custodian.
-            subFlow(new CustodianFlows.UpdateTrade(trade));
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
 
             return null;
         }
@@ -300,7 +300,7 @@ public class TradeFlow {
             // we update the custodian.
             SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callerSession));
             TradeState trade = (TradeState) signedTransaction.getCoreTransaction().getOutput(0);
-            subFlow(new CustodianFlows.UpdateTrade(trade));
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
 
             return null;
         }
@@ -429,7 +429,7 @@ public class TradeFlow {
             subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
 
             // we update the custodiian
-            subFlow(new CustodianFlows.UpdateTrade(trade));
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
 
             return fullySignedTx;
         }
@@ -471,7 +471,7 @@ public class TradeFlow {
             }
 
             // we update the custodian
-            subFlow(new CustodianFlows.UpdateTrade(trade));
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
             return null;
         }
     }
@@ -658,6 +658,9 @@ public class TradeFlow {
             // we are done.
             subFlow(new FinalityFlow(signedTransaction,sellerSession));
 
+            // we are informing the custodian
+            subFlow(new CustodianFlows.SendTrade(tradeId));
+
             // bond is our. We will issue a new offer
             BondState bond = trade.getOffer().getBond();
             OfferState offer = new OfferState(new UniqueIdentifier(),caller, bond,trade.getOffer().getTicker(),100,100,trade.getSize(),false, new Date());
@@ -726,8 +729,13 @@ public class TradeFlow {
 
             SignedTransaction signedTransaction = subFlow(new ReceiveFinalityFlow(callerSession));
 
-            // we are generating the new Fiat Transaction
+            // we get the trade
             TradeState trade = signedTransaction.getCoreTransaction().outputsOfType(TradeState.class).get(0);
+
+            // We are informing the custodian
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
+
+            // we are generating the new Fiat Transaction
             TokenType fiatToken = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
             Amount fiatAmount = new Amount(trade.getSize(), fiatToken);
             Amount currentBalance = QueryUtilitiesKt.tokenBalance(getServiceHub().getVaultService(),fiatToken);
@@ -802,7 +810,7 @@ public class TradeFlow {
             subFlow(new FinalityFlow(signedTransaction,Arrays.asList(sellerSession)));
 
             // we update the custodian
-            subFlow(new CustodianFlows.UpdateTrade(trade));
+            subFlow(new CustodianFlows.SendTrade(tradeId));
 
             return signedTransaction;
         }
@@ -925,6 +933,9 @@ public class TradeFlow {
             participants.add(sellerSession);
             subFlow(new FinalityFlow(fullySignedTx,participants));
 
+            // we will notify custodians
+            subFlow(new CustodianFlows.SendTrade(tradeId));
+
             // now we will pay if we have the money
             TokenType fiat = FiatCurrency.Companion.getInstance(trade.getCurrency().getCurrencyCode());
             Amount balance = QueryUtilitiesKt.tokenBalance(vaultService,fiat);
@@ -971,7 +982,7 @@ public class TradeFlow {
 
             // we update the custodian
             TradeState trade = (TradeState) fullySignedTx.getCoreTransaction().getOutput(0);
-            subFlow(new CustodianFlows.UpdateTrade(trade));
+            subFlow(new CustodianFlows.SendTrade(trade.getId()));
 
             return null;
         }
