@@ -668,10 +668,20 @@ public class TradeFlow {
             // we are informing the custodian
             subFlow(new CustodianFlows.SendTrade(tradeId));
 
-            // bond is our. We will issue a new offer
-            BondState bond = trade.getOffer().getBond();
-            OfferState offer = new OfferState(new UniqueIdentifier(),caller, bond,trade.getOffer().getTicker(),100,100,trade.getSize(),false, new Date());
-            subFlow(new OfferFlow.Create(offer));
+            // bond is our. We will add it to a new offer if it doesn't exists.
+            OfferState offer = null;
+            for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class,criteria).getStates()){
+                if (stateAndRef.getState().getData().getBond().equals(trade.getOffer().getBond())){
+                    offer = stateAndRef.getState().getData();
+                }
+            }
+            if (offer == null) {
+                // no previous offer, we are creating a new one
+                BondState bond = trade.getOffer().getBond();
+                offer = new OfferState(new UniqueIdentifier(), caller, bond, trade.getOffer().getTicker(), 100, 100, trade.getSize(), false, new Date());
+                subFlow(new OfferFlow.Create(offer));
+            }
+
 
 
             // we are generating the new Fiat Transaction
