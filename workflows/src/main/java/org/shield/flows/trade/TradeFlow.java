@@ -672,7 +672,11 @@ public class TradeFlow {
             OfferState offer = null;
             for (StateAndRef<OfferState> stateAndRef : getServiceHub().getVaultService().queryBy(OfferState.class,criteria).getStates()){
                 if (stateAndRef.getState().getData().getBond().equals(trade.getOffer().getBond())){
-                    offer = stateAndRef.getState().getData();
+                    // we do have an offer with this bond, but needs to be issued by us too.
+                    if (stateAndRef.getState().getData().getIssuer().equals(caller)) {
+                        // we found an offer with this bond, issued by us. No need to reissue.
+                        offer = stateAndRef.getState().getData();
+                    }
                 }
             }
             if (offer == null) {
