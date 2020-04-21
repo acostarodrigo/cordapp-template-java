@@ -6,6 +6,8 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.messaging.CordaRPCOps;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
 import org.shield.custodian.CustodianState;
 import org.shield.offer.OfferState;
@@ -92,6 +94,42 @@ public class CustodianController {
 
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("settlementBlotter", jsonArray);
+        return getValidResponse(jsonObject);
+    }
+
+    @GetMapping("/settlementBlotterDetail")
+    public ResponseEntity<Response> getSettlementBlotterDetail(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        String tradeId = "";
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            tradeId = body.get("tradeId").textValue();
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray jsonArray = new JsonArray();
+        // todo this is not good performance. We loop each custodianState, consumed or not
+        // in search of an specific trade
+        QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
+        List<TradeState> tradeStateList = new ArrayList<>();
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            for (TradeState trade : custodianState.getTrades()){
+                if (trade.getId().getId().toString().equals(tradeId)){
+                    tradeStateList.add(trade);
+                }
+            }
+        }
+
+        List<TradeState> uniqueTrades = new ArrayList<>(new HashSet<>(tradeStateList));
+        for (TradeState tradeState : uniqueTrades){
+            jsonArray.add(tradeState.toJson());
+        }
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("detail", jsonArray);
         return getValidResponse(jsonObject);
     }
 }
