@@ -78,15 +78,18 @@ public class CustodianController {
 
         JsonArray jsonArray = new JsonArray();
         // for each custodian state, we get the list of trades
-        Set<TradeState> tradeStateList = new HashSet<>();
+        Set<TradeState> tradeStateSet = new HashSet<>();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
-            if (custodianState.getTrades() != null)
-                tradeStateList.addAll(custodianState.getTrades());
+            if (custodianState.getTrades() != null){
+                Set<TradeState> noDuplicates = new HashSet<>(custodianState.getTrades());
+                tradeStateSet.addAll(noDuplicates);
+            }
+
         }
 
-        if (tradeStateList.size() > 0) {
-            for (TradeState tradeState : tradeStateList) {
+        if (tradeStateSet.size() > 0) {
+            for (TradeState tradeState : tradeStateSet) {
                 // we add them to the json result
                 jsonArray.add(tradeState.toJson());
             }
