@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.function.Predicate;
 
 import static org.shield.webserver.response.Response.getConnectionErrorResponse;
@@ -78,7 +79,7 @@ public class CustodianController {
         JsonArray jsonArray = new JsonArray();
 
         // for each custodian state, we get the list of trades
-        List<TradeState> tradeStateList = new ArrayList<>();
+        Set<TradeState> tradeStateList = new HashSet<>();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getTrades() != null)
@@ -86,7 +87,7 @@ public class CustodianController {
         }
 
         // we generate a new list without duplicates
-        List<TradeState> uniqueTrades = new ArrayList<>(new HashSet<>(tradeStateList));
+        List<TradeState> uniqueTrades = new ArrayList<>(tradeStateList);
         if (uniqueTrades.size() > 0) {
             for (TradeState tradeState : uniqueTrades) {
                 // we add them to the json result
