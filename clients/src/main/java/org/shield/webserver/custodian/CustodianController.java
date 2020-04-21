@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import net.corda.core.contracts.StateAndRef;
+import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
@@ -83,7 +84,17 @@ public class CustodianController {
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getTrades() != null){
                 for (TradeState tradeState : custodianState.getTrades()){
-                    if (!tradeStateSet.contains(tradeState)) tradeStateSet.add(tradeState);
+                    final UniqueIdentifier tradeId = tradeState.getId();
+                    tradeStateSet.removeIf(new Predicate<TradeState>() {
+                        @Override
+                        public boolean test(TradeState tradeState) {
+                            if (tradeState.getId().equals(tradeId))
+                                return true;
+                            else
+                                return false;
+                        }
+                    });
+                    tradeStateSet.add(tradeState);
                 }
             }
 
