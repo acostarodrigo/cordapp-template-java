@@ -116,9 +116,11 @@ public class CustodianController {
         List<TradeState> tradeStateList = new ArrayList<>();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
-            for (TradeState trade : custodianState.getTrades()){
-                if (trade.getId().getId().toString().equals(tradeId)){
-                    tradeStateList.add(trade);
+            if (custodianState.getTrades() != null){
+                for (TradeState trade : custodianState.getTrades()){
+                    if (trade.getId().getId().toString().equals(tradeId)){
+                        tradeStateList.add(trade);
+                    }
                 }
             }
         }
