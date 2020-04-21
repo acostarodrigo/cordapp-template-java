@@ -81,16 +81,18 @@ public class CustodianController {
         List<TradeState> tradeStateList = new ArrayList<>();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
-            tradeStateList.addAll(custodianState.getTrades());
+            if (custodianState.getTrades() != null)
+                tradeStateList.addAll(custodianState.getTrades());
         }
 
         // we generate a new list without duplicates
         List<TradeState> uniqueTrades = new ArrayList<>(new HashSet<>(tradeStateList));
-        for (TradeState tradeState : uniqueTrades){
-            // we add them to the json result
-            jsonArray.add(tradeState.toJson());
+        if (uniqueTrades.size() > 0) {
+            for (TradeState tradeState : uniqueTrades) {
+                // we add them to the json result
+                jsonArray.add(tradeState.toJson());
+            }
         }
-
 
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("settlementBlotter", jsonArray);
