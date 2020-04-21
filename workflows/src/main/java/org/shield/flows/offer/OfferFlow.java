@@ -183,6 +183,9 @@ public class OfferFlow {
 
             offer.setAfs(afs);
 
+            // we can't allow an empty offer which is AFS
+            if (offer.getAfsSize() == 0 && offer.isAfs()) throw new FlowException("Offer is empty. We can't allow to be available for sale.");
+
             SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));
             return signedTransaction;
         }
@@ -230,6 +233,9 @@ public class OfferFlow {
 
                 if (balance.getQuantity() < offer.getAfsSize()) throw new FlowException(String.format("Not enought balance to submit offer. Current balance is %s", String.valueOf(balance.getQuantity())));
             }
+
+            // we can't allow an empty offer which is AFS
+            if (offer.getAfsSize() == 0 && offer.isAfs()) throw new FlowException("Offer is empty. We can't allow to be available for sale.");
 
             // we notify of the changes
             SignedTransaction signedTransaction = subFlow(new NotifyBuyers(input, offer));

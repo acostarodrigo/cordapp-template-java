@@ -444,6 +444,63 @@ public class TradeTests {
         assertTrue(balance.getQuantity() == 999000);
 
     }
+
+    // after offer is sold out, automatically should be set to AFS = false. and not be able to change back.
+    @Test
+    public void emptyOfferTest() throws ExecutionException, InterruptedException {
+        // we create the bond
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date());
+        // manipulate date
+        c.add(Calendar.YEAR, 1);
+        Date date = c.getTime();
+        // we issue a small bond
+        BondState bondState = new BondState("Test", "test",Currency.getInstance("USD"),date, 1,1,1,DealType.REG_S, 1,1000,1,date, 1,0, BondType.VANILA);
+        CordaFuture cordaFuture = issuerNode.startFlow(new BondFlow.Issue(bondState));
+        mockNet.runNetwork();
+        cordaFuture.get();
+        OfferState myOffer = issuerNode.getServices().getVaultService().queryBy(OfferState.class).getStates().get(1).getState().getData();
+
+        cordaFuture = issuerNode.startFlow(new OfferFlow.setAFS(myOffer.getOfferId(), true));
+        mockNet.runNetwork();
+        cordaFuture.get();
+
+        // we issue some money
+        cordaFuture = issuerNode.startFlow(new USDFiatTokenFlow.Issue(broker1, 100000));
+        mockNet.runNetwork();
+        cordaFuture.get();
+
+
+        // we create the trade
+        myOffer = issuerNode.getServices().getVaultService().queryBy(OfferState.class).getStates().get(1).getState().getData();
+        TradeState myTrade = new TradeState(new UniqueIdentifier(),myOffer, new Date(), new Date(), broker1,broker1,issuer,"yo",100,1,1000,1000,Currency.getInstance("USD"), State.PROPOSED,new Date());
+        cordaFuture = broker1Node.startFlow(new TradeFlow.Create(myTrade));
+        mockNet.runNetwork();
+        cordaFuture.get();
+
+        // issuer accepts the trade
+        cordaFuture = issuerNode.startFlow(new TradeFlow.AcceptSeller(myTrade.getId()));
+        mockNet.runNetwork();
+        cordaFuture.get();
+
+        // at this point, offer should be not AFS. We will check in all nodes.
+        myOffer = issuerNode.getServices().getVaultService().queryBy(OfferState.class).getStates().get(1).getState().getData();
+        assertFalse(myOffer.isAfs());
+        myOffer = broker1Node.getServices().getVaultService().queryBy(OfferState.class).getStates().get(1).getState().getData();
+        assertFalse(myOffer.isAfs());
+        myOffer = broker2Node.getServices().getVaultService().queryBy(OfferState.class).getStates().get(1).getState().getData();
+        assertFalse(myOffer.isAfs());
+
+        try {
+            // changing AFS should not be permited.
+            cordaFuture = issuerNode.startFlow(new OfferFlow.setAFS(myOffer.getOfferId(), true));
+            mockNet.runNetwork();
+            cordaFuture.get();
+            assertTrue(false); // this should never been executed
+        } catch (Exception e){
+            // expected.
+        }
+    }
     @After
     public void cleanUp(){
         TestHelper.cleanUpNetwork();

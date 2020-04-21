@@ -407,6 +407,9 @@ public class TradeFlow {
             long currentAfsSize = offer.getAfsSize();
             offer.setAfsSize(currentAfsSize-trade.getSize());
 
+            // if offer is empty, then we are switching to not AFS
+            if (offer.getAfsSize() == 0) offer.setAfs(false);
+
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(tradeStateStateAndRef)
                 .addInputState(offerStateStateAndRef)
@@ -1005,6 +1008,8 @@ public class TradeFlow {
 
             // now we will notify all buyers about the new offer change
             OfferState offer = (OfferState) fullySignedTx.getCoreTransaction().outRef(1).getState().getData();
+            if (offer.getAfsSize() == 0) offer.setAfs(false);
+
             subFlow(new OfferFlow.NotifyBuyers(fullySignedTx.getCoreTransaction().outRef(1), offer));
 
 
