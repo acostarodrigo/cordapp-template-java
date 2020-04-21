@@ -82,8 +82,9 @@ public class CustodianController {
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getTrades() != null){
-                Set<TradeState> noDuplicates = new HashSet<>(custodianState.getTrades());
-                tradeStateSet.addAll(noDuplicates);
+                for (TradeState tradeState : custodianState.getTrades()){
+                    if (!tradeStateSet.contains(tradeState)) tradeStateSet.add(tradeState);
+                }
             }
 
         }
