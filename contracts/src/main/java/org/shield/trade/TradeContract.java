@@ -56,6 +56,7 @@ public class TradeContract implements Contract {
                 // we don't allow any change in the trade other than state.
                 // So changing input state to pending should be equal to output
                 input.setState(State.PENDING);
+                input.setStateUpdate(output.getStateUpdate());
                 require.using("Trade modified from original before accepting.", output.equals(input));
                 // must have issuer and seller / buyer signature
                 require.using("Only two signatures are required", signers.size() == 2);
@@ -78,7 +79,7 @@ public class TradeContract implements Contract {
 
         // trade has been settled.
         if (command instanceof TradeContract.Commands.Settled){
-
+            // todo add validations
         }
 
     }

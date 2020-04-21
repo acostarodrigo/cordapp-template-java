@@ -195,19 +195,20 @@ public class TradeState implements ContractState, Serializable {
             getProceeds() == that.getProceeds() &&
             Objects.equals(getId(), that.getId()) &&
             Objects.equals(getOffer(), that.getOffer()) &&
-            Objects.equals(getIssuer(), that.getIssuer()) &&
-            Objects.equals(getArranger(), that.getArranger()) &&
             Objects.equals(getTradeDate(), that.getTradeDate()) &&
             Objects.equals(getSettleDate(), that.getSettleDate()) &&
+            Objects.equals(getIssuer(), that.getIssuer()) &&
             Objects.equals(getBuyer(), that.getBuyer()) &&
             Objects.equals(getSeller(), that.getSeller()) &&
             Objects.equals(getCurrency(), that.getCurrency()) &&
-            getState() == that.getState();
+            getState() == that.getState() &&
+            Objects.equals(getStateUpdate(), that.getStateUpdate()) &&
+            Objects.equals(getArranger(), that.getArranger());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(getId(), getOffer(), getTradeDate(), getSettleDate(), getIssuer(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState(), getArranger());
+        return Objects.hash(getId(), getOffer(), getTradeDate(), getSettleDate(), getIssuer(), getBuyer(), getSeller(), getPrice(), getYield(), getSize(), getProceeds(), getCurrency(), getState(), getStateUpdate(), getArranger());
     }
 
     @Override
