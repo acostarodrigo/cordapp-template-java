@@ -59,7 +59,7 @@ public class TradeBuilder {
         Party issuer = proxy.nodeInfo().getLegalIdentities().get(0);
 
         // we generate the trade
-        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,issuer, issuer,seller, arranger, price,yield,size,proceeds, currency,state);
+        TradeState trade = new TradeState(id,offer, tradeDate,settleDate,issuer, issuer,seller, arranger, price,yield,size,proceeds, currency,state, new Date());
         return trade;
     }
 
