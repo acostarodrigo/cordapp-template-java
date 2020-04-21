@@ -33,13 +33,11 @@ public class DetailedTradeBlotter {
 
     public JsonObject toJson(){
         JsonObject jsonObject = trade.toJson();
-        JsonArray jsonArray = new JsonArray();
-        for (Map.Entry<State,Date> entry : stateDateMap.entrySet()){
-            JsonObject state = new JsonObject();
-            state.addProperty(entry.getKey().toString(), entry.getValue().toString());
-            jsonArray.add(state);
+        if (stateDateMap.size()>0) {
+            for (Map.Entry<State, Date> entry : stateDateMap.entrySet()) {
+                jsonObject.addProperty(entry.getKey().toString(), entry.getValue().toString());
+            }
         }
-        jsonObject.add("states", jsonArray);
         return jsonObject;
     }
 }
