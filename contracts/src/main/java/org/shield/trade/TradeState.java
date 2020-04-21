@@ -31,6 +31,7 @@ public class TradeState implements ContractState, Serializable {
     private long proceeds;
     private Currency currency;
     private State state;
+    private Date stateUpdate;
     private String arranger;
 
     @NotNull
@@ -44,7 +45,7 @@ public class TradeState implements ContractState, Serializable {
         // construtor for deserialization
     }
 
-    public TradeState(UniqueIdentifier id, OfferState offer, Date tradeDate, Date settleDate, Party issuer, Party buyer, Party seller, String arranger, float price, float yield, long size, long proceeds, Currency currency, State state) {
+    public TradeState(UniqueIdentifier id, OfferState offer, Date tradeDate, Date settleDate, Party issuer, Party buyer, Party seller, String arranger, float price, float yield, long size, long proceeds, Currency currency, State state, Date stateUpdate) {
         this.id = id;
         this.offer = offer;
         this.tradeDate = tradeDate;
@@ -59,6 +60,7 @@ public class TradeState implements ContractState, Serializable {
         this.proceeds = proceeds;
         this.currency = currency;
         this.state = state;
+        this.stateUpdate = stateUpdate;
     }
 
 
@@ -174,6 +176,14 @@ public class TradeState implements ContractState, Serializable {
         this.issuer = issuer;
     }
 
+    public Date getStateUpdate() {
+        return stateUpdate;
+    }
+
+    public void setStateUpdate(Date stateUpdate) {
+        this.stateUpdate = stateUpdate;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -217,6 +227,7 @@ public class TradeState implements ContractState, Serializable {
             ", proceeds=" + proceeds +
             ", currency=" + currency +
             ", state=" + state +
+            ", stateUpdate=" + stateUpdate +
             '}';
     }
 
@@ -236,6 +247,8 @@ public class TradeState implements ContractState, Serializable {
         jsonObject.addProperty("proceeds",proceeds);
         jsonObject.addProperty("currency",currency.getCurrencyCode());
         jsonObject.addProperty("state",state.toString());
+        jsonObject.addProperty("stateUpdate",stateUpdate.toString());
+
         return jsonObject;
     }
 }

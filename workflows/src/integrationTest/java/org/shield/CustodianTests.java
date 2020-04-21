@@ -1,6 +1,13 @@
 package org.shield;
 
 import com.google.gson.JsonObject;
+import net.corda.core.contracts.StateAndRef;
+import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.*;
+import net.corda.core.transactions.SignedTransaction;
+import net.corda.testing.internal.vault.DummyLinearContract;
+import org.jgroups.protocols.pbcast.STATE;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -9,6 +16,11 @@ import org.shield.custodian.CustodianState;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
 
+import java.time.Instant;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;
@@ -138,6 +150,23 @@ public class CustodianTests {
         CustodianState traderCustodianState = null;
         traderCustodianState = broker1Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
         assertEquals(traderCustodianState.getTrades().get(0), custodianState.getTrades().get(0));
+    }
+
+
+    @Test
+    public void queryTest() throws ExecutionException, InterruptedException {
+        tradeTests.setNetwork();
+        tradeTests.acceptTradeWithBalance();
+
+        Set<Class<CustodianState>> classes = new HashSet<>();
+        classes.add(CustodianState.class);
+        List<StateAndRef<CustodianState>> stateAndRefList = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates();
+        for (StateAndRef<CustodianState> stateAndRef : stateAndRefList){
+            QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL, classes, Arrays.asList(stateAndRef.getRef()));
+            for (Vault.StateMetadata metadata : custodianNode.getServices().getVaultService().queryBy(DummyLinearContract.State.class, criteria).getStatesMetadata()){
+                System.out.println(metadata.getConsumedTime().toString());
+            }
+        }
     }
 
     @After

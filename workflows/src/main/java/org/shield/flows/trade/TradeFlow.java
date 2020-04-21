@@ -118,6 +118,8 @@ public class TradeFlow {
             // we validate data of the trade
             progressTracker.setCurrentStep(VALIDATE_TRADE);
             trade.setState(State.PROPOSED);
+            trade.setStateUpdate(new Date());
+
             if (trade.getId() == null) trade.setId(new UniqueIdentifier());
             if (trade.getSize() > trade.getOffer().getAfsSize())
                 throw new FlowException(String.format("Trade size is incorrect. AFS is %s while trade size is %s",String.valueOf(trade.getOffer().getAfsSize()),String.valueOf(trade.getSize())));
@@ -260,6 +262,7 @@ public class TradeFlow {
             Command command = new Command<>(new TradeContract.Commands.Cancelled(), requiredSigners);
 
             trade.setState(State.CANCELLED);
+            trade.setStateUpdate(new Date());
 
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(tradeStateStateAndRef)
@@ -399,6 +402,7 @@ public class TradeFlow {
             Command tradeCommand = new Command<>(new TradeContract.Commands.Pending(), requiredSigners);
             Command offerCommand = new Command<>(new OfferContract.Commands.notifyBuyers(), trade.getSeller().getOwningKey());
             trade.setState(State.PENDING);
+            trade.setStateUpdate(new Date());
 
             long currentAfsSize = offer.getAfsSize();
             offer.setAfsSize(currentAfsSize-trade.getSize());
@@ -654,6 +658,7 @@ public class TradeFlow {
 
             // and add the trade as output.
             trade.setState(State.SETTLED);
+            trade.setStateUpdate(new Date());
             txBuilder.addOutputState(trade, TradeContract.ID);
 
             SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
@@ -817,6 +822,7 @@ public class TradeFlow {
             Command command = new Command<>(new TradeContract.Commands.Cancelled(), requiredSigners);
 
             trade.setState(State.CANCELLED);
+            trade.setStateUpdate(new Date());
 
             TransactionBuilder txBuilder = new TransactionBuilder(notary)
                 .addInputState(input)
@@ -925,6 +931,7 @@ public class TradeFlow {
             Command tradeCommand = new Command<>(new TradeContract.Commands.Pending(), requiredSigners);
             Command offerCommand = new Command<>(new OfferContract.Commands.notifyBuyers(), trade.getSeller().getOwningKey());
             trade.setState(State.PENDING);
+            trade.setStateUpdate(new Date());
 
             long currentAfsSize = offer.getAfsSize();
             offer.setAfsSize(currentAfsSize-trade.getSize());
