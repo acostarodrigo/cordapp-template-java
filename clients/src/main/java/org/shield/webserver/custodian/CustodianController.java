@@ -109,7 +109,6 @@ public class CustodianController {
             return getConnectionErrorResponse(e);
         }
 
-        JsonArray jsonArray = new JsonArray();
         // todo this is not good performance. We loop each custodianState, consumed or not
         // in search of an specific trade
         QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
@@ -126,12 +125,14 @@ public class CustodianController {
         }
 
         List<TradeState> uniqueTrades = new ArrayList<>(new HashSet<>(tradeStateList));
+        DetailedTradeBlotter detailedTradeBlotter = new DetailedTradeBlotter();
         for (TradeState tradeState : uniqueTrades){
-            jsonArray.add(tradeState.toJson());
+            detailedTradeBlotter.setTrade(tradeState);
+            detailedTradeBlotter.addState(tradeState.getState(), tradeState.getStateUpdate());
         }
 
         JsonObject jsonObject = new JsonObject();
-        jsonObject.add("detail", jsonArray);
+        jsonObject.add("detail", detailedTradeBlotter.toJson());
         return getValidResponse(jsonObject);
     }
 }
