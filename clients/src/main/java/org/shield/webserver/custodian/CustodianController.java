@@ -277,4 +277,36 @@ public class CustodianController {
         jsonObject.add("controlBook", result);
         return getValidResponse(jsonObject);
     }
+
+    @GetMapping("/controlBookAttributes")
+    public ResponseEntity<Response> getControlBookAttributes(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        String bondId = "";
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            bondId = body.get("bondId").asText();
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        JsonObject result = new JsonObject();
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            if (custodianState.getBonds() != null){
+                for (BondState bondState : custodianState.getBonds()){
+                    if (bondState.getId().equals(bondId)){
+                        result = bondState.toJson();
+                        break;
+                    }
+                }
+            }
+
+        }
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("attributes", result);
+        return getValidResponse(jsonObject);
+    }
 }
