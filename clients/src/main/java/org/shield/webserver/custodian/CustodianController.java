@@ -163,7 +163,6 @@ public class CustodianController {
             return getConnectionErrorResponse(e);
         }
 
-        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
         JsonArray jsonArray = new JsonArray();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
@@ -171,15 +170,7 @@ public class CustodianController {
                 for (BondState bondState : custodianState.getBonds()){
                     String bondId = bondState.getId();
                     Party issuer = bondState.getIssuer();
-                    StringBuilder tickerBuilder = new StringBuilder();
-                    tickerBuilder.append(bondId);
-                    tickerBuilder.append(" ");
-                    tickerBuilder.append(bondState.getCouponRate());
-                    tickerBuilder.append("% ");
-                    tickerBuilder.append(f.format(bondState.getMaturityDate()));
-                    tickerBuilder.append(" ");
-                    tickerBuilder.append(bondState.getDenomination().getCurrencyCode());
-                    String ticker =tickerBuilder.toString();
+
                     Map<Party, Pair<Long, Date>> aggregatedTraders = new HashMap<>();
                     if (custodianState.getTrades() != null){
                         for (TradeState tradeState : custodianState.getTrades()){
@@ -206,7 +197,7 @@ public class CustodianController {
                     for (Map.Entry<Party, Pair<Long, Date>> entry : aggregatedTraders.entrySet()){
                             JsonObject jsonObject = new JsonObject();
                             jsonObject.addProperty("bond", bondId);
-                            jsonObject.addProperty("issue", ticker);
+                            jsonObject.addProperty("issue", bondState.getTicker());
                             jsonObject.addProperty("issuer", issuer.getName().toString());
                             jsonObject.addProperty("holder", entry.getKey().getName().toString());
                             jsonObject.addProperty("size", entry.getValue().getFirst());
@@ -247,23 +238,13 @@ public class CustodianController {
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getBonds() != null){
 
-                SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
-
                 JsonObject issuerJson = new JsonObject();
                 issuerJson.addProperty("issuer",  custodianState.getIssuer().getName().toString());
                 JsonArray issuerBonds = new JsonArray();
                 for (BondState bondState : custodianState.getBonds()){
                     JsonObject bondJson = new JsonObject();
                     bondJson.addProperty("id", bondState.getId());
-                    StringBuilder tickerBuilder = new StringBuilder();
-                    tickerBuilder.append(bondState.getId());
-                    tickerBuilder.append(" ");
-                    tickerBuilder.append(bondState.getCouponRate());
-                    tickerBuilder.append(" ");
-                    tickerBuilder.append(f.format(bondState.getMaturityDate()));
-                    tickerBuilder.append(" ");
-                    tickerBuilder.append(bondState.getDenomination().getCurrencyCode());
-                    bondJson.addProperty("ticker", tickerBuilder.toString());
+                    bondJson.addProperty("ticker", bondState.getTicker());
 
                     issuerBonds.add(bondJson);
                 }
