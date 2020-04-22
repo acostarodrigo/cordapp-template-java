@@ -163,7 +163,7 @@ public class CustodianController {
             return getConnectionErrorResponse(e);
         }
 
-        SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
+        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
         JsonArray jsonArray = new JsonArray();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
@@ -228,5 +228,52 @@ public class CustodianController {
     @GetMapping("/investorList")
     public ResponseEntity<Response> getInvestorList(@NotNull @RequestBody JsonNode body){
         return getMasterSecurityHolderFile(body);
+    }
+
+
+    @GetMapping("/controlBookBonds")
+    public ResponseEntity<Response> getControlBookBonds(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        JsonArray jsonArray = new JsonArray();
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            if (custodianState.getBonds() != null){
+
+                SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
+
+                JsonObject issuerJson = new JsonObject();
+                issuerJson.addProperty("issuer",  custodianState.getIssuer().getName().toString());
+                JsonArray issuerBonds = new JsonArray();
+                for (BondState bondState : custodianState.getBonds()){
+                    JsonObject bondJson = new JsonObject();
+                    bondJson.addProperty("id", bondState.getId());
+                    StringBuilder tickerBuilder = new StringBuilder();
+                    tickerBuilder.append(bondState.getId());
+                    tickerBuilder.append(" ");
+                    tickerBuilder.append(bondState.getCouponRate());
+                    tickerBuilder.append(" ");
+                    tickerBuilder.append(f.format(bondState.getMaturityDate()));
+                    tickerBuilder.append(" ");
+                    tickerBuilder.append(bondState.getDenomination().getCurrencyCode());
+                    bondJson.addProperty("ticker", tickerBuilder.toString());
+
+                    issuerBonds.add(bondJson);
+                }
+
+                jsonArray.add(issuerJson);
+            }
+        }
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("controlBook", jsonArray);
+        return getValidResponse(jsonObject);
     }
 }
