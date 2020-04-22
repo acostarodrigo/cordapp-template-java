@@ -170,6 +170,8 @@ public class CustodianController {
                     String bondId = bondState.getId();
                     Party issuer = bondState.getIssuer();
                     Map<Party, Pair<Long, Date>> aggregatedTraders = new HashMap<>();
+                    // we add the issuer first.
+                    aggregatedTraders.put(issuer, new Pair<>(bondState.getDealSize(), bondState.getStartDate()));
                     if (custodianState.getTrades() != null){
                         for (TradeState tradeState : custodianState.getTrades()){
                             if (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED)){
