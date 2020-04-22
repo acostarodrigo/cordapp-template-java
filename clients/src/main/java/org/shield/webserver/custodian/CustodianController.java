@@ -29,6 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Predicate;
 
@@ -162,6 +163,7 @@ public class CustodianController {
             return getConnectionErrorResponse(e);
         }
 
+        SimpleDateFormat f = new SimpleDateFormat("yyyyMMdd");
         JsonArray jsonArray = new JsonArray();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
@@ -174,7 +176,7 @@ public class CustodianController {
                     tickerBuilder.append(" ");
                     tickerBuilder.append(bondState.getCouponRate());
                     tickerBuilder.append("% ");
-                    tickerBuilder.append(bondState.getMaturityDate().toString());
+                    tickerBuilder.append(f.format(bondState.getMaturityDate()));
                     tickerBuilder.append(" ");
                     tickerBuilder.append(bondState.getDenomination().getCurrencyCode());
                     String ticker =tickerBuilder.toString();
