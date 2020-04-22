@@ -169,9 +169,16 @@ public class CustodianController {
                 for (BondState bondState : custodianState.getBonds()){
                     String bondId = bondState.getId();
                     Party issuer = bondState.getIssuer();
+                    StringBuilder tickerBuilder = new StringBuilder();
+                    tickerBuilder.append(bondId);
+                    tickerBuilder.append(" ");
+                    tickerBuilder.append(bondState.getCouponRate());
+                    tickerBuilder.append("% ");
+                    tickerBuilder.append(bondState.getMaturityDate().toString());
+                    tickerBuilder.append(" ");
+                    tickerBuilder.append(bondState.getDenomination().getCurrencyCode());
+                    String ticker =tickerBuilder.toString();
                     Map<Party, Pair<Long, Date>> aggregatedTraders = new HashMap<>();
-
-
                     if (custodianState.getTrades() != null){
                         for (TradeState tradeState : custodianState.getTrades()){
                             if (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED)){
@@ -196,11 +203,12 @@ public class CustodianController {
                     // at this point we have the bond, issuer and a map with all traders
                     for (Map.Entry<Party, Pair<Long, Date>> entry : aggregatedTraders.entrySet()){
                             JsonObject jsonObject = new JsonObject();
-                            jsonObject.addProperty("bond", bondId);
+                            jsonObject.addProperty("bond", ticker);
                             jsonObject.addProperty("issuer", issuer.getName().toString());
                             jsonObject.addProperty("holder", entry.getKey().getName().toString());
                             jsonObject.addProperty("size", entry.getValue().getFirst());
                             jsonObject.addProperty("lastTradeDate", entry.getValue().getSecond().toString());
+                            jsonObject.addProperty("currency", bondState.getDenomination().getCurrencyCode());
 
                             jsonArray.add(jsonObject);
                     }
