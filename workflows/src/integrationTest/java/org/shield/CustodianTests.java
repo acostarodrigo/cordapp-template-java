@@ -153,22 +153,6 @@ public class CustodianTests {
     }
 
 
-    @Test
-    public void queryTest() throws ExecutionException, InterruptedException {
-        tradeTests.setNetwork();
-        tradeTests.acceptTradeWithBalance();
-
-        Set<Class<CustodianState>> classes = new HashSet<>();
-        classes.add(CustodianState.class);
-        List<StateAndRef<CustodianState>> stateAndRefList = custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates();
-        for (StateAndRef<CustodianState> stateAndRef : stateAndRefList){
-            QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL, classes, Arrays.asList(stateAndRef.getRef()));
-            for (Vault.StateMetadata metadata : custodianNode.getServices().getVaultService().queryBy(DummyLinearContract.State.class, criteria).getStatesMetadata()){
-                System.out.println(metadata.getConsumedTime().toString());
-            }
-        }
-    }
-
     @After
     public void cleanUp(){
         TestHelper.cleanUpNetwork();
