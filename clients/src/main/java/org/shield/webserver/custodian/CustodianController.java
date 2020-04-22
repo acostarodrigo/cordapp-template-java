@@ -4,14 +4,18 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import kotlin.Pair;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
+import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
+import org.shield.bond.BondState;
 import org.shield.custodian.CustodianState;
 import org.shield.offer.OfferState;
+import org.shield.trade.State;
 import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
@@ -25,10 +29,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Predicate;
 
 import static org.shield.webserver.response.Response.getConnectionErrorResponse;
@@ -148,6 +149,57 @@ public class CustodianController {
 
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("detail", detailedTradeBlotter.toJson());
+        return getValidResponse(jsonObject);
+    }
+
+    @GetMapping("/masterFile")
+    public ResponseEntity<Response> getMasterSecurityHolderFile(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray jsonArray = new JsonArray();
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            if (custodianState.getBonds() != null) {
+                for (BondState bondState : custodianState.getBonds()){
+                    String bondId = bondState.getId();
+                    Party issuer = bondState.getIssuer();
+                    Map<Party, Pair<Long, Date>> aggregatedTraders = new HashMap<>();
+                    if (custodianState.getTrades() != null){
+                        for (TradeState tradeState : custodianState.getTrades()){
+                            if (tradeState.getOffer().getBond().getId().equals(bondId) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED))){
+                                if (aggregatedTraders.containsKey(tradeState.getBuyer())){
+                                    // we have a buyer already, so lets sum the size
+                                    aggregatedTraders.replace(tradeState.getBuyer(),new Pair<>(tradeState.getSize(), tradeState.getTradeDate()));
+                                } else {
+                                    aggregatedTraders.put(tradeState.getBuyer(), new Pair<>(tradeState.getSize(), tradeState.getTradeDate()));
+                                }
+                            }
+                        }
+                    }
+
+                    // at this point we have the bond, issuer and a map with all traders
+                    for (Map.Entry<Party, Pair<Long, Date>> entry : aggregatedTraders.entrySet()){
+                        JsonObject jsonObject = new JsonObject();
+                        jsonObject.addProperty("bond", bondId);
+                        jsonObject.addProperty("issuer", issuer.getName().toString());
+                        jsonObject.addProperty("holder", entry.getKey().getName().toString());
+                        jsonObject.addProperty("size", entry.getValue().getFirst());
+                        jsonObject.addProperty("lastTradeDate", entry.getValue().getSecond().toString());
+
+                        jsonArray.add(jsonObject);
+                    }
+
+                }
+            }
+        }
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("book", jsonArray);
         return getValidResponse(jsonObject);
     }
 }
