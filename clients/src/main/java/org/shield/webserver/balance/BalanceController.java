@@ -144,6 +144,7 @@ public class BalanceController {
             TradeState tradeState = stateAndRef.getState().getData();
             if (tradeState.getState().equals(State.PENDING)){
                 JsonObject upcomingJson = new JsonObject();
+                upcomingJson.addProperty("tradeId", tradeState.getId().getId().toString());
                 upcomingJson.addProperty("buyer", tradeState.getBuyer().getName().toString());
                 upcomingJson.addProperty("seller", tradeState.getSeller().getName().toString());
                 upcomingJson.addProperty("description", tradeState.getOffer().getBond().getTicker());
