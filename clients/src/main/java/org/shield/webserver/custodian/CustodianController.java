@@ -242,7 +242,7 @@ public class CustodianController {
         }
 
         QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-        JsonArray jsonArray = new JsonArray();
+        JsonArray result = new JsonArray();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getBonds() != null){
@@ -267,13 +267,14 @@ public class CustodianController {
 
                     issuerBonds.add(bondJson);
                 }
-
-                jsonArray.add(issuerJson);
+                issuerJson.add("bonds", issuerBonds);
+                result.add(issuerJson);
             }
+
         }
 
         JsonObject jsonObject = new JsonObject();
-        jsonObject.add("controlBook", jsonArray);
+        jsonObject.add("controlBook", result);
         return getValidResponse(jsonObject);
     }
 }
