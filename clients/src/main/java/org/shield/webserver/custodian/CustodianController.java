@@ -175,7 +175,8 @@ public class CustodianController {
                             if (tradeState.getOffer().getBond().getId().equals(bondId) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED))){
                                 if (aggregatedTraders.containsKey(tradeState.getBuyer())){
                                     // we have a buyer already, so lets sum the size
-                                    aggregatedTraders.replace(tradeState.getBuyer(),new Pair<>(tradeState.getSize(), tradeState.getTradeDate()));
+                                    long currentSize = aggregatedTraders.get(tradeState.getBuyer()).getFirst();
+                                    aggregatedTraders.replace(tradeState.getBuyer(),new Pair<>(tradeState.getSize() + currentSize, tradeState.getTradeDate()));
                                 } else {
                                     aggregatedTraders.put(tradeState.getBuyer(), new Pair<>(tradeState.getSize(), tradeState.getTradeDate()));
                                 }
