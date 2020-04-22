@@ -19,6 +19,8 @@ import org.json.simple.JSONObject;
 import org.shield.fiat.FiatState;
 import org.shield.fiat.FiatTransaction;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
+import org.shield.trade.State;
+import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
@@ -125,6 +127,41 @@ public class BalanceController {
         response.add("transactions", transactions);
         return getValidResponse(response);
     }
+
+    @GetMapping("/obligations")
+    public ResponseEntity<Response> getObligations(@NotNull @RequestBody JsonNode body) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(), User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray transactions = new JsonArray();
+        QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<TradeState> stateAndRef : proxy.vaultQueryByCriteria(criteria, TradeState.class).getStates()){
+            TradeState tradeState = stateAndRef.getState().getData();
+            if (tradeState.getState().equals(State.PENDING)){
+                JsonObject upcomingJson = new JsonObject();
+                upcomingJson.addProperty("buyer", tradeState.getBuyer().getName().toString());
+                upcomingJson.addProperty("seller", tradeState.getSeller().getName().toString());
+                upcomingJson.addProperty("description", tradeState.getOffer().getBond().getTicker());
+                upcomingJson.addProperty("arranger", tradeState.getArranger());
+                upcomingJson.addProperty("amount", tradeState.getSize());
+                upcomingJson.addProperty("currency", tradeState.getCurrency().getCurrencyCode());
+
+                transactions.add(upcomingJson);
+            }
+        }
+
+        JsonObject response = new JsonObject();
+        response.add("obligations", transactions);
+        return getValidResponse(response);
+
+    }
+
+
 
     private void generateConnection(User user){
         connection = new Connection(user);
