@@ -10,6 +10,8 @@ import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
+import org.shield.fiat.FiatState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.offer.OfferState;
 import org.shield.trade.TradeState;
 
@@ -25,6 +27,7 @@ public class CustodianState implements Serializable,ContractState {
     private List<BondState> bonds;
     private List<TradeState> trades;
     private List<OfferState> offers;
+    private List<FiatState> fiats;
     private Date lastUpdated;
 
     @ConstructorForDeserialization
@@ -92,6 +95,14 @@ public class CustodianState implements Serializable,ContractState {
         this.lastUpdated = lastUpdated;
     }
 
+    public List<FiatState> getFiats() {
+        return fiats;
+    }
+
+    public void setFiats(List<FiatState> fiats) {
+        this.fiats = fiats;
+    }
+
     public JsonObject toJson(){
         JsonObject result = new JsonObject();
         result.addProperty("issuer", issuer.getName().toString());
@@ -115,14 +126,29 @@ public class CustodianState implements Serializable,ContractState {
             result.add("trades", trades);
         }
 
-
+        // we are adding the offers
         if (getOffers() != null){
-            // we are adding the offers
             JsonArray offers = new JsonArray();
             for (OfferState offer : getOffers()){
                 offers.add(offer.toJson());
             }
             result.add("offers", offers);
+        }
+
+        // we are adding the fiat transactions
+        if (getFiats() != null){
+            JsonArray fiats = new JsonArray();
+            for (FiatState fiat : getFiats()){
+                JsonObject issuer = new JsonObject();
+                issuer.addProperty("issuer", fiat.getIssuer().getName().toString());
+                JsonArray transactions = new JsonArray();
+                for (FiatTransaction fiatTransaction : fiat.getFiatTransactionList()){
+                    transactions.add(fiatTransaction.toJson());
+                }
+                issuer.add("transactions",transactions);
+                fiats.add(issuer);
+            }
+            result.add("fiats", fiats);
         }
 
         // all ready to return JSON
