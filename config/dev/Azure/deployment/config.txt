@@ -1,0 +1,1 @@
+~/invectorIQ/projects/securitize/sourceCode/cordapp-shield-java/build/nodes/BNO acostarodrigo@23.99.231.7 /home/acostarodrigo/ShieldCorda/build/nodes/BNO

@@ -5,6 +5,10 @@ ssh -i cordaAzure rodrigo@13.89.63.69
 # Node 3
 ssh -i cordaAzure acostarodrigo@13.89.226.189
 
+# reset dir
+rm -dr build/nodes/
+mkdir build/nodes
+ls build/nodes
 
 ## copy to nodes
 # Node 1
