@@ -195,14 +195,16 @@ public class CustodianController {
 
                     // at this point we have the bond, issuer and a map with all traders
                     for (Map.Entry<Party, Pair<Long, Date>> entry : aggregatedTraders.entrySet()){
-                        JsonObject jsonObject = new JsonObject();
-                        jsonObject.addProperty("bond", bondId);
-                        jsonObject.addProperty("issuer", issuer.getName().toString());
-                        jsonObject.addProperty("holder", entry.getKey().getName().toString());
-                        jsonObject.addProperty("size", entry.getValue().getFirst());
-                        jsonObject.addProperty("lastTradeDate", entry.getValue().getSecond().toString());
+                        if (entry.getValue().getFirst() > 0){
+                            JsonObject jsonObject = new JsonObject();
+                            jsonObject.addProperty("bond", bondId);
+                            jsonObject.addProperty("issuer", issuer.getName().toString());
+                            jsonObject.addProperty("holder", entry.getKey().getName().toString());
+                            jsonObject.addProperty("size", entry.getValue().getFirst());
+                            jsonObject.addProperty("lastTradeDate", entry.getValue().getSecond().toString());
 
-                        jsonArray.add(jsonObject);
+                            jsonArray.add(jsonObject);
+                        }
                     }
 
                 }
