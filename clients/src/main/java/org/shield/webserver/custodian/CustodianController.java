@@ -172,13 +172,20 @@ public class CustodianController {
                     Map<Party, Pair<Long, Date>> aggregatedTraders = new HashMap<>();
                     if (custodianState.getTrades() != null){
                         for (TradeState tradeState : custodianState.getTrades()){
-                            if (tradeState.getOffer().getBond().getId().equals(bondId) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED))){
-                                if (aggregatedTraders.containsKey(tradeState.getBuyer())){
-                                    // we have a buyer already, so lets sum the size
-                                    long currentSize = aggregatedTraders.get(tradeState.getBuyer()).getFirst();
-                                    aggregatedTraders.replace(tradeState.getBuyer(),new Pair<>(tradeState.getSize() + currentSize, tradeState.getTradeDate()));
-                                } else {
-                                    aggregatedTraders.put(tradeState.getBuyer(), new Pair<>(tradeState.getSize(), tradeState.getTradeDate()));
+                            if (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED)){
+                                if (tradeState.getOffer().getBond().getId().equals(bondId)){
+                                    if (aggregatedTraders.containsKey(tradeState.getBuyer())){
+                                        // we have a buyer already, so lets sum the size
+                                        long currentSize = aggregatedTraders.get(tradeState.getBuyer()).getFirst();
+                                        aggregatedTraders.replace(tradeState.getBuyer(),new Pair<>(tradeState.getSize() + currentSize, tradeState.getTradeDate()));
+                                    } else {
+                                        aggregatedTraders.put(tradeState.getBuyer(), new Pair<>(tradeState.getSize(), tradeState.getTradeDate()));
+                                    }
+                                    if (aggregatedTraders.containsKey(tradeState.getSeller())){
+                                        // we have a seller already, so lets substract the size
+                                        long currentSize = aggregatedTraders.get(tradeState.getBuyer()).getFirst();
+                                        aggregatedTraders.replace(tradeState.getBuyer(),new Pair<>(tradeState.getSize() - currentSize, tradeState.getTradeDate()));
+                                    }
                                 }
                             }
                         }
