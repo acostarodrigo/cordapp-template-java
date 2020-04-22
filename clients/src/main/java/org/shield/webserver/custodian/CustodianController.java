@@ -170,8 +170,8 @@ public class CustodianController {
                     String bondId = bondState.getId();
                     Party issuer = bondState.getIssuer();
                     Map<Party, Pair<Long, Date>> aggregatedTraders = new HashMap<>();
-                    // we add the issuer first.
-                    aggregatedTraders.put(issuer, new Pair<>(bondState.getDealSize(), bondState.getStartDate()));
+
+
                     if (custodianState.getTrades() != null){
                         for (TradeState tradeState : custodianState.getTrades()){
                             if (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED)){
@@ -195,7 +195,6 @@ public class CustodianController {
 
                     // at this point we have the bond, issuer and a map with all traders
                     for (Map.Entry<Party, Pair<Long, Date>> entry : aggregatedTraders.entrySet()){
-                        if (entry.getValue().getFirst() > 0){
                             JsonObject jsonObject = new JsonObject();
                             jsonObject.addProperty("bond", bondId);
                             jsonObject.addProperty("issuer", issuer.getName().toString());
@@ -204,7 +203,6 @@ public class CustodianController {
                             jsonObject.addProperty("lastTradeDate", entry.getValue().getSecond().toString());
 
                             jsonArray.add(jsonObject);
-                        }
                     }
 
                 }
