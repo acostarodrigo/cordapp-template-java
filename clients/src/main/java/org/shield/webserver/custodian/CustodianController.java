@@ -223,4 +223,10 @@ public class CustodianController {
         jsonObject.add("book", jsonArray);
         return getValidResponse(jsonObject);
     }
+
+
+    @GetMapping("/investorList")
+    public ResponseEntity<Response> getInvestorList(@NotNull @RequestBody JsonNode body){
+        return getMasterSecurityHolderFile(body);
+    }
 }
