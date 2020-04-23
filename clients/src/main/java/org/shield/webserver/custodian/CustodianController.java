@@ -14,6 +14,7 @@ import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.custodian.CustodianState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.offer.OfferState;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
@@ -326,6 +327,32 @@ public class CustodianController {
 
         JsonObject response = new JsonObject();
         response.add("obligations", transactions);
+        return getValidResponse(response);
+
+    }
+
+    @GetMapping("/transactions")
+    public ResponseEntity<Response> getTransactions(@NotNull @RequestBody JsonNode body) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(), User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray transactions = new JsonArray();
+        QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            if (custodianState.getFiatState() != null){
+                for (FiatTransaction fiatTransaction : custodianState.getFiatState().getFiatTransactionList()){
+                    transactions.add(fiatTransaction.toJson());
+                }
+            }
+        }
+        JsonObject response = new JsonObject();
+        response.add("transactions", transactions);
         return getValidResponse(response);
 
     }
