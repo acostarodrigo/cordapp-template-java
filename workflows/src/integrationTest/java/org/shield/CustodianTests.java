@@ -7,12 +7,14 @@ import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.*;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.testing.internal.vault.DummyLinearContract;
+import org.bouncycastle.tsp.TSPUtil;
 import org.jgroups.protocols.pbcast.STATE;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.bond.BondState;
 import org.shield.custodian.CustodianState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
 
@@ -154,7 +156,44 @@ public class CustodianTests {
 
         // we must have the FiatStates with money movement
         assertNotNull(custodianState.getFiatState());
+    }
 
+    @Test
+    public void fiatStateTests() throws ExecutionException, InterruptedException {
+        // settle a trade between issuer and brokerDealer1
+        settleTradeWithCustodianTest();
+
+        CustodianState issuerState =  issuerNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        CustodianState brokerState =  broker1Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+
+        CustodianState custodian0State =  custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
+        CustodianState custodian1State =  custodianNode.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(1).getState().getData();
+
+        // all states must have FiatStates on them
+        assertNotNull(issuerState.getFiatState());
+        assertNotNull(brokerState.getFiatState());
+        assertNotNull(custodian0State.getFiatState());
+        assertNotNull(custodian1State.getFiatState());
+
+        // issuer only 1 transaction in the state
+        assertTrue(issuerState.getFiatState().getFiatTransactionList().size() == 1);
+        // trader has 3 transactions. x2 Issuing and paying
+        assertTrue(brokerState.getFiatState().getFiatTransactionList().size() == 3);
+        // and the same on the custodians
+        assertTrue(custodian0State.getFiatState().getFiatTransactionList().size() == 1);
+        assertTrue(custodian1State.getFiatState().getFiatTransactionList().size() == 3);
+
+        // lets try to toJson request
+        assertNotNull(issuerState.toJson());
+        assertNotNull(brokerState.toJson());
+        assertNotNull(custodian0State.toJson());
+        assertNotNull(custodian1State.toJson());
+
+        for (FiatTransaction fiatTransaction : custodian0State.getFiatState().getFiatTransactionList()){
+            assertNotNull(fiatTransaction.toJson());
+        }
+
+        System.out.println(custodian0State.toJson());
 
     }
 
