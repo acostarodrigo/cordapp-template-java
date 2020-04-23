@@ -1,14 +1,6 @@
 package org.shield;
 
 import com.google.gson.JsonObject;
-import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.node.services.Vault;
-import net.corda.core.node.services.vault.*;
-import net.corda.core.transactions.SignedTransaction;
-import net.corda.testing.internal.vault.DummyLinearContract;
-import org.bouncycastle.tsp.TSPUtil;
-import org.jgroups.protocols.pbcast.STATE;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -18,11 +10,6 @@ import org.shield.fiat.FiatTransaction;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
 
-import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;

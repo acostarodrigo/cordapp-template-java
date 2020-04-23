@@ -1,13 +1,14 @@
 package com.template;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.testing.driver.DriverParameters;
 import net.corda.testing.driver.NodeParameters;
 import net.corda.testing.node.User;
-import com.google.common.collect.ImmutableSet;
 
 import java.util.List;
+
 import static net.corda.testing.driver.Driver.driver;
 
 /**

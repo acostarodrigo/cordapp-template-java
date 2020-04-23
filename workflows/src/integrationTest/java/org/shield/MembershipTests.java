@@ -1,18 +1,14 @@
 package org.shield;
 
 import com.r3.businessnetworks.membership.flows.bno.ActivateMembershipFlow;
-import com.r3.businessnetworks.membership.flows.bno.SuspendMembershipFlow;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
 import com.r3.businessnetworks.membership.flows.member.RequestMembershipFlow;
 import com.r3.businessnetworks.membership.states.MembershipState;
-import com.r3.businessnetworks.membership.states.SimpleMembershipMetadata;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.identity.CordaX500Name;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.shield.membership.ShieldMetadata;
 
@@ -21,7 +17,8 @@ import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import static org.shield.TestHelper.*;
 
 /**

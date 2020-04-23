@@ -2,7 +2,6 @@ package org.shield.flows.membership;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataFlow;
-import com.r3.businessnetworks.membership.flows.member.AmendMembershipMetadataRequest;
 import com.r3.businessnetworks.membership.flows.member.GetMembershipsFlow;
 import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
 import com.r3.businessnetworks.membership.states.MembershipState;

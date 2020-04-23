@@ -13,17 +13,13 @@ import net.corda.core.contracts.Amount;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
-import org.shield.fiat.FiatState;
 import org.shield.fiat.FiatTransaction;
 import org.shield.flows.custodian.CustodianFlows;
 import org.shield.flows.fiat.FiatFlow;
 import org.shield.flows.membership.MembershipFlows;
 
-import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 
 public class USDFiatTokenFlow {

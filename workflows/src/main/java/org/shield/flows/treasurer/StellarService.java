@@ -2,7 +2,6 @@ package org.shield.flows.treasurer;
 
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.flows.FlowException;
 import net.corda.core.identity.Party;
 import net.corda.core.node.AppServiceHub;
 import net.corda.core.node.services.CordaService;
@@ -14,8 +13,6 @@ import org.stellar.sdk.requests.PaymentsRequestBuilder;
 import org.stellar.sdk.responses.operations.OperationResponse;
 import org.stellar.sdk.responses.operations.PaymentOperationResponse;
 import shadow.com.google.common.base.Optional;
-
-import java.util.concurrent.ExecutionException;
 
 @CordaService
 public class StellarService extends SingletonSerializeAsToken {

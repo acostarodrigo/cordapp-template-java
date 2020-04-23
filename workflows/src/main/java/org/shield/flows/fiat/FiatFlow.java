@@ -6,7 +6,6 @@ import net.corda.core.contracts.StateAndRef;
 import net.corda.core.flows.FinalityFlow;
 import net.corda.core.flows.FlowException;
 import net.corda.core.flows.FlowLogic;
-import net.corda.core.flows.UnexpectedFlowEndException;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.VaultService;

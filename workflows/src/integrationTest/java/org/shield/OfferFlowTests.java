@@ -1,19 +1,13 @@
 package org.shield;
 
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.UniqueIdentifier;
-import net.corda.core.node.services.Vault;
-import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.shield.bond.BondState;
 import org.shield.flows.offer.OfferFlow;
 import org.shield.offer.OfferState;
 
-import java.util.Arrays;
-import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.*;

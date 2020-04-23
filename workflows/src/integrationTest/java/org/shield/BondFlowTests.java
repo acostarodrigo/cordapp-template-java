@@ -1,14 +1,11 @@
 package org.shield;
 
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
-import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
-import com.r3.corda.lib.tokens.contracts.types.TokenType;
 import com.r3.corda.lib.tokens.workflows.utilities.QueryUtilitiesKt;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.Amount;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.transactions.SignedTransaction;
 import org.junit.After;
 import org.junit.Before;
@@ -18,13 +15,13 @@ import org.shield.bond.BondType;
 import org.shield.bond.DealType;
 import org.shield.flows.bond.BondFlow;
 
-import java.math.BigDecimal;
 import java.util.Calendar;
 import java.util.Currency;
 import java.util.Date;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.shield.TestHelper.*;
 
 public class BondFlowTests {

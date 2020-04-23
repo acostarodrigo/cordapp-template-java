@@ -1,6 +1,5 @@
 package org.shield;
 
-import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;
 import com.r3.corda.lib.tokens.contracts.types.TokenType;
 import com.r3.corda.lib.tokens.money.FiatCurrency;
@@ -11,7 +10,6 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
-import net.corda.node.Corda;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;

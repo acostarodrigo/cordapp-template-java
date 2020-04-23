@@ -7,8 +7,6 @@ import net.corda.core.node.NetworkParameters;
 import net.corda.testing.driver.DriverParameters;
 import net.corda.testing.node.*;
 
-import org.junit.Before;
-
 import java.util.*;
 
 import static java.util.Arrays.asList;

@@ -3,9 +3,7 @@ package org.shield;
 import com.google.common.collect.ImmutableList;
 import net.corda.client.rpc.CordaRPCClient;
 import net.corda.core.concurrent.CordaFuture;
-import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.CordaX500Name;
-import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.NetworkParameters;
 import net.corda.testing.core.TestIdentity;
@@ -16,11 +14,8 @@ import net.corda.testing.node.TestCordapp;
 import net.corda.testing.node.User;
 import org.junit.Assert;
 import org.junit.Test;
-import org.shield.flows.trade.TradeFlow;
 
-import java.math.BigDecimal;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 

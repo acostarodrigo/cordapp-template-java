@@ -3,17 +3,18 @@ package org.shield.flows.trade;
 import co.paralleluniverse.fibers.Suspendable;
 import net.corda.core.contracts.Command;
 import net.corda.core.contracts.StateAndRef;
-import net.corda.core.flows.*;
+import net.corda.core.flows.FlowException;
+import net.corda.core.flows.FlowLogic;
+import net.corda.core.flows.InitiatingFlow;
+import net.corda.core.flows.StartableByRPC;
 import net.corda.core.identity.Party;
 import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import net.corda.core.transactions.TransactionBuilder;
 import org.shield.flows.membership.MembershipFlows;
-import org.shield.offer.OfferContract;
 import org.shield.signet.SignetAccountContract;
 import org.shield.signet.SignetAccountState;
-import org.shield.trade.TradeContract;
 
 public class SignetAccountFlow {
     private SignetAccountFlow(){

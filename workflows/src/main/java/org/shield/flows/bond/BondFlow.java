@@ -2,7 +2,6 @@ package org.shield.flows.bond;
 
 import co.paralleluniverse.fibers.Suspendable;
 import com.r3.businessnetworks.membership.flows.member.PartyAndMembershipMetadata;
-import com.r3.businessnetworks.membership.states.MembershipState;
 import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
 import com.r3.corda.lib.tokens.contracts.types.IssuedTokenType;
 import com.r3.corda.lib.tokens.contracts.types.TokenPointer;

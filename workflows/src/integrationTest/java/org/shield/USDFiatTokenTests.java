@@ -10,7 +10,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.shield.fiat.FiatState;
-import org.shield.fiat.FiatTransaction;
 import org.shield.flows.treasurer.StellarService;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
 import org.stellar.sdk.*;
@@ -21,7 +20,8 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.shield.TestHelper.*;
 
 public class USDFiatTokenTests {

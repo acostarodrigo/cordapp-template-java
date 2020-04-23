@@ -11,8 +11,10 @@ import shadow.okhttp3.*;
 
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class SignetAPI {
     private OkHttpClient client;
