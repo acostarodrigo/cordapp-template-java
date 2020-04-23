@@ -138,11 +138,13 @@ public class BalanceController {
             return getConnectionErrorResponse(e);
         }
 
+        Party caller = proxy.nodeInfo().getLegalIdentities().get(0);
+
         JsonArray transactions = new JsonArray();
         QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
         for (StateAndRef<TradeState> stateAndRef : proxy.vaultQueryByCriteria(criteria, TradeState.class).getStates()){
             TradeState tradeState = stateAndRef.getState().getData();
-            if (tradeState.getState().equals(State.PENDING)){
+            if (tradeState.getState().equals(State.PENDING) && tradeState.getBuyer().equals(caller)){
                 JsonObject upcomingJson = new JsonObject();
                 upcomingJson.addProperty("tradeId", tradeState.getId().getId().toString());
                 upcomingJson.addProperty("buyer", tradeState.getBuyer().getName().toString());
