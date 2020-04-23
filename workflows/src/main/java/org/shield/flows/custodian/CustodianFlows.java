@@ -16,6 +16,8 @@ import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.custodian.CustodianContract;
 import org.shield.custodian.CustodianState;
+import org.shield.fiat.FiatState;
+import org.shield.fiat.FiatTransaction;
 import org.shield.flows.membership.MembershipFlows;
 import org.shield.membership.ShieldMetadata;
 import org.shield.trade.TradeState;
@@ -309,6 +311,99 @@ public class CustodianFlows {
             }
 
             return custodians;
+        }
+    }
+
+    @InitiatingFlow
+    public static class SendFiatTransaction extends FlowLogic<SignedTransaction>{
+        @Suspendable
+        @Override
+        public SignedTransaction call() throws FlowException {
+            Party caller = getOurIdentity();
+
+            // we get the Fiat State with all transactions to send.
+            QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            FiatState fiatState = getServiceHub().getVaultService().queryBy(FiatState.class,criteria).getStates().get(0).getState().getData();
+
+            // lets generate the custodian data
+            List<Object> result = subFlow(new GetCustodianState());
+            StateAndRef<CustodianState> input = (StateAndRef<CustodianState>) result.get(0);
+            CustodianState custodianState = (CustodianState) result.get(1);
+
+            // if we have a fiatState from this issuer, we will replace it
+            if (custodianState.getFiats() != null){
+                List<FiatState> fiatStates = new ArrayList<>(custodianState.getFiats());
+                for (FiatState fiatState1 : fiatStates){
+                    if (fiatState1.getIssuer().equals(caller)){
+                        fiatStates.remove(fiatState1);
+                    }
+                }
+                fiatStates.add(fiatState);
+            } else {
+                // the first fiat state, we add it.
+                custodianState.setFiats(Arrays.asList(fiatState));
+            }
+
+            custodianState.setLastUpdated(new Timestamp(System.currentTimeMillis()));
+
+            // we get custodians sessions and public keys from all custodians
+            List<PublicKey> signers = new ArrayList<>();
+            List<FlowSession> sessions = new ArrayList<>();
+            for (Party party : custodianState.getCustodians()){
+                signers.add(party.getOwningKey());
+                FlowSession flowSession = initiateFlow(party);
+                sessions.add(flowSession);
+            }
+            signers.add(caller.getOwningKey());
+            Command command = new Command<>(new CustodianContract.Commands.notifyWalletTransaction(), signers);
+
+            // we will generate the transaction
+            Party notary = getServiceHub().getNetworkMapCache().getNotaryIdentities().get(0);
+            TransactionBuilder txBuilder = new TransactionBuilder(notary)
+                .addOutputState(custodianState,CustodianContract.ID)
+                .addCommand(command);
+
+            // if we have an input, we will include it
+            if (input != null) txBuilder.addInputState(input);
+
+            // we are ready to sign
+            SignedTransaction partiallySignedTx = getServiceHub().signInitialTransaction(txBuilder);
+
+            // we get custodians signature
+            SignedTransaction fullySignedTx = subFlow(new CollectSignaturesFlow(partiallySignedTx,sessions));
+
+            // if we are also a custodian, running finality with our own will cause an exception.
+            FlowSession ownSession = initiateFlow(caller);
+            if (sessions.contains(ownSession)){
+                sessions.remove(ownSession);
+            }
+            if (!sessions.isEmpty())
+                subFlow(new FinalityFlow(fullySignedTx, sessions));
+
+            return fullySignedTx;
+        }
+    }
+
+    @InitiatedBy(SendFiatTransaction.class)
+    public static class SendFiatTransactionResponse extends FlowLogic<Void>{
+        private FlowSession callerSession;
+
+        public SendFiatTransactionResponse(FlowSession callerSession) {
+            this.callerSession = callerSession;
+        }
+
+        @Override
+        @Suspendable
+        public Void call() throws FlowException {
+            subFlow(new SignTransactionFlow(callerSession) {
+                @Override
+                protected void checkTransaction(@NotNull SignedTransaction stx) throws FlowException {
+                    // for now we are just signing with no validations.
+                }
+            });
+
+            subFlow(new ReceiveFinalityFlow(callerSession));
+            return null;
         }
     }
 }
