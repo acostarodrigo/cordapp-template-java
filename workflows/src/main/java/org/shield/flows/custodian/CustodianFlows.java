@@ -330,19 +330,8 @@ public class CustodianFlows {
             StateAndRef<CustodianState> input = (StateAndRef<CustodianState>) result.get(0);
             CustodianState custodianState = (CustodianState) result.get(1);
 
-            // if we have a fiatState from this issuer, we will replace it
-            if (custodianState.getFiats() != null){
-                List<FiatState> fiatStates = new ArrayList<>(custodianState.getFiats());
-                for (FiatState fiatState1 : fiatStates){
-                    if (fiatState1.getIssuer().equals(caller)){
-                        fiatStates.remove(fiatState1);
-                    }
-                }
-                fiatStates.add(fiatState);
-            } else {
-                // the first fiat state, we add it.
-                custodianState.setFiats(Arrays.asList(fiatState));
-            }
+            // we replace the fiat state on the custodian.
+            custodianState.setFiatState(fiatState);
 
             custodianState.setLastUpdated(new Timestamp(System.currentTimeMillis()));
 

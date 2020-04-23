@@ -13,7 +13,9 @@ import net.corda.core.contracts.Amount;
 import net.corda.core.flows.*;
 import net.corda.core.identity.Party;
 import net.corda.core.transactions.SignedTransaction;
+import org.shield.fiat.FiatState;
 import org.shield.fiat.FiatTransaction;
+import org.shield.flows.custodian.CustodianFlows;
 import org.shield.flows.fiat.FiatFlow;
 import org.shield.flows.membership.MembershipFlows;
 
@@ -95,6 +97,9 @@ public class USDFiatTokenFlow {
                     FiatTransaction fiatTransaction = new FiatTransaction(Instant.now().getEpochSecond(),stringBuilder.toString(), FiatTransaction.Type.DEPOSIT, fungibleToken.getAmount(),currentBalance.getQuantity(), FiatTransaction.Action.IN);
 
                     subFlow(new FiatFlow.NewTransaction(fiatTransaction));
+
+                    // we inform the custodians
+                    subFlow(new CustodianFlows.SendFiatTransaction());
                 }
             }
 

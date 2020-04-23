@@ -709,6 +709,9 @@ public class TradeFlow {
             FiatTransaction fiatTransaction = new FiatTransaction(Instant.now().getEpochSecond(), description.toString(), FiatTransaction.Type.SETTLEMENT,fiatAmount,currentBalance.getQuantity(), FiatTransaction.Action.OUT);
             subFlow(new FiatFlow.NewTransaction(fiatTransaction));
 
+            // we inform the custodians
+            subFlow(new CustodianFlows.SendFiatTransaction());
+
 
             return signedTransaction;
         }
@@ -776,6 +779,9 @@ public class TradeFlow {
             description.append(callerSession.getCounterparty().getName().getOrganisation());
             FiatTransaction fiatTransaction = new FiatTransaction(Instant.now().getEpochSecond(), description.toString(), FiatTransaction.Type.SETTLEMENT,fiatAmount,currentBalance.getQuantity(), FiatTransaction.Action.IN);
             subFlow(new FiatFlow.NewTransaction(fiatTransaction));
+
+            // we inform the custodians
+            subFlow(new CustodianFlows.SendFiatTransaction());
 
             return null;
         }
