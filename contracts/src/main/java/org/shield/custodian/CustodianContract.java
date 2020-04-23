@@ -16,6 +16,7 @@ public class CustodianContract implements Contract {
         class notifyBond implements CustodianContract.Commands {}
         class notifyOffer implements CustodianContract.Commands {}
         class notifyTrade implements CustodianContract.Commands {}
+        class notifyWalletTransaction implements CustodianContract.Commands {}
         class updateAll implements CustodianContract.Commands {}
     }
 }
