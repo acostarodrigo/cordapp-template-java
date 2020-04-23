@@ -290,4 +290,43 @@ public class CustodianController {
         jsonObject.add("attributes", result);
         return getValidResponse(jsonObject);
     }
+
+    @GetMapping("/obligations")
+    public ResponseEntity<Response> getObligations(@NotNull @RequestBody JsonNode body) {
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(), User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray transactions = new JsonArray();
+        QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
+            CustodianState custodianState = stateAndRef.getState().getData();
+            for (TradeState tradeState : custodianState.getTrades()){
+                if (tradeState.getState().equals(State.PENDING)){
+                    JsonObject upcomingJson = new JsonObject();
+                    upcomingJson.addProperty("tradeId", tradeState.getId().getId().toString());
+                    upcomingJson.addProperty("buyer", tradeState.getBuyer().getName().toString());
+                    upcomingJson.addProperty("seller", tradeState.getSeller().getName().toString());
+                    upcomingJson.addProperty("description", tradeState.getOffer().getBond().getTicker());
+                    upcomingJson.addProperty("arranger", tradeState.getArranger());
+                    upcomingJson.addProperty("amount", tradeState.getSize());
+                    upcomingJson.addProperty("currency", tradeState.getCurrency().getCurrencyCode());
+
+                    // if the obligation doesn't exists, we add it.
+                    if (!transactions.contains(upcomingJson))
+                        transactions.add(upcomingJson);
+                }
+            }
+
+        }
+
+        JsonObject response = new JsonObject();
+        response.add("obligations", transactions);
+        return getValidResponse(response);
+
+    }
 }
