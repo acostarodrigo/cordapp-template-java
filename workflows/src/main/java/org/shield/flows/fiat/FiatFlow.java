@@ -26,7 +26,7 @@ public class FiatFlow {
     private FiatFlow() {
     }
 
-    public static class NewTransaction extends FlowLogic<Void>{
+    public static class NewTransaction extends FlowLogic<FiatState>{
         private FiatTransaction fiatTransaction;
 
         public NewTransaction(FiatTransaction fiatTransaction) {
@@ -35,7 +35,7 @@ public class FiatFlow {
 
         @Override
         @Suspendable
-        public Void call() throws FlowException {
+        public FiatState call() throws FlowException {
             // we will validate if this node already has a FiatState
             VaultService vaultService = getServiceHub().getVaultService();
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
@@ -77,7 +77,7 @@ public class FiatFlow {
             // we sign it and store it only locally.
             SignedTransaction signedTransaction = getServiceHub().signInitialTransaction(transactionBuilder);
             subFlow(new FinalityFlow(signedTransaction));
-            return null;
+            return fiatState;
         }
     }
 }
