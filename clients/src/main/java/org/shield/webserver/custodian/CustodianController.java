@@ -347,7 +347,9 @@ public class CustodianController {
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getFiatState() != null){
                 for (FiatTransaction fiatTransaction : custodianState.getFiatState().getFiatTransactionList()){
-                    transactions.add(fiatTransaction.toJson());
+                    JsonObject tx = fiatTransaction.toJson();
+                    tx.addProperty("issuer", custodianState.getFiatState().getIssuer().getName().toString());
+                    transactions.add(tx);
                 }
             }
         }
