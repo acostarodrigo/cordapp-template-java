@@ -16,8 +16,9 @@ import org.shield.offer.OfferState;
 import org.shield.trade.TradeState;
 
 import java.io.Serializable;
-import java.sql.Timestamp;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
 
 @BelongsToContract(CustodianContract.class)
 @CordaSerializable

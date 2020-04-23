@@ -9,7 +9,6 @@ import net.corda.core.serialization.ConstructorForDeserialization;
 import net.corda.core.serialization.CordaSerializable;
 import org.jetbrains.annotations.NotNull;
 
-
 import java.io.Serializable;
 import java.text.SimpleDateFormat;
 import java.util.*;

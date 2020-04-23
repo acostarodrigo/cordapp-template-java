@@ -3,7 +3,6 @@ package org.shield.trade;
 import net.corda.core.contracts.CommandData;
 import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
-import org.shield.offer.OfferState;
 
 import java.security.PublicKey;
 import java.util.Date;

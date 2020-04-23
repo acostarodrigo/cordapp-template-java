@@ -1,7 +1,6 @@
 package org.shield.fiat;
 
 import com.google.gson.JsonObject;
-import jdk.nashorn.internal.parser.TokenType;
 import net.corda.core.contracts.Amount;
 import net.corda.core.serialization.CordaSerializable;
 
