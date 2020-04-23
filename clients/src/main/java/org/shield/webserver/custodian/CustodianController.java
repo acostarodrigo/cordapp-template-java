@@ -15,7 +15,6 @@ import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
 import org.shield.custodian.CustodianState;
 import org.shield.fiat.FiatTransaction;
-import org.shield.offer.OfferState;
 import org.shield.trade.State;
 import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
@@ -30,7 +29,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.function.Predicate;
 

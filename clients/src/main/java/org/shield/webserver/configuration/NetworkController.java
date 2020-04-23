@@ -1,20 +1,15 @@
 package org.shield.webserver.configuration;
 
 import net.corda.core.messaging.CordaRPCOps;
-import net.corda.core.node.NetworkParameters;
 import net.corda.core.node.NodeInfo;
-
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-
-import javax.validation.Valid;
 
 @RestController
 @RequestMapping("/network") // The paths for HTTP requests are relative to this base path.

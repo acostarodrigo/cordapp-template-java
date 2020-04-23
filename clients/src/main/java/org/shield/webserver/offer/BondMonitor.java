@@ -3,9 +3,7 @@ package org.shield.webserver.offer;
 import com.google.gson.JsonObject;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
-import org.shield.bond.BondState;
 import org.shield.bond.DealType;
-import org.springframework.stereotype.Component;
 
 import java.util.Currency;
 import java.util.Date;

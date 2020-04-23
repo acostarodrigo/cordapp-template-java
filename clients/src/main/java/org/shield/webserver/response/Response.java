@@ -1,9 +1,6 @@
 package org.shield.webserver.response;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import org.glassfish.jersey.server.JSONP;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
@@ -11,7 +8,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class Response implements Serializable {
     private boolean success;

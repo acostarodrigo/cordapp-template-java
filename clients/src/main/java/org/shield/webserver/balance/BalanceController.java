@@ -15,7 +15,6 @@ import net.corda.core.node.services.Vault;
 import net.corda.core.node.services.vault.QueryCriteria;
 import net.corda.core.transactions.SignedTransaction;
 import org.jetbrains.annotations.NotNull;
-import org.json.simple.JSONObject;
 import org.shield.fiat.FiatState;
 import org.shield.fiat.FiatTransaction;
 import org.shield.flows.treasurer.USDFiatTokenFlow;
@@ -25,13 +24,10 @@ import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
 import org.shield.webserver.response.Response;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.ExecutionException;
 
 import static org.shield.webserver.response.Response.*;

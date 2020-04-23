@@ -1,7 +1,6 @@
 package org.shield.webserver.signet;
 
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.r3.corda.lib.tokens.money.FiatCurrency;
 import net.corda.core.contracts.Amount;
 import net.corda.core.identity.CordaX500Name;

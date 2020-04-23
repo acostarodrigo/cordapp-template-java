@@ -3,8 +3,6 @@ package org.shield.webserver.membership;
 import com.google.gson.JsonObject;
 import org.shield.membership.ShieldMetadata;
 
-import java.util.List;
-
 public class ResponseWrapper {
     private int index;
     private String status;
