@@ -150,6 +150,12 @@ public class CustodianTests {
         CustodianState traderCustodianState = null;
         traderCustodianState = broker1Node.getServices().getVaultService().queryBy(CustodianState.class).getStates().get(0).getState().getData();
         assertEquals(traderCustodianState.getTrades().get(0), custodianState.getTrades().get(0));
+
+
+        // we must have the FiatStates with money movement
+        assertNotNull(custodianState.getFiatState());
+
+
     }
 
 
