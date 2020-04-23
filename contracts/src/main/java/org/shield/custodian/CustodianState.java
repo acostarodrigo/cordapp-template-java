@@ -27,7 +27,7 @@ public class CustodianState implements Serializable,ContractState {
     private List<BondState> bonds;
     private List<TradeState> trades;
     private List<OfferState> offers;
-    private List<FiatState> fiats;
+    private FiatState fiatState;
     private Date lastUpdated;
 
     @ConstructorForDeserialization
@@ -95,12 +95,12 @@ public class CustodianState implements Serializable,ContractState {
         this.lastUpdated = lastUpdated;
     }
 
-    public List<FiatState> getFiats() {
-        return fiats;
+    public FiatState getFiatState() {
+        return fiatState;
     }
 
-    public void setFiats(List<FiatState> fiats) {
-        this.fiats = fiats;
+    public void setFiatState(FiatState fiatState) {
+        this.fiatState = fiatState;
     }
 
     public JsonObject toJson(){
@@ -136,19 +136,12 @@ public class CustodianState implements Serializable,ContractState {
         }
 
         // we are adding the fiat transactions
-        if (getFiats() != null){
-            JsonArray fiats = new JsonArray();
-            for (FiatState fiat : getFiats()){
-                JsonObject issuer = new JsonObject();
-                issuer.addProperty("issuer", fiat.getIssuer().getName().toString());
-                JsonArray transactions = new JsonArray();
-                for (FiatTransaction fiatTransaction : fiat.getFiatTransactionList()){
-                    transactions.add(fiatTransaction.toJson());
-                }
-                issuer.add("transactions",transactions);
-                fiats.add(issuer);
+        if (getFiatState() != null){
+            JsonArray fiatTransactions = new JsonArray();
+            for (FiatTransaction transaction : fiatState.getFiatTransactionList()){
+                fiatTransactions.add(transaction.toJson());
             }
-            result.add("fiats", fiats);
+            result.add("fiats", fiatTransactions);
         }
 
         // all ready to return JSON
