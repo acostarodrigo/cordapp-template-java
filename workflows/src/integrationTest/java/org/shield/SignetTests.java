@@ -38,10 +38,10 @@ public class SignetTests {
         SignetAccountState source = new SignetAccountState(broker1, "0x8238017e7d940c29a9ad99a7a5e3774658924640", "signetapidev+00@tassat.com");
         Amount amount = new Amount(1, FiatCurrency.Companion.getInstance("USD"));
 
-        Amount balance = QueryUtilitiesKt.tokenBalance(broker2Node.getServices().getVaultService(),FiatCurrency.Companion.getInstance("USD"));
+        Amount balance = QueryUtilitiesKt.tokenBalance(issuerNode.getServices().getVaultService(),FiatCurrency.Companion.getInstance("USD"));
 
         SignetIssueTransactionState signetIssueTransactionState = new SignetIssueTransactionState(UUID.randomUUID(), Timestamp.from(Instant.now()).getNanos(),amount,source,escrow,"", IssueState.CREATED);
-        CompletableFuture<UUID> future = broker2Node.startFlow(new SignetFlow.DepositToEscrowAndIssue(signetIssueTransactionState)).toCompletableFuture();
+        CompletableFuture<UUID> future = issuerNode.startFlow(new SignetFlow.DepositToEscrowAndIssue(signetIssueTransactionState)).toCompletableFuture();
         mockNet.runNetwork();
         future.get();
 

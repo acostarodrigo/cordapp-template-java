@@ -34,7 +34,7 @@ public class SignetTransactionBuilder {
 
         CordaX500Name x500Name = CordaX500Name.parse(sourceNode);
         Party sourceParty = proxy.wellKnownPartyFromX500Name(x500Name);
-        SignetAccountState source = new SignetAccountState(sourceParty,"NA","NA");
+        SignetAccountState source = new SignetAccountState(sourceParty,"0x8238017e7d940c29a9ad99a7a5e3774658924640","signetapidev+00@tassat.com");
 
         Party treasurerParty = proxy.nodeInfo().getLegalIdentities().get(0);
         // todo this needs to be fixed. UserToken should come from a configuration file in the corda node.
