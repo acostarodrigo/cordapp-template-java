@@ -51,7 +51,7 @@ public class SignetController {
             User user = objectMapper.readValue(body.get("user").toString(),User.class);
             generateConnection(user);
 
-            SignetTransactionBuilder builder = new SignetTransactionBuilder(body.get("signet"),proxy);
+            SignetTransactionBuilder builder = new SignetTransactionBuilder(body,proxy);
             signetIssueTransactionState = builder.build();
         } catch (IOException e) {
             return getConnectionErrorResponse(e);

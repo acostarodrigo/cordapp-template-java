@@ -26,8 +26,8 @@ public class SignetTransactionBuilder {
 
     public SignetIssueTransactionState build(){
         long amount = body.get("amount").asLong();
-        String sourceNode = body.get("sourceNode").asText();
-        String escrowWallet = body.get("escrowWallet").asText();
+        String sourceNode = body.get("owner").asText();
+        String escrowWallet = "0xce067dff1eb2567ed72feebe22dd0a8547d38c77";
 
         int timestamp = Timestamp.from(Instant.now()).getNanos();
         Amount tokenAmount = new Amount(amount, FiatCurrency.Companion.getInstance("USD"));
