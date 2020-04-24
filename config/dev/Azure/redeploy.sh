@@ -38,11 +38,11 @@ sudo systemctl start cordaREST
 ## For Distributed nodes:
 # Node 1
 sudo systemctl start cordaREST
-sudo systemctl start cordaBNO
+sudo systemctl start cordaTreasurer
 
 # Node 2
 sudo systemctl start cordaNotary
-sudo systemctl start cordaTreasurer
+sudo systemctl start cordaBNO
 sudo systemctl start cordaCustodian
 
 # Node 3

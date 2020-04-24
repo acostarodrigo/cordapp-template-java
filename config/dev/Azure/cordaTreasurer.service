@@ -5,7 +5,7 @@ Requires=network.target
 Type=simple
 User=rodrigo
 WorkingDirectory=/home/rodrigo/ShieldCorda/build/nodes/treasurer
-ExecStart=/usr/bin/java -jar /home/rodrigo/ShieldCorda/build/nodes/treasurer/corda.jar
+ExecStart=/usr/bin/java -jar /home/acostarodrigo/ShieldCorda/build/nodes/treasurer/corda.jar
 Restart=on-failure
 Environment="CAPSULE_CACHE_DIR=./capsule"
 

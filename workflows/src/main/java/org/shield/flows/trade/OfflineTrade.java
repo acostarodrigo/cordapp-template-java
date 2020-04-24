@@ -96,7 +96,7 @@ public class OfflineTrade {
                 // lets make sure we have money available
                 if (offer.getAfsSize() < tradedPrice) throw new FlowException("Not enought AFS on the current offer.");
 
-
+                // offer might not be AFS, we need to make sure trader has it.
                 subFlow(new OfferFlow.NotifyBuyers(offerInput,offer));
             }
 
