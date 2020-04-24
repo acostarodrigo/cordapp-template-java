@@ -3,8 +3,8 @@ Requires=network.target
 
 [Service]
 Type=simple
-User=acostarodrigo
-WorkingDirectory=/home/acostarodrigo/ShieldCorda/build/nodes/BNO
+User=rodrigo
+WorkingDirectory=/home/rodrigo/ShieldCorda/build/nodes/BNO
 ExecStart=/usr/bin/java -jar /home/rodrigo/ShieldCorda/build/nodes/BNO/corda.jar
 Restart=on-failure
 Environment="CAPSULE_CACHE_DIR=./capsule"
