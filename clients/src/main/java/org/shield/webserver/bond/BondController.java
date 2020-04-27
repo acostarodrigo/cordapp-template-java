@@ -227,15 +227,25 @@ public class BondController {
             return getConnectionErrorResponse(e);
         }
 
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
         Party caller = proxy.nodeInfo().getLegalIdentities().get(0);
+
+        BondState bondState = null;
+        for (StateAndRef<BondState> stateAndRef : proxy.vaultQueryByCriteria(criteria, BondState.class).getStates()){
+            if (stateAndRef.getState().getData().getId().equals(bondId)){
+                bondState = stateAndRef.getState().getData();
+                break;
+            }
+        }
 
         // first we are getting caller issued bonds.
         JsonArray result = new JsonArray();
-        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+
         for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
             FungibleToken token = stateAndRef.getState().getData();
 
-            if (token.getIssuer().equals(caller) && token.getTokenType().getTokenClass().getCanonicalName().equals("org.shield.bond.BondState")){
+            String tokenIdentifier = token.getTokenType().getTokenIdentifier();
+            if (tokenIdentifier.equals(bondState.getLinearId().getId().toString())) {
                 JsonObject bondJson = new JsonObject();
                 bondJson.addProperty("investorName", caller.getName().toString());
                 bondJson.addProperty("holdings", token.getAmount().getQuantity());
