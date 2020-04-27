@@ -3,20 +3,29 @@ package org.shield.webserver.bond;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.r3.corda.lib.tokens.contracts.states.FungibleToken;
+import kotlin.Pair;
 import net.corda.core.concurrent.CordaFuture;
 import net.corda.core.contracts.StateAndRef;
 import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
+import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.QueryCriteria;
 import org.apache.commons.csv.CSVFormat;
 import org.apache.commons.csv.CSVParser;
 import org.apache.commons.csv.CSVRecord;
 import org.jetbrains.annotations.NotNull;
+import org.json.simple.JSONObject;
 import org.shield.bond.BondState;
 import org.shield.bond.BondType;
 import org.shield.bond.DealType;
+import org.shield.custodian.CustodianState;
 import org.shield.flows.bond.BondFlow;
+import org.shield.trade.State;
+import org.shield.trade.TradeState;
 import org.shield.webserver.connection.Connection;
 import org.shield.webserver.connection.ProxyEntry;
 import org.shield.webserver.connection.User;
@@ -27,11 +36,9 @@ import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
 import java.io.Reader;
 import java.io.StringReader;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Currency;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeoutException;
 
@@ -183,6 +190,108 @@ public class BondController {
         }
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("bonds", response);
+        return getValidResponse(jsonObject);
+    }
+
+    @GetMapping("/issuerPanelBonds")
+    public ResponseEntity<Response> getIssuerPannelBonds(@NotNull @RequestBody JsonNode body){
+        ObjectMapper objectMapper = new ObjectMapper();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        JsonArray jsonArray = new JsonArray();
+        for (StateAndRef<BondState> stateAndRef : proxy.vaultQuery(BondState.class).getStates()){
+            BondState bondState = stateAndRef.getState().getData();
+            JsonObject bondObject = new JsonObject();
+            bondObject.addProperty("id", bondState.getId());
+            bondObject.addProperty("ticker", bondState.getTicker());
+            jsonArray.add(bondObject);
+        }
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("bonds", jsonArray);
+        return getValidResponse(jsonObject);
+    }
+
+    @GetMapping("/issuerPanelBondDetails")
+    public ResponseEntity<Response> getIssuerPannelBondDetails(@NotNull @RequestBody JsonNode body) throws ParseException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        String bondId = body.get("bondId").textValue();
+        try {
+            User user = objectMapper.readValue(body.get("user").toString(),User.class);
+            generateConnection(user);
+        } catch (IOException e) {
+            return getConnectionErrorResponse(e);
+        }
+
+        Party caller = proxy.nodeInfo().getLegalIdentities().get(0);
+
+        // first we are getting caller issued bonds.
+        JsonArray result = new JsonArray();
+        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+        for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
+            FungibleToken token = stateAndRef.getState().getData();
+
+            if (token.getIssuer().equals(caller) && token.getTokenType().equals(BondState.class)){
+                JsonObject bondJson = new JsonObject();
+                bondJson.addProperty("investorName", caller.getName().toString());
+                bondJson.addProperty("holdings", token.getAmount().getQuantity());
+                bondJson.addProperty("lastPricePaid", 0);
+                bondJson.addProperty("lastTradeDate", 0);
+                bondJson.addProperty("currency", "USD");
+
+                // we are adding issuer bond tokens into the result
+                result.add(bondJson);
+            }
+        }
+
+        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
+
+        // then we are getting trade info of those bonds.
+        Map<Pair<String, Party>, JsonObject> traderResult = new HashMap<>();
+        for (StateAndRef<TradeState> stateAndRef : proxy.vaultQuery(TradeState.class).getStates()){
+            TradeState tradeState = stateAndRef.getState().getData();
+            if (tradeState.getSeller().equals(caller) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED))){
+                // we need to group this for every investor
+                Pair<String, Party> key = new Pair<>(tradeState.getOffer().getBond().getId(), tradeState.getBuyer());
+
+                if (traderResult.containsKey(key)){
+                    // we do have an entry for this bond and trader, we will update
+                    JsonObject traderObject = traderResult.get(key);
+                    long holdings = traderObject.get("holdings").getAsLong();
+                    traderObject.addProperty("holdings", tradeState.getSize() + holdings);
+
+                    Date tradeDate = f.parse(traderObject.get("lastTradeDate").getAsString());
+                    if (tradeDate.before(tradeState.getTradeDate()))
+                        traderObject.addProperty("lastTradeDate", f.format(tradeState.getTradeDate()));
+
+                    if (tradeDate.before(tradeState.getTradeDate()))
+                        traderObject.addProperty("lastPricePaid", tradeState.getSize());
+
+                    traderResult.replace(key, traderObject);
+
+                } else {
+                    // new entry for this bond and trader
+                    JsonObject traderObject = new JsonObject();
+                    traderObject.addProperty("investorName", tradeState.getBuyer().getName().toString());
+                    traderObject.addProperty("holdings", tradeState.getSize());
+                    traderObject.addProperty("lastPricePaid", tradeState.getSize());
+                    traderObject.addProperty("lastTradeDate", f.format(tradeState.getTradeDate()));
+                    traderObject.addProperty("currency", "USD");
+
+                    traderResult.put(key, traderObject);
+                }
+            }
+        }
+
+        for (JsonObject object : traderResult.values()){
+            result.add(object);
+        }
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.add("bonds", result);
         return getValidResponse(jsonObject);
     }
 }
