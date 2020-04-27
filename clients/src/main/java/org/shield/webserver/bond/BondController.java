@@ -235,7 +235,7 @@ public class BondController {
         for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
             FungibleToken token = stateAndRef.getState().getData();
 
-            if (token.getIssuer().equals(caller) && token.getTokenType().equals(BondState.class)){
+            if (token.getIssuer().equals(caller) && token.getTokenType().getTokenClass().getCanonicalName().equals("org.shield.bond.BondState")){
                 JsonObject bondJson = new JsonObject();
                 bondJson.addProperty("investorName", caller.getName().toString());
                 bondJson.addProperty("holdings", token.getAmount().getQuantity());
