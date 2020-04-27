@@ -264,7 +264,7 @@ public class BondController {
         Map<Pair<String, Party>, JsonObject> traderResult = new HashMap<>();
         for (StateAndRef<TradeState> stateAndRef : proxy.vaultQuery(TradeState.class).getStates()){
             TradeState tradeState = stateAndRef.getState().getData();
-            if (tradeState.getSeller().equals(caller) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED))){
+            if (tradeState.getSeller().equals(caller) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED)) && (tradeState.getOffer().getBond().getId().equals(bondId))){
                 // we need to group this for every investor
                 Pair<String, Party> key = new Pair<>(tradeState.getOffer().getBond().getId(), tradeState.getBuyer());
 
