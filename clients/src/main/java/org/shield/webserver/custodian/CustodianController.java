@@ -80,7 +80,7 @@ public class CustodianController {
         }
 
         JsonArray jsonArray = new JsonArray();
-        // for each custodian state, we get the list of trades
+        // for each custodian state, we get the list of trades, only settled and pending ones
         Set<TradeState> tradeStateSet = new HashSet<>();
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQuery(CustodianState.class).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
@@ -96,7 +96,9 @@ public class CustodianController {
                                 return false;
                         }
                     });
-                    tradeStateSet.add(tradeState);
+                    // we are only showing pending and settled trades.
+                    if (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED))
+                        tradeStateSet.add(tradeState);
                 }
             }
 
