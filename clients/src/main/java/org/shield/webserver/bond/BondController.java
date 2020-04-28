@@ -55,12 +55,13 @@ public class BondController {
     public ResponseEntity<Response> issueBond (@NotNull @RequestBody JsonNode body) throws ExecutionException, InterruptedException, TimeoutException {
         ObjectMapper objectMapper = new ObjectMapper();
         User user = null;
+
         BondState bond = null;
         try {
             user = objectMapper.readValue(body.get("user").toString(),User.class);
-            bond = objectMapper.readValue(body.get("bond").toString(),BondState.class);
-            bond.setBondType(BondType.VANILA);
-            // we initiaite the connection
+            BondMapper bondMapper = new BondMapper(body.get("bond"));
+            bond = bondMapper.getBond();
+            // we initiate the connection
             generateConnection(user);
         } catch (IOException e) {
             return getConnectionErrorResponse(e);
