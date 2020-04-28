@@ -10,6 +10,7 @@ import net.corda.core.contracts.UniqueIdentifier;
 import net.corda.core.identity.Party;
 import net.corda.core.messaging.CordaRPCOps;
 import net.corda.core.node.services.Vault;
+import net.corda.core.node.services.vault.PageSpecification;
 import net.corda.core.node.services.vault.QueryCriteria;
 import org.jetbrains.annotations.NotNull;
 import org.shield.bond.BondState;
@@ -129,7 +130,9 @@ public class CustodianController {
         // in search of an specific trade
         QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
         List<TradeState> tradeStateList = new ArrayList<>();
-        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByCriteria(criteria, CustodianState.class).getStates()){
+        // this might return too many results, we will add paging.
+        PageSpecification pageSpecification = new PageSpecification(5,200);
+        for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByWithPagingSpec(CustodianState.class, criteria, pageSpecification).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getTrades() != null){
                 for (TradeState trade : custodianState.getTrades()){
