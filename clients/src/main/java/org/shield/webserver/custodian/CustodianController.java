@@ -131,15 +131,12 @@ public class CustodianController {
         List<TradeState> tradeStateList = new ArrayList<>();
         // this might return too many results, we will add paging.
         PageSpecification pageSpecification = new PageSpecification(1,20000);
-        boolean foundTrade = false;
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByWithPagingSpec(CustodianState.class, criteria, pageSpecification).getStates()){
-            if (foundTrade == true) break; // we add this to avoid looping all custodianStates. Once we found the trade, we don't need more custodianStates
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getTrades() != null){
                 for (TradeState trade : custodianState.getTrades()){
                     if (trade.getId().getId().toString().equals(tradeId)){
                         tradeStateList.add(trade);
-                        foundTrade = true;
                     }
                 }
             }
