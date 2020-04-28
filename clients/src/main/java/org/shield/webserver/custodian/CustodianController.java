@@ -131,7 +131,7 @@ public class CustodianController {
         QueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.ALL);
         List<TradeState> tradeStateList = new ArrayList<>();
         // this might return too many results, we will add paging.
-        PageSpecification pageSpecification = new PageSpecification(5,200);
+        PageSpecification pageSpecification = new PageSpecification(1,20000);
         for (StateAndRef<CustodianState> stateAndRef : proxy.vaultQueryByWithPagingSpec(CustodianState.class, criteria, pageSpecification).getStates()){
             CustodianState custodianState = stateAndRef.getState().getData();
             if (custodianState.getTrades() != null){
