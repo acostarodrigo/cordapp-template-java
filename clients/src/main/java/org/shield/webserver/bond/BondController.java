@@ -301,8 +301,11 @@ public class BondController {
         for (JsonObject object : traderResult.values()){
             result.add(object);
         }
+
+
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("bonds", result);
+        jsonObject.add("attributes", bondState.toJson());
         return getValidResponse(jsonObject);
     }
 }
