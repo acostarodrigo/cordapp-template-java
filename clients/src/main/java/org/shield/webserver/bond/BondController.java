@@ -282,6 +282,9 @@ public class BondController {
                     if (tradeDate.before(tradeState.getTradeDate()))
                         traderObject.addProperty("lastPricePaid", tradeState.getSize());
 
+                    traderObject.remove("trade");
+                    traderObject.add("trade", tradeState.toJson());
+
                     traderResult.replace(key, traderObject);
 
                 } else {
