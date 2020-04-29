@@ -245,6 +245,7 @@ public class BondController {
         for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
             FungibleToken token = stateAndRef.getState().getData();
 
+            // we are showing issuer data.
             String tokenIdentifier = token.getTokenType().getTokenIdentifier();
             if (tokenIdentifier.equals(bondState.getLinearId().getId().toString())) {
                 JsonObject bondJson = new JsonObject();
@@ -253,6 +254,7 @@ public class BondController {
                 bondJson.addProperty("lastPricePaid", 0);
                 bondJson.addProperty("lastTradeDate", 0);
                 bondJson.addProperty("currency", "USD");
+                bondJson.add("detail", bondState.toJson());
 
                 // we are adding issuer bond tokens into the result
                 result.add(bondJson);
@@ -282,8 +284,8 @@ public class BondController {
                     if (tradeDate.before(tradeState.getTradeDate()))
                         traderObject.addProperty("lastPricePaid", tradeState.getSize());
 
-                    traderObject.remove("trade");
-                    traderObject.add("trade", tradeState.toJson());
+                    traderObject.remove("detail");
+                    traderObject.add("detail", tradeState.toJson());
 
                     traderResult.replace(key, traderObject);
 
@@ -295,7 +297,7 @@ public class BondController {
                     traderObject.addProperty("lastPricePaid", tradeState.getSize());
                     traderObject.addProperty("lastTradeDate", f.format(tradeState.getTradeDate()));
                     traderObject.addProperty("currency", "USD");
-                    traderObject.add("trade", tradeState.toJson());
+                    traderObject.add("detail", tradeState.toJson());
                     traderResult.put(key, traderObject);
                 }
             }
