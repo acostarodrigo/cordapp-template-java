@@ -254,10 +254,7 @@ public class BondController {
                 bondJson.addProperty("lastPricePaid", 0);
                 bondJson.addProperty("lastTradeDate", 0);
                 bondJson.addProperty("currency", "USD");
-                bondJson.add("detail", bondState.toJson());
 
-                // we are adding issuer bond tokens into the result
-                result.add(bondJson);
             }
         }
 
@@ -284,8 +281,8 @@ public class BondController {
                     if (tradeDate.before(tradeState.getTradeDate()))
                         traderObject.addProperty("lastPricePaid", tradeState.getSize());
 
-                    traderObject.remove("detail");
-                    traderObject.add("detail", tradeState.toJson());
+                    traderObject.remove("trade");
+                    traderObject.add("trade", tradeState.toJson());
 
                     traderResult.replace(key, traderObject);
 
@@ -297,7 +294,7 @@ public class BondController {
                     traderObject.addProperty("lastPricePaid", tradeState.getSize());
                     traderObject.addProperty("lastTradeDate", f.format(tradeState.getTradeDate()));
                     traderObject.addProperty("currency", "USD");
-                    traderObject.add("detail", tradeState.toJson());
+                    traderObject.add("trade", tradeState.toJson());
                     traderResult.put(key, traderObject);
                 }
             }
@@ -311,6 +308,7 @@ public class BondController {
 
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("bonds", result);
+        jsonObject.add("bondDetail", bondState.toJson());
         return getValidResponse(jsonObject);
     }
 }
