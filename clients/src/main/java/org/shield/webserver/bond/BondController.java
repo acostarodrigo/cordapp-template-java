@@ -292,11 +292,12 @@ public class BondController {
                     traderObject.addProperty("lastPricePaid", tradeState.getSize());
                     traderObject.addProperty("lastTradeDate", f.format(tradeState.getTradeDate()));
                     traderObject.addProperty("currency", "USD");
-
+                    traderObject.add("trade", tradeState.toJson());
                     traderResult.put(key, traderObject);
                 }
             }
         }
+
 
         for (JsonObject object : traderResult.values()){
             result.add(object);
@@ -305,7 +306,6 @@ public class BondController {
 
         JsonObject jsonObject = new JsonObject();
         jsonObject.add("bonds", result);
-        jsonObject.add("attributes", bondState.toJson());
         return getValidResponse(jsonObject);
     }
 }
