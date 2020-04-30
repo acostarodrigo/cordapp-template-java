@@ -31,7 +31,7 @@ public class BondMapper {
             e.printStackTrace();
         }
         int couponFrequency = body.get("couponFrequency").intValue();
-        long minDenomination = body.get("miinDenomination").longValue();
+        long minDenomination = body.get("minDenomination").longValue();
         long increment = body.get("increment").longValue();
         String strDealType = body.get("dealType").textValue();
         DealType dealType = DealType.valueOf(strDealType.toUpperCase());

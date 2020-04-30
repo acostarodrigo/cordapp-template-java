@@ -32,7 +32,7 @@ public class TradeContract implements Contract {
                 require.using("Only two signature are required", signers.size() == 2);
                 // settle date can't be in the past
                 Date now = new Date();
-                require.using("Creation date can't be in the future", output.getSettleDate().before(now));
+                require.using("Settle date can't be in the future", output.getSettleDate().before(now));
                 // size can be 0
                 require.using("Trade size can't be zero", output.getSize() > 0);
                 // Offer size must greater than zero
