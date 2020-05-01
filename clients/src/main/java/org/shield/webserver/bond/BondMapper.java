@@ -19,7 +19,7 @@ public class BondMapper {
     }
 
     public BondState getBond(){
-        SimpleDateFormat f = new SimpleDateFormat("YYYY-MM-DD");
+        SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
         String id = body.get("id").textValue();
         String issuerTicker = body.get("issuerTicker").textValue();
         String denomination = body.get("denomination").textValue();
