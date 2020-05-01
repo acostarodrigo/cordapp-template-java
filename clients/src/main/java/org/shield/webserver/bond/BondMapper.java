@@ -47,6 +47,7 @@ public class BondMapper {
         }
         double couponRate = body.get("couponRate").doubleValue();
         BondState bondState = new BondState(id, issuerTicker, Currency.getInstance(denomination),startdate,couponFrequency,minDenomination,increment, dealType, redemptionPrice, dealSize,initialPrice,maturityDate , couponRate,0, BondType.VANILA);
+        System.out.println("BondMapper: " + bondState.toString());
         return bondState;
     }
 }
