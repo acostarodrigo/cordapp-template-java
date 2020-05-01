@@ -65,6 +65,8 @@ public class BondController {
             generateConnection(user);
         } catch (IOException e) {
             return getConnectionErrorResponse(e);
+        } catch (ParseException e) {
+            return getErrorResponse("Provided date could not be parsed correctly. expected format is yyyy-MM-dd", e);
         }
 
 

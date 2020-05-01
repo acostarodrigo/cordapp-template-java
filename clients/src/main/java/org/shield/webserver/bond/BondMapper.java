@@ -18,18 +18,13 @@ public class BondMapper {
         this.body = body;
     }
 
-    public BondState getBond(){
+    public BondState getBond() throws ParseException {
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
         String id = body.get("id").textValue();
         String issuerTicker = body.get("issuerTicker").textValue();
         String denomination = body.get("denomination").textValue();
         String strStartDate = body.get("startDate").textValue();
-        Date startdate = new Date();
-        try {
-             startdate = f.parse(strStartDate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+        Date startdate = f.parse(strStartDate);
         int couponFrequency = body.get("couponFrequency").intValue();
         long minDenomination = body.get("minDenomination").longValue();
         long increment = body.get("increment").longValue();
@@ -39,12 +34,7 @@ public class BondMapper {
         long dealSize = body.get("dealSize").longValue();
         double initialPrice = body.get("initialPrice").doubleValue();
         String strMaturityDate = body.get("maturityDate").textValue();
-        Date maturityDate = new Date();
-        try {
-            maturityDate = f.parse(strMaturityDate);
-        } catch (ParseException e) {
-            e.printStackTrace();
-        }
+        Date maturityDate = f.parse(strMaturityDate);
         double couponRate = body.get("couponRate").doubleValue();
         BondState bondState = new BondState(id, issuerTicker, Currency.getInstance(denomination),startdate,couponFrequency,minDenomination,increment, dealType, redemptionPrice, dealSize,initialPrice,maturityDate , couponRate,0, BondType.VANILA);
         System.out.println("BondMapper: " + bondState.toString());
