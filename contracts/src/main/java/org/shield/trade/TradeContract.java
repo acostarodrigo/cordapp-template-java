@@ -5,6 +5,8 @@ import net.corda.core.contracts.Contract;
 import net.corda.core.transactions.LedgerTransaction;
 
 import java.security.PublicKey;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.Date;
 import java.util.List;
 
@@ -32,7 +34,7 @@ public class TradeContract implements Contract {
                 require.using("Only two signature are required", signers.size() == 2);
                 // settle date can't be in the past
                 Date now = new Date();
-                require.using("Settle date can't be in the future", output.getSettleDate().before(now));
+                require.using("Settle date can't be in the past", isSettleDateValid(now, output.getSettleDate()));
                 // size can be 0
                 require.using("Trade size can't be zero", output.getSize() > 0);
                 // Offer size must greater than zero
@@ -89,5 +91,12 @@ public class TradeContract implements Contract {
         class Pending implements Commands {}
         class Settled implements Commands{}
         class Cancelled implements Commands {}
+    }
+
+    public boolean isSettleDateValid(Date now, Date settleDate) {
+        Instant nowDay = now.toInstant().truncatedTo(ChronoUnit.DAYS);
+        Instant settleDay = settleDate.toInstant().truncatedTo(ChronoUnit.DAYS);
+
+        return nowDay.equals(settleDay) || settleDay.isAfter(nowDay);
     }
 }
