@@ -242,7 +242,7 @@ public class CustodianController {
             if (custodianState.getBonds() != null){
 
                 JsonObject issuerJson = new JsonObject();
-                issuerJson.addProperty("issuer",  custodianState.getIssuer().getName().toString());
+                issuerJson.addProperty("issuer",  custodianState.getIssuer().getName().getOrganisation().toString());
                 JsonArray issuerBonds = new JsonArray();
                 for (BondState bondState : custodianState.getBonds()){
                     JsonObject bondJson = new JsonObject();
