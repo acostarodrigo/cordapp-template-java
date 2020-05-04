@@ -243,24 +243,19 @@ public class BondController {
 
         // first we are getting caller issued bonds.
         JsonArray result = new JsonArray();
-
+        JsonObject bondJson = new JsonObject();
         for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
             FungibleToken token = stateAndRef.getState().getData();
 
             // we are showing issuer data.
             String tokenIdentifier = token.getTokenType().getTokenIdentifier();
+
             if (tokenIdentifier.equals(bondState.getLinearId().getId().toString())) {
-                JsonObject bondJson = new JsonObject();
                 bondJson.addProperty("investorName", caller.getName().toString());
                 bondJson.addProperty("holdings", token.getAmount().getQuantity());
                 bondJson.addProperty("lastPricePaid", 0);
                 bondJson.addProperty("lastTradeDate", 0);
                 bondJson.addProperty("currency", "USD");
-                bondJson.addProperty("trade", "");
-
-                // we are adding the issuer
-                if (token.getAmount().getQuantity() > 0)
-                    result.add(bondJson);
             }
         }
 
@@ -310,6 +305,10 @@ public class BondController {
         for (JsonObject object : traderResult.values()){
             result.add(object);
         }
+
+        // we are adding the issuer data with a trade.
+        bondJson.add("trade", result.get(0).getAsJsonObject().get("trade"));
+        result.add(bondJson);
 
 
         JsonObject jsonObject = new JsonObject();
