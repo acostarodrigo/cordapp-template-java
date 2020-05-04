@@ -28,7 +28,7 @@ public class BondTypeContract extends EvolvableTokenContract implements Contract
         requireThat(require -> {
             require.using("Deal size can't less than zero.", output.getDealSize() > 0);
             require.using("Digits supported is zero.", output.getFractionDigits() == 0);
-            require.using("Start date can't be in the past", output.getStartDate().after(now));
+            //require.using("Start date can't be in the past", output.getStartDate().after(now));
             return null;
         });
     }
