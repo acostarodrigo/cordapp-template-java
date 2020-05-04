@@ -256,6 +256,7 @@ public class BondController {
                 bondJson.addProperty("lastPricePaid", 0);
                 bondJson.addProperty("lastTradeDate", 0);
                 bondJson.addProperty("currency", "USD");
+                bondJson.addProperty("trade", "");
 
                 // we are adding the issuer
                 if (token.getAmount().getQuantity() > 0)
