@@ -201,7 +201,7 @@ public class CustodianController {
                             JsonObject jsonObject = new JsonObject();
                             jsonObject.addProperty("bond", bondId);
                             jsonObject.addProperty("issue", bondState.getTicker());
-                            jsonObject.addProperty("issuer", issuer.getName().toString());
+                            jsonObject.addProperty("issuer", issuer.getName().getOrganisation());
                             jsonObject.addProperty("holder", entry.getKey().getName().toString());
                             jsonObject.addProperty("size", entry.getValue().getFirst());
                             jsonObject.addProperty("lastTradeDate", entry.getValue().getSecond().toString());
