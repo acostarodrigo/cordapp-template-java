@@ -241,23 +241,11 @@ public class BondController {
             }
         }
 
+        // we start with full balance to issuer.
+        long issuerBalance = bondState.getDealSize();
+
         // first we are getting caller issued bonds.
         JsonArray result = new JsonArray();
-        JsonObject bondJson = new JsonObject();
-        for (StateAndRef<FungibleToken> stateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()){
-            FungibleToken token = stateAndRef.getState().getData();
-
-            // we are showing issuer data.
-            String tokenIdentifier = token.getTokenType().getTokenIdentifier();
-
-            if (tokenIdentifier.equals(bondState.getLinearId().getId().toString())) {
-                bondJson.addProperty("investorName", caller.getName().toString());
-                bondJson.addProperty("holdings", token.getAmount().getQuantity());
-                bondJson.addProperty("lastPricePaid", 0);
-                bondJson.addProperty("lastTradeDate", 0);
-                bondJson.addProperty("currency", "USD");
-            }
-        }
 
         SimpleDateFormat f = new SimpleDateFormat("yyyy-MM-dd");
 
@@ -268,6 +256,9 @@ public class BondController {
             if (tradeState.getSeller().equals(caller) && (tradeState.getState().equals(State.PENDING) || tradeState.getState().equals(State.SETTLED)) && (tradeState.getOffer().getBond().getId().equals(bondId))){
                 // we need to group this for every investor
                 Pair<String, Party> key = new Pair<>(tradeState.getOffer().getBond().getId(), tradeState.getBuyer());
+
+                // for each trade, we reduce the balance if the issuer
+                issuerBalance = issuerBalance - tradeState.getSize();
 
                 if (traderResult.containsKey(key)){
                     // we do have an entry for this bond and trader, we will update
@@ -307,6 +298,13 @@ public class BondController {
         }
 
         // we are adding the issuer data with a trade.
+        JsonObject bondJson = new JsonObject();
+        bondJson.addProperty("investorName", caller.getName().toString());
+        bondJson.addProperty("holdings", issuerBalance);
+        bondJson.addProperty("lastPricePaid", 0);
+        bondJson.addProperty("lastTradeDate", 0);
+        bondJson.addProperty("currency", "USD");
+
         bondJson.add("trade", result.get(0).getAsJsonObject().get("trade"));
         result.add(bondJson);
 
