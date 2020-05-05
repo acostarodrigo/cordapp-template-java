@@ -73,6 +73,8 @@ public class OfferFlowTests {
         cordaFuture.get();
     }
 
+
+
     @Test
     public void updateOfferTest() throws ExecutionException, InterruptedException {
         setUp();
@@ -80,6 +82,7 @@ public class OfferFlowTests {
         long currentAfsSize = offerState.getAfsSize();
         BondState bond = offerState.getBond();
         offerState.setAfsSize(bond.getDealSize() - 1000);
+        offerState.setOfferYield(99);
         CordaFuture<SignedTransaction> cordaFuture =  issuerNode.startFlow(new OfferFlow.Modify(offerState));
         mockNet.runNetwork();
         cordaFuture.get();
@@ -89,6 +92,7 @@ public class OfferFlowTests {
 
         offerState = getOffer();
         assertTrue(currentAfsSize == offerState.getAfsSize() +1000);
+        assertTrue(offerState.getOfferYield() == 99);
 
         assertEquals(broker1Offer, broker2Offer);
     }
