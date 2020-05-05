@@ -47,7 +47,9 @@ public class OfferContract implements Contract {
                 OfferState modifiedInput = input;
                 modifiedInput.setAfs(output.isAfs());
                 modifiedInput.setAfsSize(output.getAfsSize());
-                require.using("Only AFS value and AFS Size can be updated.", modifiedInput.equals(output));
+                modifiedInput.setOfferPrice(output.getOfferPrice());
+                modifiedInput.setOfferYield(output.getOfferYield());
+                require.using("Only AFS, AFSSize, OfferPrice and OfferYiel values can be updated.", modifiedInput.equals(output));
                 return null;
             });
         }
