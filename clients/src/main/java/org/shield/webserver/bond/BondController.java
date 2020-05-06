@@ -299,7 +299,7 @@ public class BondController {
 
         // we are adding the issuer data with a trade.
         JsonObject bondJson = new JsonObject();
-        bondJson.addProperty("investorName", caller.getName().toString());
+        bondJson.addProperty("investorName", caller.getName().getOrganisation());
         bondJson.addProperty("holdings", issuerBalance);
         bondJson.addProperty("lastPricePaid", 0);
         bondJson.addProperty("lastTradeDate", 0);

@@ -99,7 +99,6 @@ public class OfferController {
         Party myNode = proxy.nodeInfo().getLegalIdentities().get(0);
 
         // we get the data feed from the vault.
-        DataFeed<Vault.Page<OfferState>, Vault.Update<OfferState>> dataFeed = proxy.vaultTrackByCriteria(OfferState.class, criteria);
         for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria,OfferState.class).getStates()){
             OfferState offer = stateAndRef.getState().getData();
             // we are getting the list of offers that are not ours and are AFS
