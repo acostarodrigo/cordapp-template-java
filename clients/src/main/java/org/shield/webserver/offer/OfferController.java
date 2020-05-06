@@ -113,12 +113,12 @@ public class OfferController {
                     bond.getCouponFrequency(),
                     "Vanila", // hardcoding for now
                     "Primary", // hardcoding for now
-                    offer.getAfsSize(),
+                    bond.getDealSize(),
                     bond.getDealType(),
                     bond.getDenomination(),
                     offer.getIssuer(),
-                    offer.getIssuer().getName().getOrganisation()
-                );
+                    offer.getIssuer().getName().getOrganisation(),
+                    offer.getAfsSize());
 
                 offers.add(bondMonitor.toJson());
             }

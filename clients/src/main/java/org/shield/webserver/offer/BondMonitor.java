@@ -25,8 +25,9 @@ public class BondMonitor {
     private Currency currency;
     private Party issuer;
     private String issuerName;
+    private long afsSize;
 
-    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, double coupon, int couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency, Party issuer, String issuerName) {
+    public BondMonitor(UniqueIdentifier offerId, String bondId, String ticker, float currentPrice, float currentYield, Date bondMaturity, double coupon, int couponFrequency, String bondStructure, String market, long dealSize, DealType dealType, Currency currency, Party issuer, String issuerName, long afsSize) {
         this.offerId = offerId;
         this.bondId = bondId;
         this.ticker = ticker;
@@ -42,6 +43,7 @@ public class BondMonitor {
         this.currency = currency;
         this.issuer = issuer;
         this.issuerName = issuerName;
+        this.afsSize = afsSize;
     }
 
     public UniqueIdentifier getOfferId() {
@@ -126,6 +128,7 @@ public class BondMonitor {
             ", currency=" + currency +
             ", issuer=" + issuer.getName().toString() +
             ", issuerName=" + issuerName +
+            ", afsSize=" + afsSize +
             '}';
     }
 
@@ -146,6 +149,7 @@ public class BondMonitor {
         jsonObject.addProperty("currency", currency.getCurrencyCode());
         jsonObject.addProperty("issuer", issuer.getName().toString());
         jsonObject.addProperty("issuerName", issuerName);
+        jsonObject.addProperty("afsSize", afsSize);
 
         return jsonObject;
     }
