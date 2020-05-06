@@ -236,47 +236,53 @@ public class OfferController {
             return getConnectionErrorResponse(e);
         }
 
-        JsonArray inventory = new JsonArray();
-        QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-        for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()) {
-            OfferState offer = stateAndRef.getState().getData();
-            long aggregatedTradeSize = 0L;
-            // if the node we are connected issued the offer, then we create the inventory
-            if (proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer())) {
-                // all data of My inventory comes from the offer, except the aggregated trade size,
-                // which we obtain from the balance.
-                for (StateAndRef<FungibleToken> tokenStateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()) {
-                    FungibleToken token = tokenStateAndRef.getState().getData();
-                    String tokenIdentifier = token.getTokenType().getTokenIdentifier();
-                    if (tokenIdentifier.equals(offer.getBond().getLinearId().getId().toString())) {
-                        aggregatedTradeSize = aggregatedTradeSize + token.getAmount().getQuantity();
+        try{
+            JsonArray inventory = new JsonArray();
+            QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
+            for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()) {
+                OfferState offer = stateAndRef.getState().getData();
+                long aggregatedTradeSize = 0L;
+                // if the node we are connected issued the offer, then we create the inventory
+                if (proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer())) {
+                    // all data of My inventory comes from the offer, except the aggregated trade size,
+                    // which we obtain from the balance.
+                    for (StateAndRef<FungibleToken> tokenStateAndRef : proxy.vaultQueryByCriteria(criteria, FungibleToken.class).getStates()) {
+                        FungibleToken token = tokenStateAndRef.getState().getData();
+                        String tokenIdentifier = token.getTokenType().getTokenIdentifier();
+                        if (tokenIdentifier.equals(offer.getBond().getLinearId().getId().toString())) {
+                            aggregatedTradeSize = aggregatedTradeSize + token.getAmount().getQuantity();
+                        }
                     }
+                    MyInventory myInventory = new MyInventory(
+                        offer.getBond().getId(),
+                        offer.getTicker(),
+                        offer.getOfferPrice(),
+                        offer.getOfferYield(),
+                        aggregatedTradeSize,
+                        offer.getAfsSize(),
+                        offer.getBond().getMaturityDate(),
+                        offer.getBond().getBondType().toString(),
+                        offer.getBond().getCouponRate(),
+                        offer.getBond().getCouponFrequency(),
+                        offer.getBond().getDealSize(),
+                        offer.getBond().getDealType(),
+                        offer.getBond().getDenomination(),
+                        offer.isAfs(),
+                        offer.getOfferId(),
+                        offer.getBond().getLinearId(),
+                        offer.getIssuer()
+                    );
+                    inventory.add(myInventory.toJson());
                 }
-                MyInventory myInventory = new MyInventory(
-                    offer.getBond().getId(),
-                    offer.getTicker(),
-                    offer.getOfferPrice(),
-                    offer.getOfferYield(),
-                    aggregatedTradeSize,
-                    offer.getAfsSize(),
-                    offer.getBond().getMaturityDate(),
-                    offer.getBond().getBondType().toString(),
-                    offer.getBond().getCouponRate(),
-                    offer.getBond().getCouponFrequency(),
-                    offer.getBond().getDealSize(),
-                    offer.getBond().getDealType(),
-                    offer.getBond().getDenomination(),
-                    offer.isAfs(),
-                    offer.getOfferId(),
-                    offer.getBond().getLinearId(),
-                    offer.getIssuer()
-                );
-                inventory.add(myInventory.toJson());
             }
-        }
             JsonObject jsonObject = new JsonObject();
             jsonObject.add("myInventory", inventory);
             return getValidResponse(jsonObject);
+        }  catch (Exception e){
+            System.out.println("Error getting MyInventory data. " + e.toString());
+            return getErrorResponse("Error getting MyInventory data.", e);
+        }
+
     }
 
 }
