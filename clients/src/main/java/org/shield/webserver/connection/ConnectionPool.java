@@ -46,7 +46,7 @@ public class ConnectionPool {
      * @param key
      */
     public static void putProxyEntry(ProxyEntry proxyEntry, String key){
-        queue.put(key, proxyEntry);
+        //queue.put(key, proxyEntry);
     }
 
     public static int getProxyEntryCount(){
