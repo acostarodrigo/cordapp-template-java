@@ -232,6 +232,7 @@ public class OfferController {
         try {
             User user = objectMapper.readValue(body.get("user").toString(), User.class);
             generateConnection(user);
+            System.out.println("MyInventory - Connected with " + body.toString());
         } catch (IOException e) {
             return getConnectionErrorResponse(e);
         }
@@ -239,8 +240,11 @@ public class OfferController {
         try{
             JsonArray inventory = new JsonArray();
             QueryCriteria.VaultQueryCriteria criteria = new QueryCriteria.VaultQueryCriteria(Vault.StateStatus.UNCONSUMED);
-            for (StateAndRef<OfferState> stateAndRef : proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates()) {
+            List<StateAndRef<OfferState>> result = proxy.vaultQueryByCriteria(criteria, OfferState.class).getStates();
+            System.out.println("MyInventory: got offer result: " + result.size());
+            for (StateAndRef<OfferState> stateAndRef : result) {
                 OfferState offer = stateAndRef.getState().getData();
+                System.out.println("|--MyInventory: got offer with bond " + offer.getBond().getId());
                 long aggregatedTradeSize = 0L;
                 // if the node we are connected issued the offer, then we create the inventory
                 if (proxy.nodeInfo().getLegalIdentities().contains(offer.getIssuer())) {
