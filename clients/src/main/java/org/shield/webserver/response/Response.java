@@ -39,6 +39,8 @@ public class Response implements Serializable {
         try {
             JSONObject jsonObject = (JSONObject) parser.parse(message.toString());
             Response response = new Response(true, jsonObject);
+
+            System.out.println(String.format("MyInventory: response: %s", message.size()));
             return new ResponseEntity<>(response,HttpStatus.OK);
         } catch (ParseException e) {
             return null;
