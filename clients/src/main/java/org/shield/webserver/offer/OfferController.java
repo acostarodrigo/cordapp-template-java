@@ -283,6 +283,7 @@ public class OfferController {
             jsonObject.add("myInventory", inventory);
 
 
+            System.out.println(String.format("MyInventory: response: %s", inventory.size()));
             return getValidResponse(jsonObject);
         }  catch (Exception e){
             System.out.println("Error getting MyInventory data. " + e.toString());
