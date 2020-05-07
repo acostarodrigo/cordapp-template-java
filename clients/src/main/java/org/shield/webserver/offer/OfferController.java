@@ -282,6 +282,8 @@ public class OfferController {
             JsonObject jsonObject = new JsonObject();
             jsonObject.add("myInventory", inventory);
 
+            // we close the connection
+            proxyEntry.getConnection().close();
 
             System.out.println(String.format("MyInventory: response: %s", inventory.size()));
             return getValidResponse(jsonObject);
